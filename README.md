@@ -3,7 +3,7 @@
 
 ##About
 An application that is written in Java, used to read and write to the caches of RuneScape2.
-This application is able to read and write to various types of RuneScape2 caches between the revisions 559 and 743.
+This application is able to read and write to various types of RuneScape2 caches between the revisions 561 and 743.
 A RuneScape2 cache is built of a 2-level container and each level 1 container is the actual data of the game stored.
 I have named the level 0 container "Index" and the level 1 container "Archive". It looks like this.
 - Index (level 0)
