@@ -283,7 +283,7 @@ public class IndexInformation implements CacheFile {
 	}
 
 	/**
-	 * Add mulitple archives to this index.
+	 * Add multiple archives to this index.
 	 * @param archives An array of archives.
 	 * @param addFiles If we need to add the files in the archives to the new archive.
 	 * @param resetFiles If we need to reset all the files in the archives.
@@ -292,6 +292,15 @@ public class IndexInformation implements CacheFile {
 		for(Archive archive : archives) {
 			addArchive(archive, addFiles, resetFiles);
 		}
+	}
+	
+	/**
+	 * Add an archive to this index.
+	 * @param archive The archive to add.
+	 * @return The added archive.
+	 */
+	public Archive addArchive(Archive archive) {
+		return addArchive(archive, false);
 	}
 	
 	/**
