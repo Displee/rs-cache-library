@@ -104,7 +104,16 @@ data[0] = 5;
 library.getIndex(19).getArchive(81).addFile(34, data);
 library.getIndex(19).update();
 ```
+###Cross cache copying
+```Java
+final CacheLibrary from = new CacheLibrary("path_1_here", 742);
+final CacheLibrary to = new CacheLibrary("path_2_here", 718);
+from.getIndex(3).cache();//Don't forget to cache your index first!
+to.getIndex(3).addArchives(from.getIndex(3).getArchives(), true, true);//Copy all interfaces from 742 to your own cache.
+to.getIndex(3).update();
+```
 
+Easy, isn't it?
 There are plenty more functions you can use, check it out!
 
 ######Note: if you add or delete archives/files, this is not directly written to the cache, to write it to the cache, you should update your cache.
