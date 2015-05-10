@@ -58,6 +58,9 @@ library.getIndex(7).addArchives(library.getIndex(19).getArchives());//Add multip
 ```
 ###Add a file to an archive
 ```Java
+library.getIndex(7).getArchive(3223).addFile("file_name", byte_array);
+```
+```Java
 library.getIndex(7).addArchive(3223).addFile("file_name", byte_array);
 ```
 ```Java
