@@ -1,6 +1,6 @@
 package org.displee.cache.index.archive;
 
-import org.displee.cache.CacheFile;
+import org.displee.cache.Container;
 import org.displee.io.impl.InputStream;
 import org.displee.io.impl.OutputStream;
 
@@ -8,7 +8,7 @@ import org.displee.io.impl.OutputStream;
  * A class represting the information of an {@link Archive}.
  * @author Displee
  */
-public class ArchiveInformation implements CacheFile {
+public class ArchiveInformation implements Container {
 
 	/**
 	 * The archive type.

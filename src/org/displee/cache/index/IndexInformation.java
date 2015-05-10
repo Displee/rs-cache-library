@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import org.displee.CacheLibrary;
-import org.displee.cache.CacheFile;
+import org.displee.cache.Container;
 import org.displee.cache.index.archive.Archive;
 import org.displee.cache.index.archive.ArchiveInformation;
 import org.displee.cache.index.archive.file.File;
@@ -18,7 +18,7 @@ import org.displee.utilities.Constants;
  * A class that represents contains usefull data of this index.
  * @author Displee
  */
-public class IndexInformation implements CacheFile {
+public class IndexInformation implements Container {
 
 	/**
 	 * The id of the index.

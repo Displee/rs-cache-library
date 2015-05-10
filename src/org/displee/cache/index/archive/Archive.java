@@ -4,7 +4,7 @@ import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import org.displee.cache.CacheFile;
+import org.displee.cache.Container;
 import org.displee.cache.index.archive.file.File;
 import org.displee.io.impl.InputStream;
 import org.displee.io.impl.OutputStream;
@@ -14,7 +14,7 @@ import org.displee.utilities.Constants;
  * A class that represents a single archive inside a single index.
  * @author Displee
  */
-public class Archive implements CacheFile {
+public class Archive implements Container {
 
 	/**
 	 * The id of this archive.
