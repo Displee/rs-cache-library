@@ -91,7 +91,7 @@ public class CacheLibrary {
 
 	/**
 	 * Add an index to this cache library.
-	 * @param named If the index contains archive/file names.
+	 * @param named If the index contains archive and/or file names.
 	 * @param whirlpool If the index is using whirlpool.
 	 */
 	public Index addIndex(boolean named, boolean whirlpool) {
