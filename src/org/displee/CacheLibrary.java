@@ -93,7 +93,6 @@ public class CacheLibrary {
 	 * Add an index to this cache library.
 	 * @param named If the index contains archive/file names.
 	 * @param whirlpool If the index is using whirlpool.
-	 * @param compressionType The compression type.
 	 */
 	public Index addIndex(boolean named, boolean whirlpool) {
 		try {
@@ -140,19 +139,18 @@ public class CacheLibrary {
 
 	/**
 	 * Get a single index from the cache.
-	 * @param index The index id to get.
+	 * @param id The id of the index to get.
 	 * @return The index instance.
 	 */
 	public Index getIndex(int id) {
 		if (id >= indices.length) {
 			return null;
-			//throw new ArrayIndexOutOfBoundsException("Index[id=" + id + "] is not available in this cache.");
 		}
 		return indices[id];
 	}
 
 	/**
-	 * Get the last index instance.
+	 * Get the last index of this library.
 	 * @return The last index.
 	 */
 	public Index getLastIndex() {
@@ -168,7 +166,7 @@ public class CacheLibrary {
 	}
 
 	/**
-	 * Get the {@link indices}.
+	 * Get the indices as an array.
 	 * @return {@code indices}
 	 */
 	public Index[] getIndices() {
