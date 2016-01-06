@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import org.displee.CacheLibrary;
-import org.displee.cache.CacheFile;
+import org.displee.cache.Container;
 import org.displee.cache.index.archive.Archive;
 import org.displee.cache.index.archive.ArchiveInformation;
 import org.displee.cache.index.archive.file.File;
@@ -18,7 +18,7 @@ import org.displee.utilities.Constants;
  * A class that represents contains usefull data of this index.
  * @author Displee
  */
-public class IndexInformation implements CacheFile {
+public class IndexInformation implements Container {
 
 	/**
 	 * The id of the index.
@@ -283,7 +283,7 @@ public class IndexInformation implements CacheFile {
 	}
 
 	/**
-	 * Add mulitple archives to this index.
+	 * Add multiple archives to this index.
 	 * @param archives An array of archives.
 	 * @param addFiles If we need to add the files in the archives to the new archive.
 	 * @param resetFiles If we need to reset all the files in the archives.
@@ -353,7 +353,6 @@ public class IndexInformation implements CacheFile {
 	/**
 	 * Add a new archive to this index.
 	 * @param name The name of the archive to add.
-	 * @param data The data.
 	 * @param resetFiles If we need to reset all the files in this archive.
 	 * @return The archive instance.
 	 */
@@ -384,7 +383,6 @@ public class IndexInformation implements CacheFile {
 	/**
 	 * Add a new archive to this index.
 	 * @param id The id of the new archive.
-	 * @param data The data.
 	 * @param name The archive name.
 	 * @param resetFiles If we need to reset all the files in this archive.
 	 * @return The archive instance.
@@ -395,20 +393,20 @@ public class IndexInformation implements CacheFile {
 			if (name != -1 && current.getName() != name) {
 				current.setName(name);
 			}
-			current.setIsUpdateRequired(true);
 			if (resetFiles) {
 				current.reset();
 			}
 			flag();
+            current.flag();
 			return current;
 		}
 		archiveIds = Arrays.copyOf(archiveIds, archiveIds.length + 1);
 		archiveIds[archiveIds.length - 1] = id;
 		archives = Arrays.copyOf(archives, archives.length + 1);
 		final Archive archive = new Archive(id, name);
-		archive.setIsUpdateRequired(true);
 		archive.reset();
 		archive.setIsNew(true);
+        archive.flag();
 		archives[archives.length - 1] = archive;
 		flag();
 		return archive;

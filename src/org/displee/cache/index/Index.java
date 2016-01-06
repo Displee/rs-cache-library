@@ -282,7 +282,7 @@ public class Index extends IndexInformation {
 	}
 
 	/**
-	 * Get the {@link randomAccessFile}.
+	 * Get the random access file.
 	 * @return {@code randomAccessFile}
 	 */
 	public RandomAccessFile getRandomAccessFile() {

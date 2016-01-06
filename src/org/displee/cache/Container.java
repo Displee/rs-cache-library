@@ -4,10 +4,10 @@ import org.displee.io.impl.InputStream;
 import org.displee.io.impl.OutputStream;
 
 /**
- * A class serving as interface for each index, archive and file.
+ * A class serving as a container where we can read from and write to.
  * @author Displee
  */
-public interface CacheFile {
+public interface Container {
 
 	/**
 	 * Used to read data from an index, an archive or a file.
@@ -17,6 +17,6 @@ public interface CacheFile {
 	/**
 	 * Write data to an index, archive or file.
 	 */
-	public byte[] write(OutputStream outputStream);
+    public byte[] write(OutputStream outputStream);
 
 }
