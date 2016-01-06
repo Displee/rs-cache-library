@@ -105,6 +105,18 @@ public class OutputStream extends Stream {
 	 * Write a big smart.
 	 * @param i
 	 */
+	public void writeBigSmart(int i, boolean old) {
+		if (old) {
+			writeShort(i);
+		} else {
+			writeBigSmart(i);
+		}
+	}
+
+	/**
+	 * Write a big smart.
+	 * @param i
+	 */
 	public void writeBigSmart(int i) {
 		if (i >= Short.MAX_VALUE) {
 			writeInt(i - Integer.MAX_VALUE - 1);
@@ -320,7 +332,7 @@ public class OutputStream extends Stream {
 	 * @param string The string.
 	 */
 	public void writeString(String string) {
-		if(offset + string.length() + 1 > buffer.length) {
+		if (offset + string.length() + 1 > buffer.length) {
 			final byte[] newBytes = new byte[offset + string.length() + 1 + DEFAULT_CAPACITY];
 			System.arraycopy(buffer, 0, newBytes, 0, buffer.length);
 			buffer = newBytes;
@@ -359,7 +371,7 @@ public class OutputStream extends Stream {
 	public void writeReversedBytes(byte[] bytes, int offset, int length) {
 		expend(this.offset + length - offset);
 		final byte[] copy = bytes.clone();
-		for(int i = 0; i < copy.length; i++) {
+		for (int i = 0; i < copy.length; i++) {
 			bytes[copy.length - 1 - i] = bytes[i];
 		}
 		System.arraycopy(bytes, offset, this.buffer, this.offset, length);

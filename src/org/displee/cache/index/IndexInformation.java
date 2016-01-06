@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import org.displee.CacheLibrary;
-import org.displee.cache.Container;
+import org.displee.cache.CacheFile;
 import org.displee.cache.index.archive.Archive;
 import org.displee.cache.index.archive.ArchiveInformation;
 import org.displee.cache.index.archive.file.File;
@@ -18,7 +18,7 @@ import org.displee.utilities.Constants;
  * A class that represents contains usefull data of this index.
  * @author Displee
  */
-public class IndexInformation implements Container {
+public class IndexInformation implements CacheFile {
 
 	/**
 	 * The id of the index.
@@ -97,7 +97,7 @@ public class IndexInformation implements Container {
 			archives[i] = new Archive(archiveIds[i]);
 		}
 		if (named) {
-			for(int i = 0; i < archives.length; i++) {
+			for (int i = 0; i < archives.length; i++) {
 				archives[i].setName(inputStream.readInt());
 			}
 		}
@@ -115,10 +115,10 @@ public class IndexInformation implements Container {
 		for (int i = 0; i < archives.length; i++) {
 			archives[i].setFileIds(version >= 7 ? inputStream.readBigSmart() : (inputStream.readShort() & 0xFFFF));
 		}
-		for(int i = 0; i < archives.length; i++) {
+		for (int i = 0; i < archives.length; i++) {
 			int lastFileId = -1;
 			final Archive archive = archives[i];
-			for(int fileIndex = 0; fileIndex < archive.getFileIds().length; fileIndex++) {
+			for (int fileIndex = 0; fileIndex < archive.getFileIds().length; fileIndex++) {
 				archive.getFileIds()[fileIndex] = (version >= 7 ? inputStream.readBigSmart() : (inputStream.readShort() & 0xFFFF)) + (fileIndex == 0 ? 0 : archive.getFileIds()[fileIndex - 1]);
 				if (archive.getFileIds()[fileIndex] > lastFileId) {
 					lastFileId = archive.getFileIds()[fileIndex];
@@ -160,7 +160,7 @@ public class IndexInformation implements Container {
 			}
 		}
 		if (named) {
-			for(int i = 0; i < archives.length; i++) {
+			for (int i = 0; i < archives.length; i++) {
 				outputStream.writeInt(archives[i].getName());
 			}
 		}
@@ -182,7 +182,7 @@ public class IndexInformation implements Container {
 				outputStream.writeShort(archives[i].getFileIds().length);
 			}
 		}
-		for(int i = 0; i < archives.length; i++) {
+		for (int i = 0; i < archives.length; i++) {
 			final Archive archive = archives[i];
 			for (int fileIndex = 0; fileIndex < archive.getFileIds().length; fileIndex++) {
 				if (version >= 7) {
@@ -283,26 +283,17 @@ public class IndexInformation implements Container {
 	}
 
 	/**
-	 * Add multiple archives to this index.
+	 * Add mulitple archives to this index.
 	 * @param archives An array of archives.
 	 * @param addFiles If we need to add the files in the archives to the new archive.
 	 * @param resetFiles If we need to reset all the files in the archives.
 	 */
 	public void addArchives(Archive[] archives, boolean addFiles, boolean resetFiles) {
-		for(Archive archive : archives) {
+		for (Archive archive : archives) {
 			addArchive(archive, addFiles, resetFiles);
 		}
 	}
-	
-	/**
-	 * Add an archive to this index.
-	 * @param archive The archive to add.
-	 * @return The added archive.
-	 */
-	public Archive addArchive(Archive archive) {
-		return addArchive(archive, false);
-	}
-	
+
 	/**
 	 * Add a archive instance to this index.
 	 * @param archive The archive to add.
@@ -312,7 +303,7 @@ public class IndexInformation implements Container {
 	public Archive addArchive(Archive archive, boolean resetFiles) {
 		return addArchive(archive, true, resetFiles, getLastArchive().getId() + 1);
 	}
-	
+
 	/**
 	 * Add an archive instance to this index.
 	 * @param archive The archive instance.
@@ -341,7 +332,7 @@ public class IndexInformation implements Container {
 		}
 		return newArchive;
 	}
-	
+
 	/**
 	 * Add an archive to this index.
 	 * @return The new added archive.
@@ -349,7 +340,7 @@ public class IndexInformation implements Container {
 	public Archive addArchive() {
 		return addArchive(getLastArchive().getId() + 1);
 	}
-	
+
 	/**
 	 * Add a new archive to this index.
 	 * @param name The name.
@@ -401,7 +392,7 @@ public class IndexInformation implements Container {
 	public Archive addArchive(int id, int name, boolean resetFiles) {
 		final Archive current = getArchive(id, true);
 		if (current != null) {
-			if (current.getName() != -1) {
+			if (name != -1 && current.getName() != name) {
 				current.setName(name);
 			}
 			current.setIsUpdateRequired(true);
@@ -438,7 +429,7 @@ public class IndexInformation implements Container {
 	public void removeArchive(int id) {
 		try {
 			boolean exists = false;
-			for(final Archive archive : archives) {
+			for (final Archive archive : archives) {
 				if (archive.getId() == id) {
 					exists = true;
 				}
@@ -448,7 +439,7 @@ public class IndexInformation implements Container {
 			}
 			final int[] archiveIds = new int[this.archiveIds.length - 1];
 			int offset = 0;
-			for(int i = 0; i < this.archiveIds.length; i++) {
+			for (int i = 0; i < this.archiveIds.length; i++) {
 				if (this.archiveIds[i] != id) {
 					archiveIds[offset++] = this.archiveIds[i];
 				}
@@ -456,21 +447,21 @@ public class IndexInformation implements Container {
 			this.archiveIds = archiveIds;
 			offset = 0;
 			final Archive[] archives = new Archive[this.archives.length - 1];
-			for(int i = 0; i < this.archives.length; i++) {
+			for (int i = 0; i < this.archives.length; i++) {
 				if (this.archives[i].getId() != id) {
 					archives[offset++] = this.archives[i];
 				}
 			}
 			this.archives = archives;
 			flag();
-		} catch(Exception exception) {
+		} catch (Exception exception) {
 			exception.printStackTrace();
 			return;
 		}
 	}
 
 	/**
-	 * Flag this archive to be updated.
+	 * Flag this index to be updated.
 	 */
 	public void flag() {
 		sort();
@@ -557,7 +548,7 @@ public class IndexInformation implements Container {
 	 * @return The archive instance.
 	 */
 	public Archive getArchive(int id, int[] xtea, boolean direct) {
-		for(final Archive archive : archives) {
+		for (final Archive archive : archives) {
 			if (archive.getId() == id) {
 				if (!archive.isRead() && !direct) {
 					final ArchiveInformation archiveInformation = origin.getIndex(this.id).getArchiveInformation(id);
@@ -586,7 +577,7 @@ public class IndexInformation implements Container {
 	 * @return The archive id of the argued name.
 	 */
 	public int getArchiveId(String name) {
-		for(final Archive archive : archives) {
+		for (final Archive archive : archives) {
 			if (name != null && archive.getName() == name.toLowerCase().hashCode()) {
 				return archive.getId();
 			}

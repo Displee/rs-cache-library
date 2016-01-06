@@ -1,6 +1,5 @@
 package org.displee.utilities;
 
-
 /**
  * A class containing utilities that are used in this cache library.
  * @author Displee
@@ -10,12 +9,8 @@ public class Miscellaneous {
 	/**
 	 * An array of characters.
 	 */
-	public static char[] aCharArray6385
-	= { '\u20ac', '\0', '\u201a', '\u0192', '\u201e', '\u2026', '\u2020',
-		'\u2021', '\u02c6', '\u2030', '\u0160', '\u2039', '\u0152', '\0',
-		'\u017d', '\0', '\0', '\u2018', '\u2019', '\u201c', '\u201d',
-		'\u2022', '\u2013', '\u2014', '\u02dc', '\u2122', '\u0161',
-		'\u203a', '\u0153', '\0', '\u017e', '\u0178' };
+	public static char[] aCharArray6385 = { '\u20ac', '\0', '\u201a', '\u0192', '\u201e', '\u2026', '\u2020', '\u2021', '\u02c6', '\u2030', '\u0160', '\u2039', '\u0152', '\0', '\u017d', '\0', '\0', '\u2018', '\u2019', '\u201c', '\u201d', '\u2022', '\u2013', '\u2014', '\u02dc', '\u2122', '\u0161',
+			'\u203a', '\u0153', '\0', '\u017e', '\u0178' };
 
 	/**
 	 * Converts a string to an byte array.
@@ -27,8 +22,7 @@ public class Miscellaneous {
 		byte[] is = new byte[i_0_];
 		for (int i_1_ = 0; (i_1_ ^ 0xffffffff) > (i_0_ ^ 0xffffffff); i_1_++) {
 			int i_2_ = message.charAt(i_1_);
-			if (((i_2_ ^ 0xffffffff) >= -1 || i_2_ >= 128)
-					&& (i_2_ < 160 || i_2_ > 255)) {
+			if (((i_2_ ^ 0xffffffff) >= -1 || i_2_ >= 128) && (i_2_ < 160 || i_2_ > 255)) {
 				if ((i_2_ ^ 0xffffffff) != -8365) {
 					if ((i_2_ ^ 0xffffffff) == -8219) {
 						is[i_1_] = (byte) -126;
@@ -128,8 +122,7 @@ public class Miscellaneous {
 		for (int i_6_ = 0; i_6_ < messageDataLength; i_6_++) {
 			int i_7_ = 0xff & messageData[i_6_ + messageDataOffset];
 			if ((i_7_ ^ 0xffffffff) != -1) {
-				if ((i_7_ ^ 0xffffffff) <= -129
-						&& (i_7_ ^ 0xffffffff) > -161) {
+				if ((i_7_ ^ 0xffffffff) <= -129 && (i_7_ ^ 0xffffffff) > -161) {
 					int i_8_ = aCharArray6385[i_7_ - 128];
 					if (i_8_ == 0) {
 						i_8_ = 63;
@@ -140,6 +133,59 @@ public class Miscellaneous {
 			}
 		}
 		return new String(cs, 0, i);
+	}
+
+	/**
+	 * A method used when decoding the script configurations.
+	 * @param i The value.
+	 * @return The character.
+	 */
+	public static char method6566(byte i) {
+		int index = i & 0xff;
+		if (index == 0) {
+			throw new IllegalArgumentException("Non cp1252 character 0x" + Integer.toString(i, 16) + " provided");
+		}
+		if (index >= 128 && index < 160) {
+			int character = aCharArray6385[index - 128];
+			if (character == 0) {
+				character = 63;
+			}
+			index = character;
+		}
+		return (char) index;
+	}
+
+	public static int method6567(char character) {
+		for (int i = 0; i < aCharArray6385.length; i++) {
+			if (character == aCharArray6385[i]) {
+				return i + Byte.MAX_VALUE + 1;
+			}
+		}
+		return character;
+	}
+
+	/**
+	 * Get the size of a jagex hashmap.
+	 * @param count The count.
+	 * @return The size.
+	 */
+	public static int getHashMapSize(int count) {
+		for (int pow = 1; pow <= 16; pow *= 2) {
+			count |= count >>> pow;
+		}
+		return count + 1;
+	}
+
+	/**
+	 * Reverse the jagex hashmap size.
+	 * @param size The size.
+	 * @return The count.
+	 */
+	public static int reverseHashMapSize(int size) {
+		for (int pow = 1; pow <= 16; pow *= 2) {
+			size &= size << pow;
+		}
+		return Math.abs(size);
 	}
 
 }

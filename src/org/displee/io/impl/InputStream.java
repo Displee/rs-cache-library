@@ -97,6 +97,18 @@ public class InputStream extends Stream {
 	}
 
 	/**
+	 * Read an signed smart.
+	 * @return The smart value.
+	 */
+	public int readSmart() {
+		final int i = buffer[offset] & 0xFF;
+		if (i >= 128) {
+			return -49152 + (readShort() & 0xFFFF);
+		}
+		return -64 + (readByte() & 0xFF);
+	}
+
+	/**
 	 * Read an unsigned smart.
 	 * @return The smart value.
 	 */
@@ -108,7 +120,15 @@ public class InputStream extends Stream {
 		return readByte() & 0xFF;
 	}
 
-	public int readBigSmart()  {
+	public int readBigSmart(boolean old) {
+		if (old) {
+			return readShort() & 0xFFFF;
+		} else {
+			return readBigSmart();
+		}
+	}
+
+	public int readBigSmart() {
 		if ((buffer[offset] ^ 0xffffffff) <= -1) {
 			int value = readShort() & 0xFFFF;
 			if (value == 32767) {
@@ -125,7 +145,7 @@ public class InputStream extends Stream {
 	 */
 	public int readShort() {
 		int s = ((readByte() & 0xFF) << 8) + (readByte() & 0xFF);
-		if(s > 32767) {
+		if (s > 32767) {
 			s -= 0x10000;
 		}
 		return s;
@@ -137,7 +157,7 @@ public class InputStream extends Stream {
 	 */
 	public int readShortLE() {
 		int s = (readByte() & 0xFF) + ((readByte() & 0xFF) << 8);
-		if(s > 32767) {
+		if (s > 32767) {
 			s -= 0x10000;
 		}
 		return s;
@@ -149,7 +169,7 @@ public class InputStream extends Stream {
 	 */
 	public int readShort128() {
 		int s = ((readByte() & 0xFF) << 8) + (readByte() - 128 & 0xFF);
-		if(s > 32767) {
+		if (s > 32767) {
 			s -= 0x10000;
 		}
 		return s;
@@ -161,7 +181,7 @@ public class InputStream extends Stream {
 	 */
 	public int readShortLE128() {
 		int s = (readByte() - 128 & 0xFF) + ((readByte() & 0xFF) << 8);
-		if(s > 32767) {
+		if (s > 32767) {
 			s -= 0x10000;
 		}
 		return s;
@@ -219,7 +239,7 @@ public class InputStream extends Stream {
 	public String readString() {
 		StringBuilder s = new StringBuilder();
 		int b;
-		while((b = readByte()) != 0) {
+		while ((b = readByte()) != 0) {
 			s.append((char) b);
 		}
 		return s.toString();
@@ -250,7 +270,7 @@ public class InputStream extends Stream {
 	 * @param bytes The safe-byte-array.
 	 */
 	public void readMultipleBytes(byte[] bytes) {
-		for(int i = 0; i < bytes.length; i++) {
+		for (int i = 0; i < bytes.length; i++) {
 			bytes[i] = (byte) readByte();
 		}
 	}
@@ -270,7 +290,7 @@ public class InputStream extends Stream {
 	 * @param length The length.
 	 */
 	public void supplyBytes(byte[] bytes, int offset, int length) {
-		for(; offset < length; offset++) {
+		for (; offset < length; offset++) {
 			this.buffer[offset] = bytes[offset];
 		}
 	}

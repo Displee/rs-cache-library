@@ -108,9 +108,17 @@ public class File {
 		return data;
 	}
 
+	/**
+	 * Get the info about this file.
+	 * @return The info.
+	 */
+	public String getInfo() {
+		return "File[id=" + id + ", name=" + name + "]";
+	}
+	
 	@Override
 	public String toString() {
-		return "File[id=" + id + ", name=" + name + "]";
+		return "File " + id;
 	}
 
 }

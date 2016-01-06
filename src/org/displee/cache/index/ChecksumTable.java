@@ -3,7 +3,7 @@ package org.displee.cache.index;
 import java.io.RandomAccessFile;
 
 import org.displee.CacheLibrary;
-import org.displee.cache.Container;
+import org.displee.cache.CacheFile;
 import org.displee.io.impl.InputStream;
 import org.displee.io.impl.OutputStream;
 
@@ -11,7 +11,7 @@ import org.displee.io.impl.OutputStream;
  * A class representing the checksum table.
  * @author Displee
  */
-public class ChecksumTable extends Index implements Container {
+public class ChecksumTable extends Index implements CacheFile {
 
 	/**
 	 * The data of this checksum table.

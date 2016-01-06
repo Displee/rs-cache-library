@@ -4,7 +4,7 @@ import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import org.displee.cache.Container;
+import org.displee.cache.CacheFile;
 import org.displee.cache.index.archive.file.File;
 import org.displee.io.impl.InputStream;
 import org.displee.io.impl.OutputStream;
@@ -14,7 +14,7 @@ import org.displee.utilities.Constants;
  * A class that represents a single archive inside a single index.
  * @author Displee
  */
-public class Archive implements Container {
+public class Archive implements CacheFile {
 
 	/**
 	 * The id of this archive.
@@ -128,15 +128,15 @@ public class Archive implements Container {
 		if (files.length == 1) {
 			return files[0].getData();
 		} else {
-			for(int i = 0; i < fileIds.length; i++) {
+			for (int i = 0; i < fileIds.length; i++) {
 				final File file = getFile(fileIds[i]);
 				if (file != null && file.getData() != null) {
 					outputStream.writeBytes(file.getData());
 				}
 			}
-			for(int i = 0; i < files.length; i++) {
+			for (int i = 0; i < files.length; i++) {
 				final File file = getFile(fileIds[i]);
-				if (file!= null && file.getData() != null) {
+				if (file != null && file.getData() != null) {
 					outputStream.writeInt(file.getData().length - ((i == 0 || getFile(fileIds[i - 1]) == null || getFile(fileIds[i - 1]).getData() == null) ? 0 : getFile(fileIds[i - 1]).getData().length));
 				}
 			}
@@ -150,7 +150,7 @@ public class Archive implements Container {
 	 * @param files The array of the files to add.
 	 */
 	public void addFiles(File[] files) {
-		for(File file : files) {
+		for (File file : files) {
 			addFile(file);
 		}
 	}
@@ -162,7 +162,7 @@ public class Archive implements Container {
 	public File addFile(File file) {
 		return addFile(file.getId(), file.getData(), file.getName());
 	}
-	
+
 	/**
 	 * Add a file to this archive.
 	 * @param name The name.
@@ -171,7 +171,7 @@ public class Archive implements Container {
 	public File addFile(String name) {
 		return addFile(name);
 	}
-	
+
 	/**
 	 * Add a file to this archive.
 	 * @param data The data of the file to add.
@@ -213,7 +213,7 @@ public class Archive implements Container {
 				current.setData(data);
 				flag = true;
 			}
-			if (current.getName() != -1) {
+			if (name != -1 && current.getName() != name) {
 				current.setName(name);
 				flag = true;
 			}
@@ -229,7 +229,7 @@ public class Archive implements Container {
 		files[files.length - 1] = file;
 		flag();
 		return file;
-		
+
 	}
 
 	/**
@@ -247,7 +247,7 @@ public class Archive implements Container {
 	public void removeFile(int id) {
 		try {
 			boolean exists = false;
-			for(final File file : files) {
+			for (final File file : files) {
 				if (file.getId() == id) {
 					exists = true;
 				}
@@ -257,7 +257,7 @@ public class Archive implements Container {
 			}
 			final int[] fileIds = new int[this.fileIds.length - 1];
 			int offset = 0;
-			for(int i = 0; i < this.fileIds.length; i++) {
+			for (int i = 0; i < this.fileIds.length; i++) {
 				if (this.fileIds[i] != id) {
 					fileIds[offset++] = this.fileIds[i];
 				}
@@ -265,14 +265,14 @@ public class Archive implements Container {
 			this.fileIds = fileIds;
 			offset = 0;
 			final File[] files = new File[this.files.length - 1];
-			for(int i = 0; i < this.files.length; i++) {
+			for (int i = 0; i < this.files.length; i++) {
 				if (this.files[i].getId() != id) {
 					files[offset++] = this.files[i];
 				}
 			}
 			this.files = files;
 			flag();
-		} catch(Exception exception) {
+		} catch (Exception exception) {
 			exception.printStackTrace();
 		}
 	}
@@ -440,7 +440,7 @@ public class Archive implements Container {
 	 * @return The file id of the argued name.
 	 */
 	public int getFileId(String name) {
-		for(final File file : files) {
+		for (final File file : files) {
 			if (name != null && file.getName() == name.toLowerCase().hashCode()) {
 				return file.getId();
 			}
@@ -454,7 +454,7 @@ public class Archive implements Container {
 	 * @return The file instance.
 	 */
 	public File getFile(int id) {
-		for(final File file : files) {
+		for (final File file : files) {
 			if (file.getId() == id) {
 				return file;
 			}
@@ -505,8 +505,10 @@ public class Archive implements Container {
 
 	/**
 	 * Set if this archive needs to be updated.
+	 * This method should not be used, instead use the {@code flag} method;
 	 * @param needUpdate If we need to update this archive.
 	 */
+	@Deprecated
 	public void setIsUpdateRequired(boolean needUpdate) {
 		this.needUpdate = needUpdate;
 	}
@@ -527,9 +529,17 @@ public class Archive implements Container {
 		return isNew;
 	}
 
+	/**
+	 * Get the info about this archive.
+	 * @return The info.
+	 */
+	public String getInfo() {
+		return "Archive[id=" + id + ", name=" + name + ", revision=" + revision + ", read=" + read + ", files=" + Arrays.toString(fileIds) + "]";
+	}
+
 	@Override
 	public String toString() {
-		return "Archive[id=" + id + ", name=" + name + ", revision=" + revision + ", read=" + read + ", files=" + Arrays.toString(fileIds) + "]";
+		return "Archive " + id;
 	}
 
 }

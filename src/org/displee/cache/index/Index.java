@@ -61,10 +61,11 @@ public class Index extends IndexInformation {
 
 	/**
 	 * Update all the archives and files in this index.
+	 * @return If we have updated the cache with success {@code true}.
 	 */
-	public void update() {
+	public boolean update() {
 		boolean updateChecksumTable = false;
-		for(final Archive archive : super.archives) {
+		for (final Archive archive : super.archives) {
 			if (archive.isUpdateRequired()) {
 				if (!updateChecksumTable) {
 					updateChecksumTable = true;
@@ -72,8 +73,16 @@ public class Index extends IndexInformation {
 				final byte[] compressed = Compression.compress(archive.write(new OutputStream()), super.id == 7 ? CompressionTypes.NONE : CompressionTypes.GZIP, null, archive.getRevision());
 				archive.setCRC(HashGenerator.getCRCHash(compressed, 0, compressed.length - 2));
 				archive.setWhirlpool(Whirlpool.getHash(compressed, 0, compressed.length - 2));
+				final ArchiveInformation backup = getArchiveInformation(archive.getId());
 				if (!writeArchiveInformation(archive.getId(), compressed)) {
-					throw new RuntimeException("Could not write the archive information for index[id=" + super.id + ", archive=" + archive.getId() + "]");
+					System.err.println("Could not write the archive information for index[id=" + super.id + ", archive=" + archive.getId() + "]");
+					System.out.println("Reverting changes...");
+					if (writeArchiveInformation(archive.getId(), backup.getData())) {
+						System.out.println("Changes have been reverted.");
+					} else {
+						System.err.println("Your cache is corrupt.");
+					}
+					return false;
 				}
 			}
 		}
@@ -81,6 +90,7 @@ public class Index extends IndexInformation {
 			super.revision++;
 			super.origin.getChecksumTable().writeArchiveInformation(super.id, Compression.compress(super.write(new OutputStream()), CompressionTypes.GZIP, null, -1));
 		}
+		return true;
 	}
 
 	/**
@@ -92,7 +102,7 @@ public class Index extends IndexInformation {
 		synchronized (super.origin.getMainFile()) {
 			try {
 				int type = 0;
-				if (origin.getRevision() >= 562 && id > 65535) {
+				if (origin.getRevision() >= 670 && id > 65535) {
 					type = 1;
 				}
 				if (super.origin.getMainFile().length() < (Constants.INDEX_SIZE * id + Constants.INDEX_SIZE)) {
@@ -104,7 +114,7 @@ public class Index extends IndexInformation {
 				final InputStream inputStream = new InputStream(buffer);
 				final ArchiveInformation archiveInformation = new ArchiveInformation(type, inputStream.read24BitInt(), inputStream.read24BitInt());
 				if (archiveInformation.getSize() < 0 || archiveInformation.getSize() > 1000000) {
-					throw new RuntimeException("Error, archive size is invalid.");
+					return null;
 				} else if (archiveInformation.getPosition() <= 0 || archiveInformation.getPosition() > (super.origin.getMainFile().length() / Constants.ARCHIVE_SIZE)) {
 					return null;
 				}
@@ -117,6 +127,9 @@ public class Index extends IndexInformation {
 					archiveHeaderSize += 2;
 				}
 				while (read < archiveInformation.getSize()) {
+					if (archiveInformation.getPosition() == 0) {
+						return null;
+					}
 					int requiredToRead = archiveInformation.getSize() - read;
 					if (requiredToRead > archiveDataSize) {
 						requiredToRead = archiveDataSize;
@@ -127,7 +140,8 @@ public class Index extends IndexInformation {
 					if (!archiveInformation.read(inputStream)) {
 						throw new RuntimeException("Error, could not read the archive.");
 					} else if (super.id != archiveInformation.getIndex() || id != archiveInformation.getId() || chunk != archiveInformation.getChunk()) {
-						throw new RuntimeException("Error, the read data is incorrect. Data[currentIndex=" + super.id + ", index=" + archiveInformation.getIndex() + ", currentId=" + id + ", id=" + archiveInformation.getId() + ", currentChunk=" + chunk + ", chunk=" + archiveInformation.getChunk() + "]");
+						throw new RuntimeException(
+								"Error, the read data is incorrect. Data[currentIndex=" + super.id + ", index=" + archiveInformation.getIndex() + ", currentId=" + id + ", id=" + archiveInformation.getId() + ", currentChunk=" + chunk + ", chunk=" + archiveInformation.getChunk() + "]");
 					} else if (archiveInformation.getNextPosition() < 0 || archiveInformation.getNextPosition() > (super.origin.getMainFile().length() / Constants.ARCHIVE_SIZE)) {
 						throw new RuntimeException("Error, the next position is invalid.");
 					}
@@ -138,7 +152,7 @@ public class Index extends IndexInformation {
 					chunk++;
 				}
 				return archiveInformation;
-			} catch(Exception exception) {
+			} catch (Exception exception) {
 				exception.printStackTrace();
 			}
 		}
@@ -190,7 +204,7 @@ public class Index extends IndexInformation {
 				int chunk = 0;
 				int archiveDataSize = 512;
 				int archiveHeaderSize = 8;
-				if (super.origin.getRevision() >= 562 && id > 65535) {
+				if (super.origin.getRevision() >= 670 && id > 65535) {
 					archiveDataSize -= 2;
 					archiveHeaderSize += 2;
 				}
@@ -260,7 +274,7 @@ public class Index extends IndexInformation {
 	 */
 	public void cache(int[][] xteas) {
 		if (!cached) {
-			for(final int archive : super.archiveIds) {
+			for (final int archive : super.archiveIds) {
 				super.getArchive(archive, xteas == null ? null : xteas[archive] == null ? null : xteas[archive]);
 			}
 			cached = true;
@@ -299,9 +313,17 @@ public class Index extends IndexInformation {
 		this.crc = crc;
 	}
 
+	/**
+	 * Get the info about this index.
+	 * @return The info.
+	 */
+	public String getInfo() {
+		return "Index[id=" + id + "]";
+	}
+
 	@Override
 	public String toString() {
-		return "Index[id=" + id + "]";
+		return "Index " + id;
 	}
 
 }
