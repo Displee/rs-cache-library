@@ -325,7 +325,7 @@ public class IndexInformation implements Container {
 	 */
 	public Archive addArchive(Archive archive, boolean addFiles, boolean resetFiles, int id) {
 		final File[] files = archive.getFiles();
-		final Archive newArchive = addArchive(archive.getId(), archive.getName(), resetFiles);
+		final Archive newArchive = addArchive(id, archive.getName(), resetFiles);
 		if (addFiles) {
 			newArchive.addFiles(files);
 			newArchive.setIsRead(true);
