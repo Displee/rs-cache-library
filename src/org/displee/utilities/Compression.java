@@ -15,7 +15,7 @@ public class Compression {
 
 	/**
 	 * Compress archive data with the argued compression type.
-	 * @param archiveInformation The archive information instance to compress.
+	 * @param uncompressed The data to compressed.
 	 * @param compressionType The compression type.
 	 * @param xteas The xteas.
 	 * @param revision The revision.
@@ -75,7 +75,7 @@ public class Compression {
 		if (type != 0) {
 			int decompressedSize = inputStream.readInt() & 0xFFFFFF;
 			if (decompressedSize < 0 || decompressedSize > 1000000000) {
-				throw new RuntimeException("The decomporessed size is invalid.");
+				throw new RuntimeException("The decompressed size is invalid.");
 			}
 			byte[] decompressed = new byte[decompressedSize];
 			if (type == CompressionTypes.BZIP2.ordinal()) {
