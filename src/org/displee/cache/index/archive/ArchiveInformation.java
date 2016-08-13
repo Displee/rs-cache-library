@@ -1,11 +1,13 @@
 package org.displee.cache.index.archive;
 
 import org.displee.cache.Container;
+import org.displee.cache.index.Index;
 import org.displee.io.impl.InputStream;
 import org.displee.io.impl.OutputStream;
+import org.displee.utilities.Compression;
 
 /**
- * A class represting the information of an {@link Archive}.
+ * A class representing the information of an {@link Index}.
  * @author Displee
  */
 public class ArchiveInformation implements Container {
@@ -54,6 +56,11 @@ public class ArchiveInformation implements Container {
 	 * The keys of this archive.
 	 */
 	private int[] keys;
+
+	/**
+	 * The compression type.
+	 */
+	private Compression.CompressionTypes compression;
 
 	/**
 	 * Constructs a new {@code Archive} {@code Object}.
@@ -226,6 +233,18 @@ public class ArchiveInformation implements Container {
 	 */
 	public void setType(int type) {
 		this.type = type;
+	}
+
+	/**
+	 * Set a new compression type.
+	 * @param compression The new compression type to set.
+     */
+	public void setCompression(Compression.CompressionTypes compression) {
+		this.compression = compression;
+	}
+
+	public Compression.CompressionTypes getCompression() {
+		return compression;
 	}
 
 }

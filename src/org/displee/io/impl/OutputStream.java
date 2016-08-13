@@ -270,6 +270,28 @@ public class OutputStream extends Stream {
 		writeByte((byte) -b);
 	}
 
+	public void method13177(int i) {
+		if ((i & ~0x7f) != 0) {
+			if ((i & ~0x3fff) != 0) {
+				if (0 != (i & ~0x1fffff)) {
+					if ((i & ~0xfffffff) != 0)
+						writeByte(i >>> 28 | 0x80);
+					writeByte(i >>> 21 | 0x80);
+				}
+				writeByte(i >>> 14 | 0x80);
+			}
+			writeByte(i >>> 7 | 0x80);
+		}
+		writeByte(i & 0x7f);
+	}
+
+	public void method13180(int i) {
+		buffer[offset - i - 4] = (byte) (i >> 24);
+		buffer[offset - i - 3] = (byte) (i >> 16);
+		buffer[offset - i - 2] = (byte) (i >> 8);
+		buffer[offset - i - 1] = (byte) i;
+	}
+
 	/**
 	 * Initialize bit access.
 	 */

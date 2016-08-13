@@ -83,6 +83,15 @@ public abstract class Stream {
 		return getRemaining() > 0 ? buffer[offset++] : 0;
 	}
 
+	public int smf_gvlength() {
+		int i_20_ = readByte();
+		int i_21_ = 0;
+		for (; i_20_ < 0; i_20_ = readByte()) {
+			i_21_ = (i_21_ | i_20_ & 0x7f) << 7;
+		}
+		return i_21_ | i_20_;
+	}
+
 	/**
 	 * Write a byte.
 	 * @param b The byte.

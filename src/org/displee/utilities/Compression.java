@@ -63,7 +63,8 @@ public class Compression {
 		}
 		InputStream inputStream = new InputStream(packedData);
 		int type = inputStream.readByte() & 0xFF;
-		if (type < 0 || type > CompressionTypes.values().length) {
+		archiveInformation.setCompression(CompressionTypes.values()[type]);
+		if (type < 0 || type > CompressionTypes.values().length - 1) {
 			throw new RuntimeException("Unknown compression type - type=" + type);
 		}
 		int compressedSize = inputStream.readInt() & 0xFFFFFF;

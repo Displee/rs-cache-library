@@ -165,7 +165,7 @@ public class Miscellaneous {
 	}
 
 	/**
-	 * Get the size of a jagex hashmap.
+	 * Get the size of a com.jagex hashmap.
 	 * @param count The count.
 	 * @return The size.
 	 */
@@ -174,18 +174,6 @@ public class Miscellaneous {
 			count |= count >>> pow;
 		}
 		return count + 1;
-	}
-
-	/**
-	 * Reverse the jagex hashmap size.
-	 * @param size The size.
-	 * @return The count.
-	 */
-	public static int reverseHashMapSize(int size) {
-		for (int pow = 1; pow <= 16; pow *= 2) {
-			size &= size << pow;
-		}
-		return Math.abs(size);
 	}
 
 }
