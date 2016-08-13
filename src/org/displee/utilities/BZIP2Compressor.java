@@ -1,8 +1,8 @@
 package org.displee.utilities;
 
-import java.io.ByteArrayOutputStream;
+import org.apache.tools.bzip2.CBZip2OutputStream;
 
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import java.io.*;
 
 /**
  * A class representing the BZIP2 (de)compressor.
@@ -23,20 +23,37 @@ public class BZIP2Compressor {
 
 	/**
 	 * Compress a decompressed BZIP2 file.
-	 * @param data The uncompressed BZIP2 file.
+	 * @param bytes The uncompressed BZIP2 file.
 	 * @return The compressed BZIP2 file.
 	 */
-	public static byte[] compress(byte[] data) {
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+	public static byte[] compress(byte[] bytes) {
 		try {
-			BZip2CompressorOutputStream bzip2CompressorOutputStream = new BZip2CompressorOutputStream(byteArrayOutputStream);
-			bzip2CompressorOutputStream.write(data);
-			bzip2CompressorOutputStream.finish();
-			bzip2CompressorOutputStream.close();
-		} catch(Exception exception) {
-			exception.printStackTrace();
+			InputStream is = new ByteArrayInputStream(bytes);
+			try {
+				ByteArrayOutputStream bout = new ByteArrayOutputStream();
+				OutputStream os = new CBZip2OutputStream(bout, 1);
+				try {
+					byte[] buf = new byte[4096];
+					int len = 0;
+					while ((len = is.read(buf, 0, buf.length)) != -1) {
+						os.write(buf, 0, len);
+					}
+					os.close();
+				} finally {
+					os.close();
+				}
+			/* strip the header from the byte array and return it */
+				bytes = bout.toByteArray();
+				byte[] bzip2 = new byte[bytes.length - 2];
+				System.arraycopy(bytes, 2, bzip2, 0, bzip2.length);
+				return bzip2;
+			} finally {
+				is.close();
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+			return null;
 		}
-		return byteArrayOutputStream.toByteArray();
 	}
 
 	/**

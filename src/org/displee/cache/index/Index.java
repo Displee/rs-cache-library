@@ -42,7 +42,7 @@ public class Index extends IndexInformation {
 	/**
 	 * The compression type.
 	 */
-	//private CompressionTypes type;
+	private CompressionTypes type;
 
 	/**
 	 * Constructs a new {@code Index} {@code Object}.
@@ -58,7 +58,7 @@ public class Index extends IndexInformation {
 				crc = HashGenerator.getCRCHash(archiveInformation.getData());
 				whirlpool = Whirlpool.getHash(archiveInformation.getData(), 0, archiveInformation.getData().length);
 				super.read(new InputStream(Compression.decompress(archiveInformation, null)));
-				//type = archiveInformation.getCompression();
+				type = archiveInformation.getCompression();
 			} else {
 				this.randomAccessFile = null;
 			}
@@ -94,7 +94,7 @@ public class Index extends IndexInformation {
 		}
 		if (updateChecksumTable || super.needUpdate) {
 			super.revision++;
-			super.origin.getChecksumTable().writeArchiveInformation(super.id, Compression.compress(super.write(new OutputStream()), super.origin.getChecksumTable().getArchiveInformation(super.id).getCompression(), null, -1));
+			super.origin.getChecksumTable().writeArchiveInformation(super.id, Compression.compress(super.write(new OutputStream()), type, null, -1));
 		}
 		return true;
 	}
