@@ -13,7 +13,7 @@ import org.displee.utilities.Compression.CompressionTypes;
 import org.displee.utilities.Constants;
 
 /**
- * A class that represents the main entry point of this cache library.s
+ * A class that represents the main entry point of this cache library.
  * @author Displee
  */
 public class CacheLibrary {
