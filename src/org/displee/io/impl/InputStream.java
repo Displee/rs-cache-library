@@ -1,6 +1,7 @@
 package org.displee.io.impl;
 
 import org.displee.io.Stream;
+import org.displee.utilities.Miscellaneous;
 
 /**
  * A class representing an input stream.
@@ -129,14 +130,14 @@ public class InputStream extends Stream {
 	}
 
 	public int readBigSmart() {
-		if ((buffer[offset] ^ 0xffffffff) <= -1) {
-			int value = readShort() & 0xFFFF;
-			if (value == 32767) {
-				return -1;
-			}
-			return value;
+		if (buffer[offset] < 0) {
+			return readInt() & 0x7fffffff;
 		}
-		return readInt() & 0x7fffffff;
+		int value = readShort() & 0xFFFF;
+		if (value == 32767) {
+			return -1;
+		}
+		return value;
 	}
 
 	/**
@@ -223,6 +224,14 @@ public class InputStream extends Stream {
 		return (byte) -readByte();
 	}
 
+	public String readMagicString() {
+		if (buffer[offset] == 0) {
+			++offset;
+			return null;
+		}
+		return readString();
+	}
+
 	/**
 	 * Read a Jagex string.
 	 * @return The string.
@@ -237,12 +246,15 @@ public class InputStream extends Stream {
 	 * @return The string.
 	 */
 	public String readString() {
-		StringBuilder s = new StringBuilder();
-		int b;
-		while ((b = readByte()) != 0) {
-			s.append((char) b);
+		int i_22_ = offset;
+		while (buffer[offset++] != 0) {
+			/* empty */
 		}
-		return s.toString();
+		int i_23_ = offset - i_22_ - 1;
+		if (i_23_ == 0) {
+			return "";
+		}
+		return Miscellaneous.method2122(buffer, i_22_, i_23_);
 	}
 
 	/**

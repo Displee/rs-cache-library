@@ -9,8 +9,7 @@ public class Miscellaneous {
 	/**
 	 * An array of characters.
 	 */
-	public static char[] aCharArray6385 = { '\u20ac', '\0', '\u201a', '\u0192', '\u201e', '\u2026', '\u2020', '\u2021', '\u02c6', '\u2030', '\u0160', '\u2039', '\u0152', '\0', '\u017d', '\0', '\0', '\u2018', '\u2019', '\u201c', '\u201d', '\u2022', '\u2013', '\u2014', '\u02dc', '\u2122', '\u0161',
-			'\u203a', '\u0153', '\0', '\u017e', '\u0178' };
+	public static char[] aCharArray6385 = {'\u20ac', '\0', '\u201a', '\u0192', '\u201e', '\u2026', '\u2020', '\u2021', '\u02c6', '\u2030', '\u0160', '\u2039', '\u0152', '\0', '\u017d', '\0', '\0', '\u2018', '\u2019', '\u201c', '\u201d', '\u2022', '\u2013', '\u2014', '\u02dc', '\u2122', '\u0161', '\u203a', '\u0153', '\0', '\u017e', '\u0178'};
 
 	/**
 	 * Converts a string to an byte array.
@@ -109,30 +108,23 @@ public class Miscellaneous {
 		return is;
 	}
 
-	/**
-	 * Converts an unformated message to an readable string.
-	 * @param messageDataLength The data length of the message.
-	 * @param messageDataOffset The data offset of the message.
-	 * @param messageData The data.
-	 * @return The readable string.
-	 */
-	public static final String getUnformatedMessage(int messageDataLength, int messageDataOffset, byte[] messageData) {
-		char[] cs = new char[messageDataLength];
-		int i = 0;
-		for (int i_6_ = 0; i_6_ < messageDataLength; i_6_++) {
-			int i_7_ = 0xff & messageData[i_6_ + messageDataOffset];
-			if ((i_7_ ^ 0xffffffff) != -1) {
-				if ((i_7_ ^ 0xffffffff) <= -129 && (i_7_ ^ 0xffffffff) > -161) {
-					int i_8_ = aCharArray6385[i_7_ - 128];
-					if (i_8_ == 0) {
-						i_8_ = 63;
+	public static String method2122(byte[] is, int i, int i_11_) {
+		char[] cs = new char[i_11_];
+		int i_13_ = 0;
+		for (int i_14_ = 0; i_14_ < i_11_; i_14_++) {
+			int i_15_ = is[i + i_14_] & 0xff;
+			if (i_15_ != 0) {
+				if (i_15_ >= 128 && i_15_ < 160) {
+					int i_16_ = aCharArray6385[i_15_ - 128];
+					if (0 == i_16_) {
+						i_16_ = 63;
 					}
-					i_7_ = i_8_;
+					i_15_ = i_16_;
 				}
-				cs[i++] = (char) i_7_;
+				cs[i_13_++] = (char) i_15_;
 			}
 		}
-		return new String(cs, 0, i);
+		return new String(cs, 0, i_13_);
 	}
 
 	/**

@@ -97,7 +97,8 @@ public class Archive implements Container {
 			for (int i = 0; i < length; i++) {
 				int offset = 0;
 				for (int fileIndex = 0; fileIndex < fileIds.length; fileIndex++) {
-					filesSize[fileIndex] += offset += inputStream.readInt();
+					offset += inputStream.readInt();
+					filesSize[fileIndex] += offset;
 				}
 			}
 			byte[][] filesData = new byte[fileIds.length][];
@@ -187,7 +188,7 @@ public class Archive implements Container {
 	 */
 	public File addFile(String name, byte[] data) {
 		final int fileId = getFileId(name);
-		return addFile(fileId == -1 ? (getLastFile().getId() + 1) : fileId, data, name == null ? -1 : name.toLowerCase().hashCode());
+		return addFile(fileId == -1 ? (getLastFile() == null ? 0 : getLastFile().getId() + 1) : fileId, data, name == null ? -1 : name.toLowerCase().hashCode());
 	}
 
 	/**
@@ -287,6 +288,13 @@ public class Archive implements Container {
 	}
 
 	/**
+	 * Unflag this archive from updating.
+	 */
+	public void unFlag() {
+		needUpdate = false;
+	}
+
+	/**
 	 * Sort the holders of this archive.
 	 */
 	public void sort() {
@@ -305,6 +313,13 @@ public class Archive implements Container {
 	public void reset() {
 		files = new File[0];
 		fileIds = new int[0];
+	}
+
+	public void restore() {
+		for(File file : files) {
+			file.setData(null);
+		}
+		read = false;
 	}
 
 	/**

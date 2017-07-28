@@ -1,6 +1,7 @@
 package org.displee.io.impl;
 
 import org.displee.io.Stream;
+import org.displee.utilities.Miscellaneous;
 
 /**
  * A class representing an output stream.
@@ -99,6 +100,14 @@ public class OutputStream extends Stream {
 		} else {
 			writeByte((byte) i);
 		}
+	}
+
+	public void writeSmart2(int i) {
+		while (i >= 32767) {
+			writeSmart(32767);
+			i -= 32767;
+		}
+		writeSmart(i);
 	}
 
 	/**
@@ -280,7 +289,7 @@ public class OutputStream extends Stream {
 				}
 				writeByte(i >>> 14 | 0x80);
 			}
-			writeByte(i >>> 7 | 0x80);
+			writeByte(i >>> 7 | 0x80);//(0x4028 | arg1) >>> 7
 		}
 		writeByte(i & 0x7f);
 	}
@@ -340,6 +349,14 @@ public class OutputStream extends Stream {
 		return 8 * i - bitPosition;
 	}
 
+	public void writeMagicString(String string) {
+		if (string == null) {
+			writeByte(0);
+			return;
+		}
+		writeString(string);
+	}
+
 	/**
 	 * Write a Jagex string.
 	 * @param string The string.
@@ -354,14 +371,8 @@ public class OutputStream extends Stream {
 	 * @param string The string.
 	 */
 	public void writeString(String string) {
-		if (offset + string.length() + 1 > buffer.length) {
-			final byte[] newBytes = new byte[offset + string.length() + 1 + DEFAULT_CAPACITY];
-			System.arraycopy(buffer, 0, newBytes, 0, buffer.length);
-			buffer = newBytes;
-		}
-		System.arraycopy(string.getBytes(), 0, buffer, offset, string.length());
-		offset += string.length();
-		writeByte((byte) 0);
+		writeBytes(Miscellaneous.getFormatedMessage(string));
+		writeByte(0);
 	}
 
 	/**

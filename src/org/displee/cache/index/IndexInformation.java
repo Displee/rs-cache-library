@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import org.displee.CacheLibrary;
+import org.displee.CacheLibraryMode;
 import org.displee.cache.Container;
 import org.displee.cache.index.archive.Archive;
 import org.displee.cache.index.archive.ArchiveInformation;
@@ -69,7 +70,10 @@ public class IndexInformation implements Container {
 	 * Constructs a new {@code IndexInformation} {@code Object}.
 	 * @param id The id of the index.
 	 */
-	public IndexInformation(CacheLibrary origin, int id) {
+	public IndexInformation(CacheLibrary origin, int id) throws IllegalAccessError {
+		if (origin.isClosed()) {
+			throw new IllegalAccessError("Cache library has been closed.");
+		}
 		this.origin = origin;
 		this.id = id;
 	}
@@ -283,12 +287,28 @@ public class IndexInformation implements Container {
 	}
 
 	/**
+	 * Get the archives.
+	 * @return {@code archives}
+	 */
+	public Archive[] copyArchives() throws Throwable {
+		final Archive[] archives = new Archive[archiveIds.length];
+		for(int i = 0; i < archives.length; i++) {
+			final Archive original = getArchive(archiveIds[i]);
+			archives[i] = original.copy();
+			if (origin.getMode() == CacheLibraryMode.UN_CACHED) {
+				original.restore();
+			}
+		}
+		return archives;
+	}
+
+	/**
 	 * Add multiple archives to this index.
 	 * @param archives An array of archives.
 	 * @param addFiles If we need to add the files in the archives to the new archive.
 	 * @param resetFiles If we need to reset all the files in the archives.
 	 */
-	public void addArchives(Archive[] archives, boolean addFiles, boolean resetFiles) {
+	public void addArchives(Archive[] archives, boolean addFiles, boolean resetFiles) throws Throwable {
 		for (Archive archive : archives) {
 			addArchive(archive, addFiles, resetFiles);
 		}
@@ -300,7 +320,7 @@ public class IndexInformation implements Container {
 	 * @param resetFiles If we need to reset all files in the new archive.
 	 * @return The new archive instance.
 	 */
-	public Archive addArchive(Archive archive, boolean resetFiles) {
+	public Archive addArchive(Archive archive, boolean resetFiles) throws Throwable {
 		return addArchive(archive, true, resetFiles, getLastArchive().getId() + 1);
 	}
 
@@ -311,7 +331,7 @@ public class IndexInformation implements Container {
 	 * @param resetFiles If we need to reset all the files in the new archive.
 	 * @return The new archive instance.
 	 */
-	public Archive addArchive(Archive archive, boolean addFiles, boolean resetFiles) {
+	public Archive addArchive(Archive archive, boolean addFiles, boolean resetFiles) throws Throwable {
 		return addArchive(archive, addFiles, resetFiles, archive.getId());
 	}
 
@@ -323,8 +343,8 @@ public class IndexInformation implements Container {
 	 * @param id The id to give to the new archive.
 	 * @return The new archive instance.
 	 */
-	public Archive addArchive(Archive archive, boolean addFiles, boolean resetFiles, int id) {
-		final File[] files = archive.getFiles();
+	public Archive addArchive(Archive archive, boolean addFiles, boolean resetFiles, int id) throws Throwable {
+		final File[] files = archive.copy().getFiles();
 		final Archive newArchive = addArchive(id, archive.getName(), resetFiles);
 		if (addFiles) {
 			newArchive.addFiles(files);
@@ -337,7 +357,7 @@ public class IndexInformation implements Container {
 	 * Add an archive to this index.
 	 * @return The new added archive.
 	 */
-	public Archive addArchive() {
+	public Archive addArchive() throws Throwable {
 		return addArchive(getLastArchive().getId() + 1);
 	}
 
@@ -346,7 +366,7 @@ public class IndexInformation implements Container {
 	 * @param name The name.
 	 * @return The archive instance.
 	 */
-	public Archive addArchive(String name) {
+	public Archive addArchive(String name) throws Throwable {
 		return addArchive(name, false);
 	}
 
@@ -356,7 +376,7 @@ public class IndexInformation implements Container {
 	 * @param resetFiles If we need to reset all the files in this archive.
 	 * @return The archive instance.
 	 */
-	public Archive addArchive(String name, boolean resetFiles) {
+	public Archive addArchive(String name, boolean resetFiles) throws Throwable {
 		final int archiveId = getArchiveId(name);
 		return addArchive(archiveId == -1 ? (getLastArchive().getId() + 1) : archiveId, name == null ? -1 : name.toLowerCase().hashCode(), resetFiles);
 	}
@@ -366,7 +386,7 @@ public class IndexInformation implements Container {
 	 * @param id The id of the new archive.
 	 * @return The archive instance.
 	 */
-	public Archive addArchive(int id) {
+	public Archive addArchive(int id) throws Throwable {
 		return addArchive(id, false);
 	}
 
@@ -376,7 +396,7 @@ public class IndexInformation implements Container {
 	 * @param resetFiles If we need to reset all the files in this archive.
 	 * @return The archive instance.
 	 */
-	public Archive addArchive(int id, boolean resetFiles) {
+	public Archive addArchive(int id, boolean resetFiles) throws Throwable {
 		return addArchive(id, -1, resetFiles);
 	}
 
@@ -387,8 +407,11 @@ public class IndexInformation implements Container {
 	 * @param resetFiles If we need to reset all the files in this archive.
 	 * @return The archive instance.
 	 */
-	public Archive addArchive(int id, int name, boolean resetFiles) {
-		final Archive current = getArchive(id, true);
+	public Archive addArchive(int id, int name, boolean resetFiles) throws Throwable {
+		Archive current = getArchive(id, true);
+		if (current != null && !current.isRead() && !current.isNew() && !current.isUpdateRequired()) {
+			current = getArchive(id);
+		}
 		if (current != null) {
 			if (name != -1 && current.getName() != name) {
 				current.setName(name);
@@ -485,7 +508,7 @@ public class IndexInformation implements Container {
 	 * @param name The name of the archive to get.
 	 * @return The archive instance.
 	 */
-	public Archive getArchive(String name) {
+	public Archive getArchive(String name) throws Throwable {
 		return getArchive(name, null);
 	}
 
@@ -495,7 +518,7 @@ public class IndexInformation implements Container {
 	 * @param xteas The xteas
 	 * @return The archive instance.
 	 */
-	public Archive getArchive(String name, int[] xteas) {
+	public Archive getArchive(String name, int[] xteas) throws Throwable {
 		return getArchive(getArchiveId(name), xteas, false);
 	}
 
@@ -505,7 +528,7 @@ public class IndexInformation implements Container {
 	 * @param direct If we must get the archive instance without reading it.
 	 * @return The archive instance.
 	 */
-	public Archive getArchive(String name, boolean direct) {
+	public Archive getArchive(String name, boolean direct) throws Throwable {
 		return getArchive(getArchiveId(name), null, direct);
 	}
 
@@ -514,7 +537,7 @@ public class IndexInformation implements Container {
 	 * @param id The id of the archive to get.
 	 * @return The archive instance.
 	 */
-	public Archive getArchive(int id) {
+	public Archive getArchive(int id) throws Throwable {
 		return getArchive(id, false);
 	}
 
@@ -524,7 +547,7 @@ public class IndexInformation implements Container {
 	 * @param xteas The xteas.
 	 * @return The archive instance.
 	 */
-	public Archive getArchive(int id, int[] xteas) {
+	public Archive getArchive(int id, int[] xteas) throws Throwable {
 		return getArchive(id, xteas, false);
 	}
 
@@ -534,7 +557,7 @@ public class IndexInformation implements Container {
 	 * @param direct If we want to get the instance without reading it.
 	 * @return The archive instance.
 	 */
-	public Archive getArchive(int id, boolean direct) {
+	public Archive getArchive(int id, boolean direct) throws Throwable {
 		return getArchive(id, null, direct);
 	}
 
@@ -545,23 +568,27 @@ public class IndexInformation implements Container {
 	 * @param direct If we want to get the archive without reading it.
 	 * @return The archive instance.
 	 */
-	public Archive getArchive(int id, int[] xtea, boolean direct) {
+	public Archive getArchive(int id, int[] xtea, boolean direct) throws Throwable {
+		if (origin.isClosed()) {
+			return null;
+		}
 		for (final Archive archive : archives) {
 			if (archive.getId() == id) {
-				if (!archive.isRead() && !direct) {
-					final ArchiveInformation archiveInformation = origin.getIndex(this.id).getArchiveInformation(id);
-					if (archiveInformation != null) {
-						archive.read(new InputStream(Compression.decompress(archiveInformation, xtea)));
-						final InputStream inputStream = new InputStream(archiveInformation.getData());
-						inputStream.setOffset(1);
-						final int remaining = inputStream.getBytes().length - ((inputStream.readInt() & 0xFFFFFF) + inputStream.getOffset());
-						if (remaining >= 2) {
-							inputStream.setOffset(inputStream.getBytes().length - 2);
-							archive.setRevision(inputStream.readShort() & 0xFFFF);
-						}
-					} else {
-						return null;
-					}
+				if (direct || archive.isRead()) {
+					return archive;
+				}
+				final ArchiveInformation archiveInformation = origin.getIndex(this.id).getArchiveInformation(id);
+				if (archiveInformation == null) {
+					archive.setIsRead(true);
+					return archive;
+				}
+				archive.read(new InputStream(Compression.decompress(archiveInformation, xtea)));
+				final InputStream inputStream = new InputStream(archiveInformation.getData());
+				inputStream.setOffset(1);
+				final int remaining = inputStream.getBytes().length - ((inputStream.readInt() & 0xFFFFFF) + inputStream.getOffset());
+				if (remaining >= 2) {
+					inputStream.setOffset(inputStream.getBytes().length - 2);
+					archive.setRevision(inputStream.readShort() & 0xFFFF);
 				}
 				return archive;
 			}

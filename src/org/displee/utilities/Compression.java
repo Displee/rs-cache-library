@@ -58,10 +58,12 @@ public class Compression {
 	 */
 	public static byte[] decompress(ArchiveInformation archiveInformation, int[] keys) {
 		byte[] packedData = archiveInformation.getData();
-		if(keys != null && (keys[0] != 0 || keys[1] != 0 || keys[2] != 0 || keys[3] != 0)) {
-			packedData = XTEACryption.decrypt(keys, ByteBuffer.wrap(packedData), 5, packedData.length).array();
-		}
 		InputStream inputStream = new InputStream(packedData);
+		boolean debug = false;
+		if(keys != null && (keys[0] != 0 || keys[1] != 0 || keys[2] != 0 || keys[3] != 0)) {
+			debug = true;
+			inputStream.decodeXTEA(keys, 5, packedData.length);
+		}
 		int type = inputStream.readByte() & 0xFF;
 		archiveInformation.setCompression(CompressionTypes.values()[type]);
 		if (type < 0 || type > CompressionTypes.values().length - 1) {

@@ -1,5 +1,7 @@
 package org.displee.io;
 
+import java.util.Arrays;
+
 /**
  * An extendible class I/O streaming serving as a base for both I/O stream.
  * @author Apache Ah64
@@ -39,8 +41,8 @@ public abstract class Stream {
 	 */
 	public Stream(int capacity) {
 		try {
-			if(capacity < 0|| capacity > Integer.MAX_VALUE) {
-				throw new RuntimeException("Illigal capacity");
+			if(capacity < 0|| capacity >= Integer.MAX_VALUE) {
+				throw new RuntimeException("Illegal capacity");
 			}
 			buffer = new byte[capacity];
 		} catch(Throwable e) {
@@ -152,23 +154,18 @@ public abstract class Stream {
 		}
 	}
 
-	/**
-	 * Decode a XTEA.
-	 * @param keys The keys.
-	 * @param start The start.
-	 * @param end The end.
-	 */
-	public final void encodeXTEA(int keys[], int start, int end) {
+	public void decodeXTEA(int keys[], int start, int end) {
 		int l = offset;
 		offset = start;
 		int i1 = (end - start) / 8;
-		for(int j1 = 0; j1 < i1; j1++) {
+		for (int j1 = 0; j1 < i1; j1++) {
 			int k1 = readInt();
 			int l1 = readInt();
 			int sum = 0xc6ef3720;
 			int delta = 0x9e3779b9;
 			for (int k2 = 32; k2-- > 0;) {
-				l1 -= keys[(sum & 0x1c84) >>> 11] + sum ^ (k1 >>> 5 ^ k1 << 4) + k1;
+				l1 -= keys[(sum & 0x1c84) >>> 11] + sum ^ (k1 >>> 5 ^ k1 << 4)
+						+ k1;
 				sum -= delta;
 				k1 -= (l1 >>> 5 ^ l1 << 4) + l1 ^ keys[sum & 3] + sum;
 			}
@@ -177,6 +174,28 @@ public abstract class Stream {
 			writeInt(l1);
 		}
 		offset = l;
+	}
+
+	public final void encodeXTEA(int keys[], int start, int end) {
+		int o = offset;
+		int j = (end - start) / 8;
+		offset = start;
+		for (int k = 0; k < j; k++) {
+			int l = readInt();
+			int i1 = readInt();
+			int sum = 0;
+			int delta = 0x9e3779b9;
+			for (int l1 = 32; l1-- > 0;) {
+				l += sum + keys[3 & sum] ^ i1 + (i1 >>> 5 ^ i1 << 4);
+				sum += delta;
+				i1 += l + (l >>> 5 ^ l << 4) ^ keys[(0x1eec & sum) >>> 11] + sum;
+			}
+
+			offset -= 8;
+			writeInt(l);
+			writeInt(i1);
+		}
+		offset = o;
 	}
 
 	/**
@@ -200,6 +219,10 @@ public abstract class Stream {
 	 */
 	public final int getOffset() {
 		return offset;
+	}
+
+	public void updateOffset(int toIncrease) {
+		this.offset += toIncrease;
 	}
 
 	/**

@@ -8,6 +8,7 @@ import java.util.Arrays;
 import org.displee.cache.index.ChecksumTable;
 import org.displee.cache.index.Index;
 import org.displee.io.impl.OutputStream;
+import org.displee.progress.ProgressListener;
 import org.displee.utilities.Compression;
 import org.displee.utilities.Compression.CompressionTypes;
 import org.displee.utilities.Constants;
@@ -44,49 +45,84 @@ public class CacheLibrary {
 	private final String path;
 
 	/**
+	 * The mode.
+	 */
+	private final CacheLibraryMode mode;
+
+	/**
+	 * If this library has been closed.
+	 */
+	private boolean closed;
+
+	/**
 	 * Initialize this cache library.
 	 * @param path The path to the cache files.
+	 * @param mode The cache library mode.
+	 * @param revision The revision of the cache files.
 	 * @throws Exception
 	 */
-	public CacheLibrary(String path) throws Exception {
-		this(path, 562);
+	public CacheLibrary(String path, CacheLibraryMode mode, int revision) throws Exception {
+		this(path, mode, revision, null);
 	}
 
 	/**
 	 * Initialize this cache library.
 	 * @param path The path to the cache files.
+	 * @param mode The cache library mode.
 	 * @param revision The revision of the cache files.
+	 * @param listener The progress listener.
 	 * @throws Exception
 	 */
-	public CacheLibrary(String path, int revision) throws Exception {
-		try {
-			if (path == null) {
-				throw new FileNotFoundException("The path to the cache is incorrect.");
-			}
-			this.revision = revision;
-			this.path = path;
-			final File main = new File(path + "main_file_cache.dat2");
-			if (!main.exists()) {
-				throw new FileNotFoundException("File[path=" + main.getAbsolutePath() + "] could not be found.");
-			} else {
-				mainFile = new RandomAccessFile(main, "rw");
-			}
-			final File index255 = new File(path + "main_file_cache.idx255");
-			if (!index255.exists()) {
-				throw new FileNotFoundException("File[path=" + index255.getAbsolutePath() + "] could not be found.");
-			}
-			checksumTable = new ChecksumTable(this, 255, new RandomAccessFile(index255, "rw"));
-			indices = new Index[(int) checksumTable.getRandomAccessFile().length() / Constants.INDEX_SIZE];
-			for(int i = 0; i < indices.length; i++) {
-				final File file = new File(path, "main_file_cache.idx" + i);
-				if (file.exists()) {
-					indices[i] = new Index(this, i, new RandomAccessFile(file, "rw"));
-				}
-			}
-			checksumTable.write(new OutputStream(indices.length * 8));
-		} catch(Exception exception) {
-			throw exception;
+	public CacheLibrary(String path, CacheLibraryMode mode, int revision, ProgressListener listener) throws Exception {
+		if (path == null) {
+			throw new FileNotFoundException("The path to the cache is incorrect.");
 		}
+		this.revision = revision;
+		this.path = path;
+		this.mode = mode;
+		final File main = new File(path + "main_file_cache.dat2");
+		if (!main.exists()) {
+			if (listener != null) {
+				listener.notify(-1, "Error, main file could not be found");
+			}
+			throw new FileNotFoundException("File[path=" + main.getAbsolutePath() + "] could not be found.");
+		} else {
+			mainFile = new RandomAccessFile(main, "rw");
+		}
+		final File index255 = new File(path + "main_file_cache.idx255");
+		if (!index255.exists()) {
+			if (listener != null) {
+				listener.notify(-1, "Error, checksum file could not be found.");
+			}
+			throw new FileNotFoundException("File[path=" + index255.getAbsolutePath() + "] could not be found.");
+		}
+		checksumTable = new ChecksumTable(this, 255, new RandomAccessFile(index255, "rw"));
+		indices = new Index[(int) checksumTable.getRandomAccessFile().length() / Constants.INDEX_SIZE];
+		if (listener != null) {
+			listener.notify(0.0, "Reading indices...");
+		}
+		for(int i = 0; i < indices.length; i++) {
+			final File file = new File(path, "main_file_cache.idx" + i);
+			final double progress = (i / (indices.length - 1.0)) * 100;
+			if (!file.exists()) {
+				if (listener != null) {
+					listener.notify(progress, "Could not load index " + i + ", missing idx file...");
+				}
+				continue;
+			}
+			try {
+				indices[i] = new Index(this, i, new RandomAccessFile(file, "rw"));
+				if (listener != null) {
+					listener.notify(progress, "Loaded index " + i + " ...");
+				}
+			} catch(Exception e) {
+				if (listener != null) {
+					listener.notify(progress, "Failed to load index " + i + "...");
+				}
+				System.err.println("Failed to read index[id=" + i + ", file=" + file + ", length=" + file.length() + ", main=" + main + ", main_length=" + main.length() + ", indices=" + indices.length + "]");
+			}
+		}
+		checksumTable.write(new OutputStream(indices.length * Constants.ARCHIVE_HEADER_SIZE));
 	}
 
 	/**
@@ -138,6 +174,27 @@ public class CacheLibrary {
 	}
 
 	/**
+	 * Close this library from reading.
+	 */
+	public void close() {
+		try {
+			if (closed) {
+				return;
+			}
+			mainFile.close();
+			checksumTable.getRandomAccessFile().close();
+			for(Index index : indices) {
+				if (index != null) {
+					index.getRandomAccessFile().close();
+				}
+			}
+			closed = true;
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
 	 * Get a single index from the cache.
 	 * @param id The id of the index to get.
 	 * @return The index instance.
@@ -147,6 +204,15 @@ public class CacheLibrary {
 			return null;
 		}
 		return indices[id];
+	}
+
+	/**
+	 * Uncache all indices.
+	 */
+	public void uncache() {
+		for(Index index : indices) {
+			index.uncache();
+		}
 	}
 
 	/**
@@ -195,6 +261,22 @@ public class CacheLibrary {
 	 */
 	public String getPath() {
 		return path;
+	}
+
+	/**
+	 * Get the cache library mode.
+	 * @return {@code mode}
+	 */
+	public CacheLibraryMode getMode() {
+		return mode;
+	}
+
+	/**
+	 * Check if this library has been closed.
+	 * @return {@code }
+	 */
+	public boolean isClosed() {
+		return closed;
 	}
 
 }
