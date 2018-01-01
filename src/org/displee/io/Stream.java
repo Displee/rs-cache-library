@@ -1,7 +1,5 @@
 package org.displee.io;
 
-import java.util.Arrays;
-
 /**
  * An extendible class I/O streaming serving as a base for both I/O stream.
  * @author Apache Ah64

@@ -411,6 +411,52 @@ public class OutputStream extends Stream {
 		this.offset += (length - offset);
 	}
 
+	public void write2DIntArray(int[][] array) {
+		writeShort(array.length);
+		for(int[] i : array) {
+			writeShort(i.length);
+			for(int i2 : i) {
+				writeShort(i2);
+			}
+		}
+	}
+
+	public void write2DByteArray(byte[][] array) {
+		writeShort(array.length);
+		for(byte[] i : array) {
+			writeShort(i.length);
+			writeBytes(i);
+		}
+	}
+
+	public void write2DBooleanArray(boolean[][] array) {
+		writeShort(array.length);
+		for(boolean[] i : array) {
+			writeShort(i.length);
+			for(boolean i2 : i) {
+				writeByte(i2 ? 1 : 0);
+			}
+		}
+	}
+
+	public void writeArray(short[] array) {
+		writeShort(array == null ? 0 : array.length);
+		if (array != null) {
+			for (short i : array) {
+				writeShort(i);
+			}
+		}
+	}
+
+	public void writeArray(int[] array) {
+		writeShort(array == null ? 0 : array.length);
+		if (array != null) {
+			for (int i : array) {
+				writeInt(i);
+			}
+		}
+	}
+
 	static {
 		for (int i = 0; i < 32; i++) {
 			BIT_MASK[i] = (1 << i) - 1;

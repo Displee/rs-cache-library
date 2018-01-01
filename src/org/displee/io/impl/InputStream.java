@@ -83,14 +83,14 @@ public class InputStream extends Stream {
 	}
 
 	/**
-	 * Read the second smart value.
+	 * Read a smart value.
 	 * @return The smart value.
 	 */
 	public int readSmart2() {
 		int i = 0;
-		int i_33_ = readUnsignedSmart();
+		int i_33_ = readSmart();
 		while (i_33_ == 32767) {
-			i_33_ = readUnsignedSmart();
+			i_33_ = readSmart();
 			i += 32767;
 		}
 		i += i_33_;
@@ -98,27 +98,27 @@ public class InputStream extends Stream {
 	}
 
 	/**
-	 * Read an signed smart.
-	 * @return The smart value.
-	 */
-	public int readSmart() {
-		final int i = buffer[offset] & 0xFF;
-		if (i >= 128) {
-			return -49152 + (readShort() & 0xFFFF);
-		}
-		return -64 + (readByte() & 0xFF);
-	}
-
-	/**
 	 * Read an unsigned smart.
 	 * @return The smart value.
 	 */
 	public int readUnsignedSmart() {
-		final int i = 0xFF & buffer[offset];
-		if (i >= 128) {
-			return -32768 + (readShort() & 0xFFFF);
+		final int i = buffer[offset] & 0xFF;
+		if (i < 128) {
+			return (readByte() & 0xFF) - 64;
 		}
-		return readByte() & 0xFF;
+		return (readShort() & 0xFFFF) - 49152;
+	}
+
+	/**
+	 * Read a signed smart.
+	 * @return The smart value.
+	 */
+	public int readSmart() {
+		final int i = 0xFF & buffer[offset];
+		if (i < 128) {
+			return readByte() & 0xFF;
+		}
+		return (readShort() & 0xFFFF) - 32768;
 	}
 
 	public int readBigSmart(boolean old) {
@@ -138,6 +138,10 @@ public class InputStream extends Stream {
 			return -1;
 		}
 		return value;
+	}
+
+	public float readIntAsFloat() {
+		return Float.intBitsToFloat(readInt());
 	}
 
 	/**
@@ -277,6 +281,16 @@ public class InputStream extends Stream {
 		}
 	}
 
+	public void readBytesSmart(byte[] bytes, int offset, int length, boolean resetOffset) {
+		int i = 0;
+		for (int k = offset; k < length + offset; k++) {
+			bytes[i++] = (byte) readByte();
+		}
+		if (resetOffset) {
+			setOffset(offset);
+		}
+	}
+
 	/**
 	 * Read multiple bytes and supply them to a safe-byte-array.
 	 * @param bytes The safe-byte-array.
@@ -307,12 +321,53 @@ public class InputStream extends Stream {
 		}
 	}
 
+	public int[][] read2DIntArray() {
+		int[][] array = new int[readShort() & 0xFFFF][];
+		for(int i = 0; i < array.length; i++) {
+			array[i] = new int[readShort() & 0xFFFF];
+			for(int i2 = 0; i2 < array[i].length; i2++) {
+				array[i][i2] = readShort();
+			}
+		}
+		return array;
+	}
+
+	public byte[][] read2DByteArray() {
+		byte[][] array = new byte[readShort() & 0xFFFF][];
+		for(int i = 0; i < array.length; i++) {
+			array[i] = new byte[readShort() & 0xFFFF];
+			readBytes(array[i]);
+		}
+		return array;
+	}
+
+	public boolean[][] read2DBooleanArray() {
+		boolean[][] array = new boolean[readShort() & 0xFFFF][];
+		for(int i = 0; i < array.length; i++) {
+			array[i] = new boolean[readShort() & 0xFFFF];
+			for(int i2 = 0; i2 < array[i].length; i2++) {
+				array[i][i2] = readByte() == 1;
+			}
+		}
+		return array;
+	}
+
 	/**
 	 * Skip bytes to be read.
 	 * @param length
 	 */
 	public void skip(int length) {
 		offset += length;
+	}
+
+	/**
+	 * Flip the bytes in this inputstream.
+	 * @return The data.
+	 */
+	public byte[] flip() {
+		byte[] data = new byte[offset];
+		readBytes(data, 0, offset);
+		return data;
 	}
 
 	/**

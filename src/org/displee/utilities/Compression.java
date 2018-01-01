@@ -59,9 +59,7 @@ public class Compression {
 	public static byte[] decompress(ArchiveInformation archiveInformation, int[] keys) {
 		byte[] packedData = archiveInformation.getData();
 		InputStream inputStream = new InputStream(packedData);
-		boolean debug = false;
 		if(keys != null && (keys[0] != 0 || keys[1] != 0 || keys[2] != 0 || keys[3] != 0)) {
-			debug = true;
 			inputStream.decodeXTEA(keys, 5, packedData.length);
 		}
 		int type = inputStream.readByte() & 0xFF;

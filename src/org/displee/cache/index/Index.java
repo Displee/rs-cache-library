@@ -163,7 +163,7 @@ public class Index extends IndexInformation {
 					type = 1;
 				}
 				if (super.origin.getMainFile().length() < (Constants.INDEX_SIZE * id + Constants.INDEX_SIZE)) {
-					throw new RuntimeException("File is to small.");
+					throw new RuntimeException("File is too small.");
 				}
 				final byte[] buffer = new byte[Constants.ARCHIVE_SIZE];
 				randomAccessFile.seek(Constants.INDEX_SIZE * id);

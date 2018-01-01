@@ -1,8 +1,7 @@
 package org.displee.cache.index;
 
 import java.io.FileNotFoundException;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.*;
 
 import org.displee.CacheLibrary;
 import org.displee.CacheLibraryMode;
@@ -67,6 +66,11 @@ public class IndexInformation implements Container {
 	protected CacheLibrary origin;
 
 	/**
+	 * A list of archive names.
+	 */
+	private List<Integer> archiveNames = new ArrayList<>();
+
+	/**
 	 * Constructs a new {@code IndexInformation} {@code Object}.
 	 * @param id The id of the index.
 	 */
@@ -103,6 +107,7 @@ public class IndexInformation implements Container {
 		if (named) {
 			for (int i = 0; i < archives.length; i++) {
 				archives[i].setName(inputStream.readInt());
+				archiveNames.add(archives[i].getName());
 			}
 		}
 		if (whirlpool) {
@@ -414,6 +419,9 @@ public class IndexInformation implements Container {
 		}
 		if (current != null) {
 			if (name != -1 && current.getName() != name) {
+				if (current.getName() > 0) {
+					archiveNames.set(archiveNames.indexOf(current.getName()), name);
+				}
 				current.setName(name);
 			}
 			if (resetFiles) {
@@ -610,12 +618,20 @@ public class IndexInformation implements Container {
 		return -1;
 	}
 
+	public boolean containsName(String name) {
+		return archiveNames.indexOf(name.hashCode()) != -1;
+	}
+
 	/**
 	 * Get the last archive.
 	 * @return The last archive instance of this index.
 	 */
-	public Archive getLastArchive() {
-		return archives[archives.length - 1];
+	public Archive getLastArchive() throws Throwable {
+		Archive archive = archives[archives.length - 1];
+		if (!archive.isRead()) {
+			archive = getArchive(archive.getId());
+		}
+		return archive;
 	}
 
 	/**
