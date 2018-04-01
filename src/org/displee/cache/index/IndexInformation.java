@@ -341,7 +341,7 @@ public class IndexInformation implements Container {
 	}
 
 	/**
-	 * Add an archive instance to this index.
+	 * Add an archive instance to this index. This will create a new archive.
 	 * @param archive The archive instance.
 	 * @param addFiles If we need to add the files in this archive to the new archive.
 	 * @param resetFiles If we need to reset all the files in the new archive.

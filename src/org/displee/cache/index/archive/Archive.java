@@ -328,11 +328,11 @@ public class Archive implements Container {
 	 */
 	public Archive copy() {
 		final Archive archive = new Archive(id, name);
-		archive.fileIds = fileIds;
-		archive.files = files;
+		archive.fileIds = Arrays.copyOf(fileIds, fileIds.length);
+		archive.files = Arrays.copyOf(files, files.length);
 		archive.revision = revision;
 		archive.crc = crc;
-		archive.whirlpool = whirlpool;
+		archive.whirlpool = Arrays.copyOf(whirlpool, whirlpool.length);
 		return archive;
 	}
 
