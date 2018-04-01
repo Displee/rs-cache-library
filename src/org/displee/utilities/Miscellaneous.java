@@ -9,14 +9,14 @@ public class Miscellaneous {
 	/**
 	 * An array of characters.
 	 */
-	private static char[] aCharArray6385 = {'\u20ac', '\0', '\u201a', '\u0192', '\u201e', '\u2026', '\u2020', '\u2021', '\u02c6', '\u2030', '\u0160', '\u2039', '\u0152', '\0', '\u017d', '\0', '\0', '\u2018', '\u2019', '\u201c', '\u201d', '\u2022', '\u2013', '\u2014', '\u02dc', '\u2122', '\u0161', '\u203a', '\u0153', '\0', '\u017e', '\u0178'};
+	private static char[] aCharArray6385 = {'€', '\0', '‚', 'ƒ', '„', '…', '†', '‡', 'ˆ', '‰', 'Š', '‹', 'Œ', '\0', 'Ž', '\0', '\0', '‘', '’', '“', '”', '•', '–', '—', '˜', '™', 'š', '›', 'œ', '\0', 'ž', 'Ÿ'};
 
 	/**
 	 * Converts a string to an byte array.
 	 * @param message The message.
 	 * @return The byte array.
 	 */
-	public static final byte[] getFormatedMessage(String message) {
+	public static final byte[] getFormattedMessage(String message) {
 		int i_0_ = message.length();
 		byte[] is = new byte[i_0_];
 		for (int i_1_ = 0; (i_1_ ^ 0xffffffff) > (i_0_ ^ 0xffffffff); i_1_++) {

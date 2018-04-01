@@ -10,7 +10,7 @@ import org.displee.utilities.Miscellaneous;
 public class OutputStream extends Stream {
 
 	/**
-	 * The mask mask.
+	 * The bit mask.
 	 */
 	private static final int[] BIT_MASK = new int[32];
 
@@ -371,7 +371,7 @@ public class OutputStream extends Stream {
 	 * @param string The string.
 	 */
 	public void writeString(String string) {
-		writeBytes(Miscellaneous.getFormatedMessage(string));
+		writeBytes(Miscellaneous.getFormattedMessage(string));
 		writeByte(0);
 	}
 

@@ -59,25 +59,20 @@ public class Compression {
 	public static byte[] decompress(ArchiveInformation archiveInformation, int[] keys) {
 		byte[] packedData = archiveInformation.getData();
 		InputStream inputStream = new InputStream(packedData);
-		if(keys != null && (keys[0] != 0 || keys[1] != 0 || keys[2] != 0 || keys[3] != 0)) {
+		if(keys != null && keys.length == 4) {
 			inputStream.decodeXTEA(keys, 5, packedData.length);
 		}
 		int type = inputStream.readByte() & 0xFF;
 		archiveInformation.setCompression(CompressionTypes.values()[type]);
-		if (type < 0 || type > CompressionTypes.values().length - 1) {
+		if (type > CompressionTypes.values().length - 1) {
 			throw new RuntimeException("Unknown compression type - type=" + type);
 		}
 		int compressedSize = inputStream.readInt() & 0xFFFFFF;
-		if (compressedSize < 0) {
-			throw new RuntimeException("Compression size is too small - size=" + compressedSize);
-		} else if (compressedSize > 1000000) {
+		if (compressedSize > 1000000) {
 			throw new RuntimeException("Compression size is too big - size=" + compressedSize);
 		}
 		if (type != 0) {
 			int decompressedSize = inputStream.readInt() & 0xFFFFFF;
-			if (decompressedSize < 0 || decompressedSize > 1000000000) {
-				throw new RuntimeException("The decompressed size is invalid.");
-			}
 			byte[] decompressed = new byte[decompressedSize];
 			if (type == CompressionTypes.BZIP2.ordinal()) {
 				BZIP2Compressor.decompress(decompressed, decompressed.length, archiveInformation.getData(), compressedSize, 9);
