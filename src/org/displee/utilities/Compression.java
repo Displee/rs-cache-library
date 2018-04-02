@@ -41,7 +41,7 @@ public class Compression {
 			outputStream.writeInt(uncompressed.length);
 		}
 		outputStream.writeBytes(compressed);
-		if (xteas != null && xteas.length == 4) {
+		if (xteas != null && (xteas[0] != 0 || xteas[1] != 0 || xteas[2] != 0 || 0 != xteas[3])) {
 			outputStream.encodeXTEA(xteas, 5, outputStream.getOffset());
 		}
 		if (revision != -1) {
@@ -59,7 +59,7 @@ public class Compression {
 	public static byte[] decompress(ArchiveInformation archiveInformation, int[] keys) {
 		byte[] packedData = archiveInformation.getData();
 		InputStream inputStream = new InputStream(packedData);
-		if(keys != null && keys.length == 4) {
+		if(keys != null && (keys[0] != 0 || keys[1] != 0 || keys[2] != 0 || 0 != keys[3])) {
 			inputStream.decodeXTEA(keys, 5, packedData.length);
 		}
 		int type = inputStream.readByte() & 0xFF;
