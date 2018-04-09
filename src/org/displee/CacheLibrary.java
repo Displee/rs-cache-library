@@ -184,7 +184,7 @@ public class CacheLibrary {
 			mainFile.close();
 			checksumTable.getRandomAccessFile().close();
 			for(Index index : indices) {
-				if (index != null) {
+				if (index != null && index.getRandomAccessFile() != null) {
 					index.getRandomAccessFile().close();
 				}
 			}
