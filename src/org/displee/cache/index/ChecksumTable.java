@@ -30,11 +30,11 @@ public class ChecksumTable extends Index implements Container {
 	@Override
 	public boolean read(InputStream inputStream) {
 		for(int i = 0; i < super.origin.getIndices().length; i++) {
-			int crc = inputStream.readInt() & 0xFFFFFF;
+			int crc = inputStream.readInt();
 			if (crc > 0) {
 				super.origin.getIndex(i).setCRC(crc);
 			}
-			int revision = inputStream.readInt() & 0xFFFFFF;
+			int revision = inputStream.readInt();
 			if (revision > 0) {
 				super.origin.getIndex(i).setRevision(revision);
 			}
