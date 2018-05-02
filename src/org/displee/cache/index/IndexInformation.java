@@ -295,7 +295,7 @@ public class IndexInformation implements Container {
 	 * Get the archives.
 	 * @return {@code archives}
 	 */
-	public Archive[] copyArchives() throws Throwable {
+	public Archive[] copyArchives() {
 		final Archive[] archives = new Archive[archiveIds.length];
 		for(int i = 0; i < archives.length; i++) {
 			final Archive original = getArchive(archiveIds[i]);
@@ -313,7 +313,7 @@ public class IndexInformation implements Container {
 	 * @param addFiles If we need to add the files in the archives to the new archive.
 	 * @param resetFiles If we need to reset all the files in the archives.
 	 */
-	public void addArchives(Archive[] archives, boolean addFiles, boolean resetFiles) throws Throwable {
+	public void addArchives(Archive[] archives, boolean addFiles, boolean resetFiles) {
 		for (Archive archive : archives) {
 			addArchive(archive, addFiles, resetFiles);
 		}
@@ -325,7 +325,7 @@ public class IndexInformation implements Container {
 	 * @param resetFiles If we need to reset all files in the new archive.
 	 * @return The new archive instance.
 	 */
-	public Archive addArchive(Archive archive, boolean resetFiles) throws Throwable {
+	public Archive addArchive(Archive archive, boolean resetFiles) {
 		return addArchive(archive, true, resetFiles, getLastArchive().getId() + 1);
 	}
 
@@ -336,7 +336,7 @@ public class IndexInformation implements Container {
 	 * @param resetFiles If we need to reset all the files in the new archive.
 	 * @return The new archive instance.
 	 */
-	public Archive addArchive(Archive archive, boolean addFiles, boolean resetFiles) throws Throwable {
+	public Archive addArchive(Archive archive, boolean addFiles, boolean resetFiles) {
 		return addArchive(archive, addFiles, resetFiles, archive.getId());
 	}
 
@@ -348,7 +348,7 @@ public class IndexInformation implements Container {
 	 * @param id The id to give to the new archive.
 	 * @return The new archive instance.
 	 */
-	public Archive addArchive(Archive archive, boolean addFiles, boolean resetFiles, int id) throws Throwable {
+	public Archive addArchive(Archive archive, boolean addFiles, boolean resetFiles, int id) {
 		final File[] files = archive.copy().getFiles();
 		final Archive newArchive = addArchive(id, archive.getName(), resetFiles);
 		if (addFiles) {
@@ -362,7 +362,7 @@ public class IndexInformation implements Container {
 	 * Add an archive to this index.
 	 * @return The new added archive.
 	 */
-	public Archive addArchive() throws Throwable {
+	public Archive addArchive() {
 		return addArchive(getLastArchive().getId() + 1);
 	}
 
@@ -371,7 +371,7 @@ public class IndexInformation implements Container {
 	 * @param name The name.
 	 * @return The archive instance.
 	 */
-	public Archive addArchive(String name) throws Throwable {
+	public Archive addArchive(String name) {
 		return addArchive(name, false);
 	}
 
@@ -381,7 +381,7 @@ public class IndexInformation implements Container {
 	 * @param resetFiles If we need to reset all the files in this archive.
 	 * @return The archive instance.
 	 */
-	public Archive addArchive(String name, boolean resetFiles) throws Throwable {
+	public Archive addArchive(String name, boolean resetFiles) {
 		final int archiveId = getArchiveId(name);
 		return addArchive(archiveId == -1 ? (getLastArchive().getId() + 1) : archiveId, name == null ? -1 : name.toLowerCase().hashCode(), resetFiles);
 	}
@@ -391,7 +391,7 @@ public class IndexInformation implements Container {
 	 * @param id The id of the new archive.
 	 * @return The archive instance.
 	 */
-	public Archive addArchive(int id) throws Throwable {
+	public Archive addArchive(int id) {
 		return addArchive(id, false);
 	}
 
@@ -401,7 +401,7 @@ public class IndexInformation implements Container {
 	 * @param resetFiles If we need to reset all the files in this archive.
 	 * @return The archive instance.
 	 */
-	public Archive addArchive(int id, boolean resetFiles) throws Throwable {
+	public Archive addArchive(int id, boolean resetFiles) {
 		return addArchive(id, -1, resetFiles);
 	}
 
@@ -412,7 +412,7 @@ public class IndexInformation implements Container {
 	 * @param resetFiles If we need to reset all the files in this archive.
 	 * @return The archive instance.
 	 */
-	public Archive addArchive(int id, int name, boolean resetFiles) throws Throwable {
+	public Archive addArchive(int id, int name, boolean resetFiles) {
 		Archive current = getArchive(id, true);
 		if (current != null && !current.isRead() && !current.isNew() && !current.isUpdateRequired()) {
 			current = getArchive(id);
@@ -503,12 +503,7 @@ public class IndexInformation implements Container {
 	 */
 	public void sort() {
 		Arrays.sort(archiveIds);
-		Arrays.sort(archives, new Comparator<Archive>() {
-			@Override
-			public int compare(Archive archive1, Archive archive2) {
-				return archive1.getId() > archive2.getId() ? 0 : -1;
-			}
-		});
+		Arrays.sort(archives, (archive1, archive2) -> archive1.getId() > archive2.getId() ? 0 : -1);
 	}
 
 	/**
@@ -516,7 +511,7 @@ public class IndexInformation implements Container {
 	 * @param name The name of the archive to get.
 	 * @return The archive instance.
 	 */
-	public Archive getArchive(String name) throws Throwable {
+	public Archive getArchive(String name) {
 		return getArchive(name, null);
 	}
 
@@ -526,7 +521,7 @@ public class IndexInformation implements Container {
 	 * @param xteas The xteas
 	 * @return The archive instance.
 	 */
-	public Archive getArchive(String name, int[] xteas) throws Throwable {
+	public Archive getArchive(String name, int[] xteas) {
 		return getArchive(getArchiveId(name), xteas, false);
 	}
 
@@ -536,7 +531,7 @@ public class IndexInformation implements Container {
 	 * @param direct If we must get the archive instance without reading it.
 	 * @return The archive instance.
 	 */
-	public Archive getArchive(String name, boolean direct) throws Throwable {
+	public Archive getArchive(String name, boolean direct) {
 		return getArchive(getArchiveId(name), null, direct);
 	}
 
@@ -545,7 +540,7 @@ public class IndexInformation implements Container {
 	 * @param id The id of the archive to get.
 	 * @return The archive instance.
 	 */
-	public Archive getArchive(int id) throws Throwable {
+	public Archive getArchive(int id) {
 		return getArchive(id, false);
 	}
 
@@ -555,7 +550,7 @@ public class IndexInformation implements Container {
 	 * @param xteas The xteas.
 	 * @return The archive instance.
 	 */
-	public Archive getArchive(int id, int[] xteas) throws Throwable {
+	public Archive getArchive(int id, int[] xteas) {
 		return getArchive(id, xteas, false);
 	}
 
@@ -565,7 +560,7 @@ public class IndexInformation implements Container {
 	 * @param direct If we want to get the instance without reading it.
 	 * @return The archive instance.
 	 */
-	public Archive getArchive(int id, boolean direct) throws Throwable {
+	public Archive getArchive(int id, boolean direct) {
 		return getArchive(id, null, direct);
 	}
 
@@ -576,7 +571,7 @@ public class IndexInformation implements Container {
 	 * @param direct If we want to get the archive without reading it.
 	 * @return The archive instance.
 	 */
-	public Archive getArchive(int id, int[] xtea, boolean direct) throws Throwable {
+	public Archive getArchive(int id, int[] xtea, boolean direct) {
 		if (origin.isClosed()) {
 			return null;
 		}
@@ -626,7 +621,7 @@ public class IndexInformation implements Container {
 	 * Get the last archive.
 	 * @return The last archive instance of this index.
 	 */
-	public Archive getLastArchive() throws Throwable {
+	public Archive getLastArchive() {
 		Archive archive = archives[archives.length - 1];
 		if (!archive.isRead()) {
 			archive = getArchive(archive.getId());
