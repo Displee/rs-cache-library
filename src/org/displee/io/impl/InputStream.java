@@ -110,6 +110,15 @@ public class InputStream extends Stream {
 	}
 
 	/**
+	 * Reads a smart value from the buffer (supports -1).
+	 *
+	 * @return the read smart value.
+	 */
+	public int readSmartNS() {
+		return readSmart() - 1;
+	}
+
+	/**
 	 * Read a signed smart.
 	 * @return The smart value.
 	 */
@@ -123,7 +132,7 @@ public class InputStream extends Stream {
 
 	public int readBigSmart(boolean old) {
 		if (old) {
-			return readShort() & 0xFFFF;
+			return readUnsignedShort();
 		} else {
 			return readBigSmart();
 		}
@@ -154,6 +163,16 @@ public class InputStream extends Stream {
 			s -= 0x10000;
 		}
 		return s;
+	}
+
+	/**
+	 * Read a short unsigned.
+	 * @return The unsigned short.
+	 */
+	public int readUnsignedShort() {
+		/*int i = readUnsignedByte();
+		return readUnsignedByte() + (i << 8);*/
+		return readShort() & 0xFFFF;
 	}
 
 	/**

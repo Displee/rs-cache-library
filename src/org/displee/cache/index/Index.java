@@ -163,7 +163,7 @@ public class Index extends IndexInformation {
 		synchronized (super.origin.getMainFile()) {
 			try {
 				int type = 0;
-				if (origin.getRevision() >= 670 && id > 65535) {
+				if (id > 65535) {
 					type = 1;
 				}
 				if (super.origin.getMainFile().length() < (Constants.INDEX_SIZE * id + Constants.INDEX_SIZE)) {
@@ -264,7 +264,7 @@ public class Index extends IndexInformation {
 				int chunk = 0;
 				int archiveDataSize = Constants.ARCHIVE_DATA_SIZE;
 				int archiveHeaderSize = Constants.ARCHIVE_HEADER_SIZE;
-				if (super.origin.getRevision() >= 670 && id > 65535) {
+				if (id > 65535) {
 					archiveDataSize -= 2;
 					archiveHeaderSize += 2;
 				}
@@ -337,7 +337,7 @@ public class Index extends IndexInformation {
 		if (!cached) {
 			for (final int archive : super.archiveIds) {
 				try {
-					super.getArchive(archive, xteas == null ? null : xteas[archive] == null ? null : xteas[archive]);
+					super.getArchive(archive, xteas == null ? null : xteas[archive]);
 				} catch(Throwable t) {
 					t.printStackTrace();
 				}
