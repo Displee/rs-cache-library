@@ -111,6 +111,22 @@ public class OutputStream extends Stream {
 	}
 
 	/**
+	 * Writes an unsigned smart value to the buffer.
+	 * @param value The value to write.
+	 */
+	public void writeUnsignedSmart(int value) {
+		if (value < 64 && value >= -64) {
+			writeByte(value + 64);
+			return;
+		}
+		if (value < 16384 && value >= -16384) {
+			writeShort(value + 49152);
+		} else {
+			System.err.println("Error psmart out of range: " + value);
+		}
+	}
+
+	/**
 	 * Write a big smart.
 	 * @param i
 	 */

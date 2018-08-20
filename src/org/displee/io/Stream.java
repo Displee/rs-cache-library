@@ -1,5 +1,7 @@
 package org.displee.io;
 
+import java.util.Arrays;
+
 /**
  * An extendible class I/O streaming serving as a base for both I/O stream.
  * @author Apache Ah64
@@ -83,6 +85,14 @@ public abstract class Stream {
 		return getRemaining() > 0 ? buffer[offset++] : 0;
 	}
 
+	/**
+	 * Read an unsigned byte.
+	 * @return The unsigned byte.
+	 */
+	public int readUnsignedByte() {
+		return readByte() & 0xFF;
+	}
+
 	public int smf_gvlength() {
 		int i_20_ = readByte();
 		int i_21_ = 0;
@@ -116,6 +126,14 @@ public abstract class Stream {
 	public void writeByte(byte b, int index) {
 		expend(index);
 		buffer[index] = b;
+	}
+
+	/**
+	 * Write a boolean.
+	 * @param bool The condition.
+	 */
+	public void writeBoolean(boolean bool) {
+		writeByte(bool ? 1 : 0);
 	}
 
 	/**

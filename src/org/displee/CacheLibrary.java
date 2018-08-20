@@ -2,6 +2,7 @@ package org.displee;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
 
@@ -18,11 +19,6 @@ import org.displee.utilities.Constants;
  * @author Displee
  */
 public class CacheLibrary {
-
-	/**
-	 * The revision of this cache library
-	 */
-	private final int revision;
 
 	/**
 	 * An array of indices of this cache.
@@ -58,26 +54,23 @@ public class CacheLibrary {
 	 * Initialize this cache library.
 	 * @param path The path to the cache files.
 	 * @param mode The cache library mode.
-	 * @param revision The revision of the cache files.
-	 * @throws Exception
+	 * @throws IOException If it failed to read the cache files.
 	 */
-	public CacheLibrary(String path, CacheLibraryMode mode, int revision) throws Exception {
-		this(path, mode, revision, null);
+	public CacheLibrary(String path, CacheLibraryMode mode) throws IOException {
+		this(path, mode, null);
 	}
 
 	/**
 	 * Initialize this cache library.
 	 * @param path The path to the cache files.
 	 * @param mode The cache library mode.
-	 * @param revision The revision of the cache files.
 	 * @param listener The progress listener.
-	 * @throws Exception
+	 * @throws IOException If it failed to read the cache files.
 	 */
-	public CacheLibrary(String path, CacheLibraryMode mode, int revision, ProgressListener listener) throws Exception {
+	public CacheLibrary(String path, CacheLibraryMode mode, ProgressListener listener) throws IOException {
 		if (path == null) {
 			throw new FileNotFoundException("The path to the cache is incorrect.");
 		}
-		this.revision = revision;
 		this.path = path;
 		this.mode = mode;
 		final File main = new File(path + "main_file_cache.dat2");
@@ -162,9 +155,9 @@ public class CacheLibrary {
 			checksumTable.getRandomAccessFile().setLength(id * Constants.INDEX_SIZE);
 			int offset = 0;
 			final Index[] newIndices = new Index[id];
-			for(int i = 0; i < indices.length; i++) {
-				if (indices[i].getId() != id) {
-					newIndices[offset++] = indices[i];
+			for (Index index : indices) {
+				if (index.getId() != id) {
+					newIndices[offset++] = index;
 				}
 			}
 			indices = newIndices;
@@ -245,14 +238,6 @@ public class CacheLibrary {
 	 */
 	public ChecksumTable getChecksumTable() {
 		return checksumTable;
-	}
-
-	/**
-	 * Get the revision of this cache library.
-	 * @return {@code revision}
-	 */
-	public int getRevision() {
-		return revision;
 	}
 
 	/**
