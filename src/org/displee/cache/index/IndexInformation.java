@@ -86,7 +86,7 @@ public class IndexInformation implements Container {
 	public boolean read(InputStream inputStream) {
 		version = inputStream.readByte() & 0xFF;
 		if (version < 5 || version > 7) {
-			throw new RuntimeException("Unknown index information version=" + version);
+			throw new RuntimeException("Unknown version=" + version);
 		}
 		revision = version >= 6 ? inputStream.readInt() : 0;
 		final int flag = inputStream.readByte();
@@ -494,7 +494,6 @@ public class IndexInformation implements Container {
 	 */
 	public void flag() {
 		sort();
-		revision++;
 		needUpdate = true;
 	}
 

@@ -141,12 +141,12 @@ public class Index extends IndexInformation {
 			listener.notify(85, "Updating checksum table...");
 		}
 		if (updateChecksumTable || super.needUpdate) {
-			final byte[] indexData = Compression.compress(write(new OutputStream()), type, null, -1);
-			byte[] clonedIndexData = indexData.clone();
-			crc = HashGenerator.getCRCHash(clonedIndexData);
-			whirlpool = Whirlpool.getHash(clonedIndexData, 0, clonedIndexData.length);
 			super.revision++;
-			super.origin.getChecksumTable().writeArchiveInformation(super.id, Compression.compress(super.write(new OutputStream()), type, null, -1));
+			final byte[] indexData = Compression.compress(super.write(new OutputStream()), type, null, -1);
+			byte[] clonedData = indexData.clone();
+			crc = HashGenerator.getCRCHash(clonedData);
+			whirlpool = Whirlpool.getHash(clonedData, 0, clonedData.length);
+			super.origin.getChecksumTable().writeArchiveInformation(super.id, indexData);
 		}
 		if (listener != null) {
 			listener.notify(100, "Successfully updated index " + id + ".");

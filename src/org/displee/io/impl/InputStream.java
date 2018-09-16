@@ -104,9 +104,9 @@ public class InputStream extends Stream {
 	public int readUnsignedSmart() {
 		final int i = buffer[offset] & 0xFF;
 		if (i < 128) {
-			return (readByte() & 0xFF) - 64;
+			return readUnsignedByte() - 64;
 		}
-		return (readShort() & 0xFFFF) - 49152;
+		return readUnsignedShort() - 49152;
 	}
 
 	/**
