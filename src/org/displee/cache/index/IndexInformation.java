@@ -310,6 +310,17 @@ public class IndexInformation implements Container {
 	/**
 	 * Add multiple archives to this index.
 	 * @param archives An array of archives.
+	 * @param resetFiles If we need to reset all the files in the archives.
+	 */
+	public void addArchives(Archive[] archives, boolean resetFiles) {
+		for (Archive archive : archives) {
+			addArchive(archive, resetFiles);
+		}
+	}
+
+	/**
+	 * Add multiple archives to this index.
+	 * @param archives An array of archives.
 	 * @param addFiles If we need to add the files in the archives to the new archive.
 	 * @param resetFiles If we need to reset all the files in the archives.
 	 */
@@ -585,6 +596,10 @@ public class IndexInformation implements Container {
 					return archive;
 				}
 				archive.read(new InputStream(Compression.decompress(archiveInformation, xtea)));
+				if (this.id == 5 && !archive.containsData()) {//reset map data if archive has no data
+					archive.setIsRead(false);
+					return archive;
+				}
 				final InputStream inputStream = new InputStream(archiveInformation.getData());
 				inputStream.setOffset(1);
 				final int remaining = inputStream.getBytes().length - ((inputStream.readInt() & 0xFFFFFF) + inputStream.getOffset());

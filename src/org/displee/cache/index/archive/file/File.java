@@ -57,7 +57,7 @@ public class File {
 	 * @return The new file.
 	 */
 	public File copy() {
-		return new File(id, data, name);
+		return new File(id, data.clone(), name);
 	}
 
 	/**
