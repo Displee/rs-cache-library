@@ -147,6 +147,22 @@ public class Archive implements Container {
 	}
 
 	/**
+	 * Check if this archive contains data.
+	 * @return If this archive contains data.
+	 */
+	public boolean containsData() {
+		if (files == null) {
+			return false;
+		}
+		for(File file : files) {
+			if (file != null && file.getData() != null) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Add multiple files.
 	 * @param files The array of the files to add.
 	 */
@@ -329,7 +345,10 @@ public class Archive implements Container {
 	public Archive copy() {
 		final Archive archive = new Archive(id, name);
 		archive.fileIds = Arrays.copyOf(fileIds, fileIds.length);
-		archive.files = Arrays.copyOf(files, files.length);
+		archive.files = new File[files.length];
+		for(int i = 0; i < files.length; i++) {
+			archive.files[i] = files[i].copy();
+		}
 		archive.revision = revision;
 		archive.crc = crc;
 		archive.whirlpool = Arrays.copyOf(whirlpool, whirlpool.length);
