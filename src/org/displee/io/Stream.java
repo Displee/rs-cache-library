@@ -1,15 +1,14 @@
 package org.displee.io;
 
-import java.util.Arrays;
-
 /**
- * An extendible class I/O streaming serving as a base for both I/O stream.
- * @author Apache Ah64
+ * A class representing the base for both I/O implementations.
+ *
+ * @author Displee
  */
 public abstract class Stream {
 
 	/**
-	 * THe default capacity.
+	 * The default capacity.
 	 */
 	public static final int DEFAULT_CAPACITY = 16;
 
@@ -37,21 +36,23 @@ public abstract class Stream {
 
 	/**
 	 * Construct a new {@code Stream} {@code Object}.
+	 *
 	 * @param capacity The capacity.
 	 */
 	public Stream(int capacity) {
 		try {
-			if(capacity < 0|| capacity >= Integer.MAX_VALUE) {
+			if (capacity < 0 || capacity >= Integer.MAX_VALUE) {
 				throw new RuntimeException("Illegal capacity");
 			}
 			buffer = new byte[capacity];
-		} catch(Throwable e) {
+		} catch (Throwable e) {
 			e.printStackTrace();
 		}
 	}
 
 	/**
 	 * Construct a new {@code Stream} {@code Object}.
+	 *
 	 * @param bytes The bytes.
 	 */
 	public Stream(byte[] bytes) {
@@ -60,6 +61,7 @@ public abstract class Stream {
 
 	/**
 	 * Write an integer.
+	 *
 	 * @param i The integer.
 	 */
 	public void writeInt(int i) {
@@ -71,14 +73,16 @@ public abstract class Stream {
 
 	/**
 	 * Read an integer.
+	 *
 	 * @return The integer.
 	 */
 	public int readInt() {
-		return ((readByte() & 0xFF) << 24) + ((readByte() & 0xFF) << 16) + ((readByte() & 0xFF) << 8) + (readByte() & 0xFF);
+		return (readUnsignedByte() << 24) + (readUnsignedByte() << 16) + (readUnsignedByte() << 8) + readUnsignedByte();
 	}
 
 	/**
 	 * Read a byte.
+	 *
 	 * @return The byte.
 	 */
 	public int readByte() {
@@ -91,15 +95,6 @@ public abstract class Stream {
 	 */
 	public int readUnsignedByte() {
 		return readByte() & 0xFF;
-	}
-
-	public int smf_gvlength() {
-		int i_20_ = readByte();
-		int i_21_ = 0;
-		for (; i_20_ < 0; i_20_ = readByte()) {
-			i_21_ = (i_21_ | i_20_ & 0x7f) << 7;
-		}
-		return i_21_ | i_20_;
 	}
 
 	/**
@@ -120,7 +115,7 @@ public abstract class Stream {
 
 	/**
 	 * Write a byte.
-	 * @param b The byte.
+	 * @param b     The byte.
 	 * @param index The index.
 	 */
 	public void writeByte(byte b, int index) {
@@ -130,6 +125,7 @@ public abstract class Stream {
 
 	/**
 	 * Write a boolean.
+	 *
 	 * @param bool The condition.
 	 */
 	public void writeBoolean(boolean bool) {
@@ -140,7 +136,7 @@ public abstract class Stream {
 	 * Expend the capacity.
 	 */
 	public void expend(int offset) {
-		if(offset >= buffer.length) {
+		if (offset >= buffer.length) {
 			final byte[] newBytes = new byte[offset + DEFAULT_CAPACITY];
 			System.arraycopy(buffer, 0, newBytes, 0, buffer.length);
 			buffer = newBytes;
@@ -149,6 +145,7 @@ public abstract class Stream {
 
 	/**
 	 * Literally clone the entire byte array.
+	 *
 	 * @param bytes The new bytes array.
 	 */
 	public void clone(byte[] bytes) {
@@ -157,15 +154,16 @@ public abstract class Stream {
 
 	/**
 	 * Clone bytes.
-	 * @param bytes The bytes.
+	 *
+	 * @param bytes  The bytes.
 	 * @param offset The offset.
 	 * @param length The length.
 	 */
 	public void clone(byte[] bytes, int offset, int length) {
-		if(bytes.length < length) {
+		if (bytes.length < length) {
 			bytes = new byte[length];
 		}
-		for(; offset < length; offset++) {
+		for (; offset < length; offset++) {
 			bytes[offset] = this.buffer[offset];
 		}
 	}
@@ -180,8 +178,7 @@ public abstract class Stream {
 			int sum = 0xc6ef3720;
 			int delta = 0x9e3779b9;
 			for (int k2 = 32; k2-- > 0;) {
-				l1 -= keys[(sum & 0x1c84) >>> 11] + sum ^ (k1 >>> 5 ^ k1 << 4)
-						+ k1;
+				l1 -= keys[(sum & 0x1c84) >>> 11] + sum ^ (k1 >>> 5 ^ k1 << 4) + k1;
 				sum -= delta;
 				k1 -= (l1 >>> 5 ^ l1 << 4) + l1 ^ keys[sum & 3] + sum;
 			}
@@ -206,7 +203,6 @@ public abstract class Stream {
 				sum += delta;
 				i1 += l + (l >>> 5 ^ l << 4) ^ keys[(0x1eec & sum) >>> 11] + sum;
 			}
-
 			offset -= 8;
 			writeInt(l);
 			writeInt(i1);
@@ -216,6 +212,7 @@ public abstract class Stream {
 
 	/**
 	 * Get the remaining size available to be read.
+	 *
 	 * @return The remaining size.
 	 */
 	public int getRemaining() {
@@ -231,18 +228,25 @@ public abstract class Stream {
 
 	/**
 	 * Get the offset.
+	 *
 	 * @return The offset.
 	 */
 	public final int getOffset() {
 		return offset;
 	}
 
+	/**
+	 * Update the offset by added the argued amount.
+	 *
+	 * @param toIncrease The amount to increase the offset.
+	 */
 	public void updateOffset(int toIncrease) {
 		this.offset += toIncrease;
 	}
 
 	/**
 	 * Set a new offset.
+	 *
 	 * @param offset The offset.
 	 */
 	public void setOffset(int offset) {
