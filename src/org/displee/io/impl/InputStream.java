@@ -291,6 +291,17 @@ public class InputStream extends Stream {
 
 	/**
 	 * Read the bytes.
+	 * @param length The amount to read.
+	 * @return The bytes.
+	 */
+	public byte[] readBytes(int length) {
+		byte[] bytes = new byte[length];
+		readBytes(bytes);
+		return bytes;
+	}
+
+	/**
+	 * Read the bytes.
 	 * @param bytes The bytes.
 	 */
 	public void readBytes(byte bytes[]) {

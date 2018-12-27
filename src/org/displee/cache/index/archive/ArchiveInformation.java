@@ -60,7 +60,7 @@ public class ArchiveInformation implements Container {
 	/**
 	 * The compression type.
 	 */
-	private Compression.CompressionTypes compression;
+	private Compression.CompressionType compression;
 
 	/**
 	 * Constructs a new {@code Archive} {@code Object}.
@@ -91,13 +91,13 @@ public class ArchiveInformation implements Container {
 	@Override
 	public boolean read(InputStream inputStream) {
 		if (type == 0) {
-			id = inputStream.readShort() & 0xFFFF;
+			id = inputStream.readUnsignedShort();
 		} else if (type == 1) {
-			id = inputStream.readInt() & 0xFFFFFF;
+			id = inputStream.readInt();
 		}
-		chunk = inputStream.readShort() & 0xFFFF;
+		chunk = inputStream.readUnsignedShort();
 		nextPosition = inputStream.read24BitInt();
-		index = inputStream.readByte() & 0xFF;
+		index = inputStream.readUnsignedByte();
 		return true;
 	}
 
@@ -239,11 +239,11 @@ public class ArchiveInformation implements Container {
 	 * Set a new compression type.
 	 * @param compression The new compression type to set.
      */
-	public void setCompression(Compression.CompressionTypes compression) {
+	public void setCompression(Compression.CompressionType compression) {
 		this.compression = compression;
 	}
 
-	public Compression.CompressionTypes getCompression() {
+	public Compression.CompressionType getCompression() {
 		return compression;
 	}
 

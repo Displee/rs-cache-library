@@ -92,10 +92,12 @@ public class IndexInformation implements Container {
 		final int flag = inputStream.readByte();
 		named = (flag & 0x1) != 0;
 		whirlpool = (flag & 0x2) != 0;
-		archiveIds = new int[version >= 7 ? inputStream.readBigSmart() : (inputStream.readShort() & 0xFFFF)];
+		boolean flag4 = (flag & 0x4) != 0;
+		boolean flag8 = (flag & 0x8) != 0;
+		archiveIds = new int[version >= 7 ? inputStream.readBigSmart() : inputStream.readUnsignedShort()];
 		int lastArchiveId = 0;
 		for (int i = 0; i < archiveIds.length; i++) {
-			archiveIds[i] = (version >= 7 ? inputStream.readBigSmart() : (inputStream.readShort() & 0xFFFF)) + (i == 0 ? 0 : archiveIds[i - 1]);
+			archiveIds[i] = (version >= 7 ? inputStream.readBigSmart() : inputStream.readUnsignedShort()) + (i == 0 ? 0 : archiveIds[i - 1]);
 			if (archiveIds[i] > lastArchiveId) {
 				lastArchiveId = archiveIds[i];
 			}
@@ -110,25 +112,47 @@ public class IndexInformation implements Container {
 				archiveNames.add(archives[i].getName());
 			}
 		}
-		if (whirlpool) {
+		if (origin.isRS3()) {
 			for (int i = 0; i < archives.length; i++) {
-				inputStream.readBytes(archives[i].getWhirlpool(), 0, Constants.WHIRLPOOL_SIZE);
+				archives[i].setCRC(inputStream.readInt());
 			}
-		}
-		for (int i = 0; i < archives.length; i++) {
-			archives[i].setCRC(inputStream.readInt());
+			if (flag8) {
+				for(int i = 0; i < archives.length; i++) {
+					archives[i].setFlag8Value(inputStream.readInt());
+				}
+			}
+			if (whirlpool) {
+				for (int i = 0; i < archives.length; i++) {
+					inputStream.readBytes(archives[i].getWhirlpool(), 0, Constants.WHIRLPOOL_SIZE);
+				}
+			}
+			if (flag4) {//flag 4
+				for(int i = 0; i < archives.length; i++) {
+					archives[i].setFlag4Value1(inputStream.readInt());
+					archives[i].setFlag4Value2(inputStream.readInt());
+				}
+			}
+		} else {
+			if (whirlpool) {
+				for (int i = 0; i < archives.length; i++) {
+					inputStream.readBytes(archives[i].getWhirlpool(), 0, Constants.WHIRLPOOL_SIZE);
+				}
+			}
+			for (int i = 0; i < archives.length; i++) {
+				archives[i].setCRC(inputStream.readInt());
+			}
 		}
 		for (int i = 0; i < archives.length; i++) {
 			archives[i].setRevision(inputStream.readInt());
 		}
 		for (int i = 0; i < archives.length; i++) {
-			archives[i].setFileIds(version >= 7 ? inputStream.readBigSmart() : (inputStream.readShort() & 0xFFFF));
+			archives[i].setFileIds(version >= 7 ? inputStream.readBigSmart() : inputStream.readUnsignedShort());
 		}
 		for (int i = 0; i < archives.length; i++) {
 			int lastFileId = -1;
 			final Archive archive = archives[i];
 			for (int fileIndex = 0; fileIndex < archive.getFileIds().length; fileIndex++) {
-				archive.getFileIds()[fileIndex] = (version >= 7 ? inputStream.readBigSmart() : (inputStream.readShort() & 0xFFFF)) + (fileIndex == 0 ? 0 : archive.getFileIds()[fileIndex - 1]);
+				archive.getFileIds()[fileIndex] = (version >= 7 ? inputStream.readBigSmart() : inputStream.readUnsignedShort()) + (fileIndex == 0 ? 0 : archive.getFileIds()[fileIndex - 1]);
 				if (archive.getFileIds()[fileIndex] > lastFileId) {
 					lastFileId = archive.getFileIds()[fileIndex];
 				}
@@ -513,7 +537,7 @@ public class IndexInformation implements Container {
 	 */
 	public void sort() {
 		Arrays.sort(archiveIds);
-		Arrays.sort(archives, (archive1, archive2) -> archive1.getId() > archive2.getId() ? 0 : -1);
+		Arrays.sort(archives, Comparator.comparingInt(Archive::getId));
 	}
 
 	/**
@@ -605,7 +629,7 @@ public class IndexInformation implements Container {
 				final int remaining = inputStream.getBytes().length - ((inputStream.readInt() & 0xFFFFFF) + inputStream.getOffset());
 				if (remaining >= 2) {
 					inputStream.setOffset(inputStream.getBytes().length - 2);
-					archive.setRevision(inputStream.readShort() & 0xFFFF);
+					archive.setRevision(inputStream.readUnsignedShort());
 				}
 				return archive;
 			}
