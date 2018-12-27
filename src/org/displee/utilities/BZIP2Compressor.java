@@ -28,32 +28,48 @@ public class BZIP2Compressor {
 	 */
 	public static byte[] compress(byte[] bytes) {
 		try {
-			InputStream is = new ByteArrayInputStream(bytes);
-			try {
+			try (InputStream is = new ByteArrayInputStream(bytes)) {
 				ByteArrayOutputStream bout = new ByteArrayOutputStream();
-				OutputStream os = new CBZip2OutputStream(bout, 1);
-				try {
+				try (OutputStream os = new CBZip2OutputStream(bout, 1)) {
 					byte[] buf = new byte[4096];
-					int len = 0;
+					int len;
 					while ((len = is.read(buf, 0, buf.length)) != -1) {
 						os.write(buf, 0, len);
 					}
-					os.close();
-				} finally {
-					os.close();
 				}
-			/* strip the header from the byte array and return it */
 				bytes = bout.toByteArray();
 				byte[] bzip2 = new byte[bytes.length - 2];
 				System.arraycopy(bytes, 2, bzip2, 0, bzip2.length);
 				return bzip2;
-			} finally {
-				is.close();
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
 			return null;
 		}
+	}
+
+	public static byte[] decompress317(byte[] data) {
+		org.displee.io.impl.InputStream inputStream = new org.displee.io.impl.InputStream(data);
+		int decompressedLength = inputStream.read24BitInt();
+		int compressedLength = inputStream.read24BitInt();
+		if (decompressedLength != compressedLength) {
+			byte[] decompressed = new byte[decompressedLength];
+			byte[] compressed = inputStream.readBytes(compressedLength);
+			/*byte[] newCompressed = new byte[compressed.length + 2];
+			newCompressed[0] = (byte) 'h';
+			newCompressed[1] = (byte) '1';
+			System.arraycopy(compressed, 0, newCompressed, 2, compressed.length);
+			try (DataInputStream input = new DataInputStream(new CBZip2InputStream(new ByteArrayInputStream(newCompressed)))) {
+				input.readFully(decompressed);
+				input.close();
+				return decompressed;
+			} catch(IOException e) {
+				e.printStackTrace();
+			}*/
+			decompress(decompressed, decompressed.length, compressed, compressed.length, 0);
+			return decompressed;
+		}
+		return null;
 	}
 
 	/**

@@ -67,7 +67,22 @@ public class Archive implements Container {
 	private boolean isNew;
 
 	/**
-	 * Consturcts a new {@code Archive} {@code Object}.
+	 * An unknown value used in rs3 caches.
+	 */
+	private int flag8Value;
+
+	/**
+	 * An unknown value used in rs3 caches.
+	 */
+	private int flag4Value1;
+
+	/**
+	 * An unknown value used in rs3 caches.
+	 */
+	private int flag4Value2;
+
+	/**
+	 * Constructs a new {@code Archive} {@code Object}.
 	 * @param id The id of this archive.
 	 */
 	public Archive(int id) {
@@ -315,12 +330,7 @@ public class Archive implements Container {
 	 */
 	public void sort() {
 		Arrays.sort(fileIds);
-		Arrays.sort(files, new Comparator<File>() {
-			@Override
-			public int compare(File file1, File file2) {
-				return file1.getId() > file2.getId() ? 0 : -1;
-			}
-		});
+		Arrays.sort(files, Comparator.comparingInt(File::getId));
 	}
 
 	/**
@@ -571,9 +581,32 @@ public class Archive implements Container {
 		return "Archive[id=" + id + ", name=" + name + ", revision=" + revision + ", read=" + read + ", files=" + Arrays.toString(fileIds) + "]";
 	}
 
+	public int getFlag8Value() {
+		return flag8Value;
+	}
+
+	public void setFlag8Value(int flag8Value) {
+		this.flag8Value = flag8Value;
+	}
+
 	@Override
 	public String toString() {
 		return "Archive " + id;
 	}
 
+	public int getFlag4Value1() {
+		return flag4Value1;
+	}
+
+	public void setFlag4Value1(int flag4Value1) {
+		this.flag4Value1 = flag4Value1;
+	}
+
+	public int getFlag4Value2() {
+		return flag4Value2;
+	}
+
+	public void setFlag4Value2(int flag4Value2) {
+		this.flag4Value2 = flag4Value2;
+	}
 }

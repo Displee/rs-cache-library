@@ -1,8 +1,6 @@
 package org.displee.cache.index;
 
 import java.io.RandomAccessFile;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 import org.displee.CacheLibrary;
@@ -13,7 +11,7 @@ import org.displee.io.impl.InputStream;
 import org.displee.io.impl.OutputStream;
 import org.displee.progress.ProgressListener;
 import org.displee.utilities.Compression;
-import org.displee.utilities.Compression.CompressionTypes;
+import org.displee.utilities.Compression.CompressionType;
 import org.displee.utilities.Constants;
 import org.displee.utilities.HashGenerator;
 import org.displee.utilities.Whirlpool;
@@ -47,7 +45,7 @@ public class Index extends IndexInformation {
 	/**
 	 * The compression type.
 	 */
-	private CompressionTypes type;
+	private CompressionType type;
 
 	/**
 	 * Constructs a new {@code Index} {@code Object}.
@@ -60,7 +58,10 @@ public class Index extends IndexInformation {
 		read();
 	}
 
-	private void read() {
+	/**
+	 * Read this index.
+	 */
+	protected void read() {
 		if (id < 255) {
 			final ArchiveInformation archiveInformation = super.origin.getChecksumTable().getArchiveInformation(id);
 			if (archiveInformation != null) {
@@ -74,14 +75,28 @@ public class Index extends IndexInformation {
 		}
 	}
 
+	/**
+	 * Update this index.
+	 * @return If this index was updated with success.
+	 */
 	public boolean update() {
 		return update(null, null);
 	}
 
+	/**
+	 * Update this index using xteas.
+	 * @param map A map of xteas (example: map.put(23, new int[4]) will create xteas for archive 23).
+	 * @return If this index was updated with success.
+	 */
 	public boolean update(Map<Integer, int[]> map) {
 		return update(null, map);
 	}
 
+	/**
+	 * Update this index.
+	 * @param listener The progress listener.
+	 * @return If this index was updated with success.
+	 */
 	public boolean update(ProgressListener listener) {
 		return update(listener, null);
 	}
@@ -96,42 +111,40 @@ public class Index extends IndexInformation {
 		boolean updateChecksumTable = false;
 		int updateCount = 0;
 		for(Archive archive : archives) {
-			if (archive == null) {
+			if (archive == null || !archive.isUpdateRequired()) {
 				continue;
 			}
 			updateCount++;
 		}
 		double i = 0;
 		for (Archive archive : archives) {
-			if (archive == null) {
+			if (archive == null || !archive.isUpdateRequired()) {
 				continue;
 			}
-			if (archive.isUpdateRequired()) {
-				i++;
-				archive.unFlag();
-				int[] keys = map == null ? null : map.get(archive.getId());
-				if (!updateChecksumTable) {
-					updateChecksumTable = true;
-				}
-				if (listener != null) {
-					listener.notify((i / updateCount) * 80.0, "Repacking archive " + archive.getId() + "...");
-				}
-				final byte[] compressed = Compression.compress(archive.write(new OutputStream(0)), super.id == 7 ? CompressionTypes.NONE : CompressionTypes.GZIP, keys, archive.getRevision());
-				archive.setCRC(HashGenerator.getCRCHash(compressed, 0, compressed.length - 2));
-				archive.setWhirlpool(Whirlpool.getHash(compressed, 0, compressed.length - 2));
-				final ArchiveInformation backup = getArchiveInformation(archive.getId());
-				if (!writeArchiveInformation(archive.getId(), compressed)) {
-					System.err.println("Could not write the archive information for index[id=" + super.id + ", archive=" + archive.getId() + "]");
-					System.err.println("Reverting changes...");
-					if (backup != null) {
-						if (writeArchiveInformation(archive.getId(), backup.getData())) {
-							System.out.println("Changes have been reverted.");
-						} else {
-							System.err.println("Your cache is corrupt.");
-						}
+			i++;
+			archive.unFlag();
+			int[] keys = map == null ? null : map.get(archive.getId());
+			if (!updateChecksumTable) {
+				updateChecksumTable = true;
+			}
+			if (listener != null) {
+				listener.notify((i / updateCount) * 80.0, "Repacking archive " + archive.getId() + "...");
+			}
+			final byte[] compressed = Compression.compress(archive.write(new OutputStream(0)), super.id == 7 ? CompressionType.NONE : CompressionType.GZIP, keys, archive.getRevision());
+			archive.setCRC(HashGenerator.getCRCHash(compressed, 0, compressed.length - 2));
+			archive.setWhirlpool(Whirlpool.getHash(compressed, 0, compressed.length - 2));
+			final ArchiveInformation backup = getArchiveInformation(archive.getId());
+			if (!writeArchiveInformation(archive.getId(), compressed)) {
+				System.err.println("Could not write the archive information for index[id=" + super.id + ", archive=" + archive.getId() + "]");
+				System.err.println("Reverting changes...");
+				if (backup != null) {
+					if (writeArchiveInformation(archive.getId(), backup.getData())) {
+						System.out.println("Changes have been reverted.");
+					} else {
+						System.err.println("Your cache is corrupt.");
 					}
-					return false;
 				}
+				return false;
 			}
 			if (origin.getMode() == CacheLibraryMode.UN_CACHED) {
 				archive.restore();
@@ -170,11 +183,11 @@ public class Index extends IndexInformation {
 					throw new RuntimeException("File is too small.");
 				}
 				final byte[] buffer = new byte[Constants.ARCHIVE_SIZE];
-				randomAccessFile.seek(Constants.INDEX_SIZE * id);
+				randomAccessFile.seek(Constants.INDEX_SIZE * (long) id);
 				randomAccessFile.read(buffer, 0, Constants.INDEX_SIZE);
 				final InputStream inputStream = new InputStream(buffer);
 				final ArchiveInformation archiveInformation = new ArchiveInformation(type, inputStream.read24BitInt(), inputStream.read24BitInt());
-				if (archiveInformation.getSize() < 0 || archiveInformation.getSize() > 1000000) {
+				if (archiveInformation.getSize() < 0) {
 					return null;
 				} else if (archiveInformation.getPosition() <= 0 || archiveInformation.getPosition() > (super.origin.getMainFile().length() / Constants.ARCHIVE_SIZE)) {
 					return null;
@@ -195,12 +208,12 @@ public class Index extends IndexInformation {
 					if (requiredToRead > archiveDataSize) {
 						requiredToRead = archiveDataSize;
 					}
-					super.origin.getMainFile().seek(archiveInformation.getPosition() * Constants.ARCHIVE_SIZE);
+					super.origin.getMainFile().seek((long) archiveInformation.getPosition() * Constants.ARCHIVE_SIZE);
 					super.origin.getMainFile().read(inputStream.getBytes(), 0, requiredToRead + archiveHeaderSize);
 					inputStream.setOffset(0);
 					if (!archiveInformation.read(inputStream)) {
 						throw new RuntimeException("Error, could not read the archive.");
-					} else if (super.id != archiveInformation.getIndex() || id != archiveInformation.getId() || chunk != archiveInformation.getChunk()) {
+					} else if (!isIndexValid(archiveInformation.getIndex()) || id != archiveInformation.getId() || chunk != archiveInformation.getChunk()) {
 						throw new RuntimeException("Error, the read data is incorrect. Data[currentIndex=" + super.id + ", index=" + archiveInformation.getIndex() + ", currentId=" + id + ", id=" + archiveInformation.getId() + ", currentChunk=" + chunk + ", chunk=" + archiveInformation.getChunk() + "]");
 					} else if (archiveInformation.getNextPosition() < 0 || archiveInformation.getNextPosition() > (super.origin.getMainFile().length() / Constants.ARCHIVE_SIZE)) {
 						throw new RuntimeException("Error, the next position is invalid.");
@@ -217,6 +230,15 @@ public class Index extends IndexInformation {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Check if the argued index is equal to this index.
+	 * @param index The id of the index.
+	 * @return If the index is equal ot this index.
+	 */
+	protected boolean isIndexValid(int index) {
+		return super.id == index;
 	}
 
 	/**
@@ -347,6 +369,9 @@ public class Index extends IndexInformation {
 		return cached;
 	}
 
+	/**
+	 * Uncache this index (clears all stored data).
+	 */
 	public void uncache() {
 		for (Archive archive : super.archives) {
 			archive.restore();
@@ -390,7 +415,7 @@ public class Index extends IndexInformation {
 	 * Geth the compression type.
 	 * @return {@code type}
 	 */
-	public CompressionTypes getCompressionType() {
+	public CompressionType getCompressionType() {
 		return type;
 	}
 

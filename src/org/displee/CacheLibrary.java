@@ -11,7 +11,7 @@ import org.displee.cache.index.Index;
 import org.displee.io.impl.OutputStream;
 import org.displee.progress.ProgressListener;
 import org.displee.utilities.Compression;
-import org.displee.utilities.Compression.CompressionTypes;
+import org.displee.utilities.Compression.CompressionType;
 import org.displee.utilities.Constants;
 
 /**
@@ -23,35 +23,44 @@ public class CacheLibrary {
 	/**
 	 * An array of indices of this cache.
 	 */
-	private Index[] indices;
+	protected Index[] indices;
 
 	/**
-	 * The main random access file (.dat2).
+	 * The main random access file.
 	 */
-	private final RandomAccessFile mainFile;
+	protected RandomAccessFile mainFile;
 
 	/**
 	 * The checksum table.
 	 */
-	private final ChecksumTable checksumTable;
+	protected ChecksumTable checksumTable;
 
 	/**
 	 * The path to the cache files.
 	 */
-	private final String path;
+	protected final String path;
 
 	/**
 	 * The mode.
 	 */
-	private final CacheLibraryMode mode;
+	protected final CacheLibraryMode mode;
 
 	/**
 	 * If this library has been closed.
 	 */
-	private boolean closed;
+	protected boolean closed;
 
 	/**
-	 * Initialize this cache library.
+	 * Constructs a new {@code CacheLibrary} {@code Object}.
+	 * @param path The path to the cache files.
+	 * @throws IOException If it failed to read the cache files.
+	 */
+	public CacheLibrary(String path) throws IOException {
+		this(path, CacheLibraryMode.CACHED);
+	}
+
+	/**
+	 * Constructs a new {@code CacheLibrary} {@code Object}.
 	 * @param path The path to the cache files.
 	 * @param mode The cache library mode.
 	 * @throws IOException If it failed to read the cache files.
@@ -61,7 +70,7 @@ public class CacheLibrary {
 	}
 
 	/**
-	 * Initialize this cache library.
+	 * Constructs a new {@code CacheLibrary} {@code Object}.
 	 * @param path The path to the cache files.
 	 * @param mode The cache library mode.
 	 * @param listener The progress listener.
@@ -71,8 +80,20 @@ public class CacheLibrary {
 		if (path == null) {
 			throw new FileNotFoundException("The path to the cache is incorrect.");
 		}
+		if (!path.endsWith("/") && !path.endsWith("\\")) {
+			path += "/";
+		}
 		this.path = path;
 		this.mode = mode;
+		load(listener);
+	}
+
+	/**
+	 * Load this cache.
+	 * @param listener The progress listener.
+	 * @throws IOException If it failed to read the cache files.
+	 */
+	protected void load(ProgressListener listener) throws IOException {
 		final File main = new File(path + "main_file_cache.dat2");
 		if (!main.exists()) {
 			if (listener != null) {
@@ -113,6 +134,7 @@ public class CacheLibrary {
 					listener.notify(progress, "Failed to load index " + i + "...");
 				}
 				System.err.println("Failed to read index[id=" + i + ", file=" + file + ", length=" + file.length() + ", main=" + main + ", main_length=" + main.length() + ", indices=" + indices.length + "]");
+				e.printStackTrace();
 			}
 		}
 		checksumTable.write(new OutputStream(indices.length * Constants.ARCHIVE_HEADER_SIZE));
@@ -130,7 +152,7 @@ public class CacheLibrary {
 			outputStream.writeByte((named ? 0x1 : 0x0) | (whirlpool ? 0x2 : 0x0));
 			outputStream.writeShort(0);
 			final int id = indices.length;
-			if (!checksumTable.writeArchiveInformation(id, Compression.compress(outputStream.flip(), CompressionTypes.GZIP, null, -1))) {
+			if (!checksumTable.writeArchiveInformation(id, Compression.compress(outputStream.flip(), CompressionType.GZIP, null, -1))) {
 				throw new RuntimeException("Failed to write the archive information for a new index[id=" + id + "]");
 			}
 			indices = Arrays.copyOf(indices, indices.length + 1);
@@ -254,6 +276,14 @@ public class CacheLibrary {
 	 */
 	public CacheLibraryMode getMode() {
 		return mode;
+	}
+
+	/**
+	 * Check if this is a RS3 cache.
+	 * @return {@code rs3}
+	 */
+	public boolean isRS3() {
+		return indices.length > 39;
 	}
 
 	/**

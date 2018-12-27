@@ -1,7 +1,5 @@
 package org.displee.utilities;
 
-import java.nio.ByteBuffer;
-
 import org.displee.cache.index.archive.ArchiveInformation;
 import org.displee.io.impl.InputStream;
 import org.displee.io.impl.OutputStream;
@@ -21,7 +19,7 @@ public class Compression {
 	 * @param revision The revision.
 	 * @return The compressed data.
 	 */
-	public static byte[] compress(byte[] uncompressed, CompressionTypes compressionType, int[] xteas, int revision) {
+	public static byte[] compress(byte[] uncompressed, CompressionType compressionType, int[] xteas, int revision) {
 		final OutputStream outputStream = new OutputStream();
 		final byte[] compressed;
 		switch(compressionType) {
@@ -31,13 +29,16 @@ public class Compression {
 		case GZIP:
 			compressed = GZIPCompressor.deflate(uncompressed);
 			break;
+		case LZMA:
+			compressed = LZMACompressor.compress(uncompressed);
+			break;
 		default:
 			compressed = uncompressed;
 			break;
 		}
 		outputStream.writeByte(compressionType.ordinal());
 		outputStream.writeInt(compressed.length);
-		if (!compressionType.equals(CompressionTypes.NONE)) {
+		if (!compressionType.equals(CompressionType.NONE)) {
 			outputStream.writeInt(uncompressed.length);
 		}
 		outputStream.writeBytes(compressed);
@@ -62,24 +63,23 @@ public class Compression {
 		if(keys != null && (keys[0] != 0 || keys[1] != 0 || keys[2] != 0 || 0 != keys[3])) {
 			inputStream.decodeXTEA(keys, 5, packedData.length);
 		}
-		int type = inputStream.readByte() & 0xFF;
-		archiveInformation.setCompression(CompressionTypes.values()[type]);
-		if (type > CompressionTypes.values().length - 1) {
+		int type = inputStream.readUnsignedByte();
+		archiveInformation.setCompression(CompressionType.values()[type]);
+		if (type > CompressionType.values().length - 1) {
 			throw new RuntimeException("Unknown compression type - type=" + type);
 		}
 		int compressedSize = inputStream.readInt() & 0xFFFFFF;
-		if (compressedSize > 1000000) {
-			throw new RuntimeException("Compression size is too big - size=" + compressedSize);
-		}
 		if (type != 0) {
-			int decompressedSize = inputStream.readInt() & 0xFFFFFF;
+			int decompressedSize = inputStream.readInt()  & 0xFFFFFF;
 			byte[] decompressed = new byte[decompressedSize];
-			if (type == CompressionTypes.BZIP2.ordinal()) {
+			if (type == CompressionType.BZIP2.ordinal()) {
 				BZIP2Compressor.decompress(decompressed, decompressed.length, archiveInformation.getData(), compressedSize, 9);
-			} else if (type == CompressionTypes.GZIP.ordinal()) {
+			} else if (type == CompressionType.GZIP.ordinal()) {
 				if (!GZIPCompressor.inflate(inputStream, decompressed)) {
 					return null;
 				}
+			} else if (type == CompressionType.LZMA.ordinal()) {
+				return LZMACompressor.decompress(inputStream, decompressedSize);
 			}
 			return decompressed;
 		}
@@ -90,7 +90,7 @@ public class Compression {
 	 * An enumeration of compression types.
 	 * @author Displee
 	 */
-	public enum CompressionTypes {
+	public enum CompressionType {
 
 		/**
 		 * {@link #NONE} Represents the 'none' compression type.
@@ -105,7 +105,12 @@ public class Compression {
 		/**
 		 * {@link #GZIP} Represents the 'gzip' compression type.
 		 */
-		GZIP
+		GZIP,
+
+		/**
+		 * {@link #LZMA} Represents the 'lzma' compression type.
+		 */
+		LZMA
 
 	}
 
