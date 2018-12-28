@@ -46,6 +46,16 @@ public class IndexInformation implements Container {
 	protected boolean whirlpool;
 
 	/**
+	 * An unknown flag.
+	 */
+	protected boolean flag4;
+
+	/**
+	 * An unknown flag.
+	 */
+	protected boolean flag8;
+
+	/**
 	 * An array of archive ids.
 	 */
 	protected int[] archiveIds;
@@ -92,8 +102,8 @@ public class IndexInformation implements Container {
 		final int flag = inputStream.readByte();
 		named = (flag & 0x1) != 0;
 		whirlpool = (flag & 0x2) != 0;
-		boolean flag4 = (flag & 0x4) != 0;
-		boolean flag8 = (flag & 0x8) != 0;
+		flag4 = (flag & 0x4) != 0;
+		flag8 = (flag & 0x8) != 0;
 		archiveIds = new int[version >= 7 ? inputStream.readBigSmart() : inputStream.readUnsignedShort()];
 		int lastArchiveId = 0;
 		for (int i = 0; i < archiveIds.length; i++) {
@@ -179,7 +189,20 @@ public class IndexInformation implements Container {
 		if (version >= 6) {
 			outputStream.writeInt(revision);
 		}
-		outputStream.writeByte((named ? 0x1 : 0x0) | (whirlpool ? 0x2 : 0x0));
+		int flag = 0x0;
+		if (named) {
+			flag |= 0x1;
+		}
+		if (whirlpool) {
+			flag |= 0x2;
+		}
+		if (flag4) {
+			flag |= 0x4;
+		}
+		if (flag8) {
+			flag |= 0x8;
+		}
+		outputStream.writeByte(flag);
 		if (version >= 7) {
 			outputStream.writeBigSmart(archives.length);
 		} else {
@@ -197,13 +220,31 @@ public class IndexInformation implements Container {
 				outputStream.writeInt(archives[i].getName());
 			}
 		}
-		if (whirlpool) {
+		if (origin.isRS3()) {
 			for (int i = 0; i < archives.length; i++) {
-				outputStream.writeBytes(archives[i].getWhirlpool());
+				outputStream.writeInt(archives[i].getCRC());
 			}
-		}
-		for (int i = 0; i < archives.length; i++) {
-			outputStream.writeInt(archives[i].getCRC());
+			for (int i = 0; i < archives.length; i++) {
+				outputStream.writeInt(archives[i].getFlag8Value());
+			}
+			if (whirlpool) {
+				for (int i = 0; i < archives.length; i++) {
+					outputStream.writeBytes(archives[i].getWhirlpool());
+				}
+			}
+			for (int i = 0; i < archives.length; i++) {
+				outputStream.writeInt(archives[i].getFlag4Value1());
+				outputStream.writeInt(archives[i].getFlag4Value2());
+			}
+		} else {
+			if (whirlpool) {
+				for (int i = 0; i < archives.length; i++) {
+					outputStream.writeBytes(archives[i].getWhirlpool());
+				}
+			}
+			for (int i = 0; i < archives.length; i++) {
+				outputStream.writeInt(archives[i].getCRC());
+			}
 		}
 		for (int i = 0; i < archives.length; i++) {
 			outputStream.writeInt(archives[i].getRevision());
