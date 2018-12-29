@@ -172,7 +172,7 @@ public class CacheLibrary {
 			indices[id].getRandomAccessFile().close();
 			final File file = new File(path, "main_file_cache.idx" + id);
 			if (!file.exists() || !file.delete()) {
-				throw new RuntimeException("Failed to remove the randomaccessfile of the argued index[id=" + id + ", file exists=" + file.exists() + "]");
+				throw new RuntimeException("Failed to remove the random access file of the argued index[id=" + id + ", file exists=" + file.exists() + "]");
 			}
 			checksumTable.getRandomAccessFile().setLength(id * Constants.INDEX_SIZE);
 			int offset = 0;
