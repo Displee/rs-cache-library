@@ -70,7 +70,7 @@ public class Compression {
 		}
 		int compressedSize = inputStream.readInt() & 0xFFFFFF;
 		if (type != 0) {
-			int decompressedSize = inputStream.readInt()  & 0xFFFFFF;
+			int decompressedSize = inputStream.readInt() & 0xFFFFFF;
 			byte[] decompressed = new byte[decompressedSize];
 			if (type == CompressionType.BZIP2.ordinal()) {
 				BZIP2Compressor.decompress(decompressed, decompressed.length, archiveInformation.getData(), compressedSize, 9);
