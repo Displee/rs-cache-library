@@ -2,17 +2,19 @@
 ## Welcome to Displee's cache library!
 
 ## About
-An application that is written in Java, used to read and write to the caches of RuneScape2.
-This application is able to read and write to various types of RuneScape2 caches between the revisions 561 and 743.
-A RuneScape2 cache is built of a 2-level container and in each level 1 container is the actual data of the game stored.
+A library written in Java used to read and write to the caches of RuneScape.
+This library is able to read and write to various types of RuneScape caches from revision 440 or greater.
+A RuneScape cache is built of a 2-level container and in each level 1 container is the actual data of the game stored.
 I have named the level 0 container "Index" and the level 1 container "Archive". It looks like this.
 - Index (level 0 container)
 	- Archive (level 1 container)
-		- File (data)
+		- File 1 (data)
+		- File 2 (data)
+		- File...
 
 The containers can contain multiple containers which makes you able to store a great amount of data.
 A file contains useful data like the properties of a certain in-game item, object, image or even model.
-The application is able to read this data, and write manipulated read data to the cache.
+This library is able to read this data, and write manipulated read data to the cache.
 
 ### Features:
 - XTEA (en/de)cryption.
@@ -97,7 +99,7 @@ library.getIndex(10).cache();
 ```
 ```Java
 int[][] xteas = new int[5][];
-xteas[3] = new int[] { 5, 10, 20 };//Setting xteas for archive 3
+xteas[3] = new int[] { 5, 10, 20, 2 };//Setting xteas for archive 3
 library.getIndex(5).cache(xteas);
 ```
 ### Data manipulation
@@ -109,8 +111,8 @@ library.getIndex(19).update();
 ```
 ### Cross cache copying
 ```Java
-final CacheLibrary from = new CacheLibrary("path_1_here", 742);
-final CacheLibrary to = new CacheLibrary("path_2_here", 718);
+final CacheLibrary from = new CacheLibrary("path_1_here", CacheLibraryMode.UN_CACHED);
+final CacheLibrary to = new CacheLibrary("path_2_here", CacheLibraryMode.UN_CACHED);
 from.getIndex(3).cache();//Don't forget to cache the index you want to copy from first!
 to.getIndex(3).addArchives(from.getIndex(3).getArchives(), true, true);//Copy all interfaces from 742 to your own cache.
 to.getIndex(3).update();
