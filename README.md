@@ -10,8 +10,8 @@ I have named the level 0 container "Index" and the level 1 container "Archive". 
 		- File (data)
 
 The containers can contain multiple containers which makes you able to store a great amount of data.
-A file contains useful data like the properties of a certain in-game item, object, image or even model.
-The application is able to read this data, and write manipulated read data to the cache.
+A file contains useful data like the properties of a certain game item, object, image or even 3D model.
+This application is able to read this data, and write manipulated data back to the cache.
 
 ###Features:
 - XTEA (en/de)cryption.
@@ -28,7 +28,13 @@ The application is able to read this data, and write manipulated read data to th
 
 ###Initialize your cache
 ```Java
-CacheLibrary library = CacheLibrary.createUncached("path_to_your_cache");
+CacheLibrary library = new CacheLibrary("path_to_your_cache");
+```
+```Java
+CacheLibrary library = new CacheLibrary("path_to_your_cache", CacheLibraryMode.UNCACHED);
+```
+```Java
+CacheLibrary library = CacheLibrary.create("path_to_your_cache");
 ```
 ###Get a specific file
 ```Java
