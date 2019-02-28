@@ -10,7 +10,7 @@ import org.displee.utilities.Compression;
  * A class representing the information of an {@link Index}.
  * @author Displee
  */
-public class ArchiveInformation implements Container {
+public class ArchiveSector implements Container {
 
 	/**
 	 * The archive type.
@@ -67,19 +67,19 @@ public class ArchiveInformation implements Container {
 	 * @param size The size.
 	 * @param position The position.
 	 */
-	public ArchiveInformation(int type, int size, int position) {
+	public ArchiveSector(int type, int size, int position) {
 		this(type, size, position, -1, -1);
 	}
 
 	/**
-	 * Constructs a new {@code ArchiveInformation} {@code Object}.
+	 * Constructs a new {@code ArchiveSector} {@code Object}.
 	 * @param type The type.
 	 * @param size The size.
 	 * @param position The position.
 	 * @param id The id.
 	 * @param index The index.
 	 */
-	public ArchiveInformation(int type, int size, int position, int id, int index) {
+	public ArchiveSector(int type, int size, int position, int id, int index) {
 		this.type = type;
 		this.size = size;
 		this.position = position;
@@ -187,7 +187,7 @@ public class ArchiveInformation implements Container {
 	}
 
 	/**
-	 * Set a new array of data for this archive information.
+	 * Set a new array of data for this archive sector.
 	 * @param data The new data to set.
 	 */
 	public void setData(byte[] data) {
@@ -243,6 +243,10 @@ public class ArchiveInformation implements Container {
 		this.compression = compression;
 	}
 
+	/**
+	 * Get the compression type.
+	 * @return {@code compression}
+	 */
 	public Compression.CompressionType getCompression() {
 		return compression;
 	}

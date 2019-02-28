@@ -392,6 +392,11 @@ public class OutputStream extends Stream {
 		writeByte(0);
 	}
 
+	public void writeString317(String string) {
+		writeBytes(string.getBytes());
+		writeByte(10);
+	}
+
 	/**
 	 * Write bytes.
 	 * @param bytes The bytes.

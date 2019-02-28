@@ -48,28 +48,11 @@ public class BZIP2Compressor {
 		}
 	}
 
-	public static byte[] decompress317(byte[] data) {
-		org.displee.io.impl.InputStream inputStream = new org.displee.io.impl.InputStream(data);
-		int decompressedLength = inputStream.read24BitInt();
-		int compressedLength = inputStream.read24BitInt();
-		if (decompressedLength != compressedLength) {
-			byte[] decompressed = new byte[decompressedLength];
-			byte[] compressed = inputStream.readBytes(compressedLength);
-			/*byte[] newCompressed = new byte[compressed.length + 2];
-			newCompressed[0] = (byte) 'h';
-			newCompressed[1] = (byte) '1';
-			System.arraycopy(compressed, 0, newCompressed, 2, compressed.length);
-			try (DataInputStream input = new DataInputStream(new CBZip2InputStream(new ByteArrayInputStream(newCompressed)))) {
-				input.readFully(decompressed);
-				input.close();
-				return decompressed;
-			} catch(IOException e) {
-				e.printStackTrace();
-			}*/
-			decompress(decompressed, decompressed.length, compressed, compressed.length, 0);
-			return decompressed;
-		}
-		return null;
+	public static byte[] decompress317(int decompressedLength, int compressedLength, org.displee.io.impl.InputStream inputStream) {
+		byte[] decompressed = new byte[decompressedLength];
+		byte[] compressed = inputStream.readBytes(compressedLength);
+		decompress(decompressed, decompressed.length, compressed, compressed.length, 0);
+		return decompressed;
 	}
 
 	/**
@@ -78,13 +61,13 @@ public class BZIP2Compressor {
 	 * @param decompressedLength The length to decompress.
 	 * @param archiveData The compressed BZIP2 file.
 	 * @param compressedSize The size of the compressed BZIP2 file.
-	 * @param arg4 An unknown argument.
+	 * @param startOffset The start offset.
 	 * @return The decompressed length.
 	 */
-	public static int decompress(byte[] decompressed, int decompressedLength, byte[] archiveData, int compressedSize, int arg4) {
+	public static int decompress(byte[] decompressed, int decompressedLength, byte[] archiveData, int compressedSize, int startOffset) {
 		synchronized (bzip2BlockEntry) {
 			bzip2BlockEntry.compressed = archiveData;
-			bzip2BlockEntry.anInt3074 = arg4;
+			bzip2BlockEntry.startOffset = startOffset;
 			bzip2BlockEntry.decompressed = decompressed;
 			bzip2BlockEntry.anInt3100 = 0;
 			bzip2BlockEntry.decompressedLength = decompressedLength;
@@ -435,9 +418,9 @@ public class BZIP2Compressor {
 				break;
 			}
 			arg1.anInt3078 = (arg1.anInt3078 << 8
-					| arg1.compressed[arg1.anInt3074] & 0xff);
+					| arg1.compressed[arg1.startOffset] & 0xff);
 			arg1.anInt3088 += 8;
-			arg1.anInt3074++;
+			arg1.startOffset++;
 			arg1.anInt3085++;
 		}
 		return i;
@@ -616,7 +599,7 @@ public class BZIP2Compressor {
 		public int anInt3071;
 		public boolean[] aBooleanArray3072;
 		public int anInt3073;
-		public int anInt3074;
+		public int startOffset;
 		public int[] anIntArray3075;
 		public byte[] aByteArray3076;
 		public int anInt3077;
@@ -655,7 +638,7 @@ public class BZIP2Compressor {
 		public BZIP2BlockEntry() {
 			aBooleanArray3072 = new boolean[16];
 			anIntArray3090 = new int[6];
-			anInt3074 = 0;
+			startOffset = 0;
 			anInt3100 = 0;
 			aByteArray3101 = new byte[4096];
 			anIntArray3091 = new int[257];

@@ -64,6 +64,10 @@ public class Whirlpool
 		}
 	}
 
+	public static byte[] getHash(byte[] data) {
+		return getHash(data, 0, data.length);
+	}
+
 	public static byte[] getHash(byte[] data, int off, int len) {
 		byte[] source;
 		if (off <= 0) {

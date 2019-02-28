@@ -6,7 +6,7 @@ import java.util.Map;
 import org.displee.CacheLibrary;
 import org.displee.CacheLibraryMode;
 import org.displee.cache.index.archive.Archive;
-import org.displee.cache.index.archive.ArchiveInformation;
+import org.displee.cache.index.archive.ArchiveSector;
 import org.displee.io.impl.InputStream;
 import org.displee.io.impl.OutputStream;
 import org.displee.progress.ProgressListener;
@@ -20,7 +20,7 @@ import org.displee.utilities.Whirlpool;
  * A class that represents a single index inside the cache.
  * @author Displee
  */
-public class Index extends IndexInformation {
+public class Index extends ReferenceTable {
 
 	/**
 	 * The {@link RandomAccessFile} of this index.
@@ -63,12 +63,12 @@ public class Index extends IndexInformation {
 	 */
 	protected void read() {
 		if (id < 255) {
-			final ArchiveInformation archiveInformation = super.origin.getChecksumTable().getArchiveInformation(id);
-			if (archiveInformation != null) {
-				crc = HashGenerator.getCRCHash(archiveInformation.getData());
-				whirlpool = Whirlpool.getHash(archiveInformation.getData(), 0, archiveInformation.getData().length);
-				super.read(new InputStream(Compression.decompress(archiveInformation, null)));
-				type = archiveInformation.getCompression();
+			final ArchiveSector archiveSector = super.origin.getChecksumTable().readArchiveSector(id);
+			if (archiveSector != null) {
+				crc = HashGenerator.getCRCHash(archiveSector.getData());
+				whirlpool = Whirlpool.getHash(archiveSector.getData(), 0, archiveSector.getData().length);
+				super.read(new InputStream(Compression.decompress(archiveSector, null)));
+				type = archiveSector.getCompression();
 			} else {
 				this.randomAccessFile = null;
 			}
@@ -133,12 +133,12 @@ public class Index extends IndexInformation {
 			final byte[] compressed = Compression.compress(archive.write(new OutputStream(0)), super.id == 7 ? CompressionType.NONE : CompressionType.GZIP, keys, archive.getRevision());
 			archive.setCRC(HashGenerator.getCRCHash(compressed, 0, compressed.length - 2));
 			archive.setWhirlpool(Whirlpool.getHash(compressed, 0, compressed.length - 2));
-			final ArchiveInformation backup = getArchiveInformation(archive.getId());
-			if (!writeArchiveInformation(archive.getId(), compressed)) {
-				System.err.println("Could not write the archive information for index[id=" + super.id + ", archive=" + archive.getId() + "]");
+			final ArchiveSector backup = readArchiveSector(archive.getId());
+			if (!writeArchiveSector(archive.getId(), compressed)) {
+				System.err.println("Could not write the archive sector for index[id=" + super.id + ", archive=" + archive.getId() + "]");
 				System.err.println("Reverting changes...");
 				if (backup != null) {
-					if (writeArchiveInformation(archive.getId(), backup.getData())) {
+					if (writeArchiveSector(archive.getId(), backup.getData())) {
 						System.out.println("Changes have been reverted.");
 					} else {
 						System.err.println("Your cache is corrupt.");
@@ -159,7 +159,7 @@ public class Index extends IndexInformation {
 			byte[] clonedData = indexData.clone();
 			crc = HashGenerator.getCRCHash(clonedData);
 			whirlpool = Whirlpool.getHash(clonedData, 0, clonedData.length);
-			super.origin.getChecksumTable().writeArchiveInformation(super.id, indexData);
+			super.origin.getChecksumTable().writeArchiveSector(super.id, indexData);
 		}
 		if (listener != null) {
 			listener.notify(100, "Successfully updated index " + id + ".");
@@ -168,11 +168,11 @@ public class Index extends IndexInformation {
 	}
 
 	/**
-	 * Get the archive information from this index.
+	 * Get the archive sector from this index.
 	 * @param id The id of the archive to get.
-	 * @return The archive information instance.
+	 * @return The archive sector instance.
 	 */
-	public ArchiveInformation getArchiveInformation(int id) {
+	public ArchiveSector readArchiveSector(int id) {
 		synchronized (super.origin.getMainFile()) {
 			try {
 				int type = 0;
@@ -186,10 +186,10 @@ public class Index extends IndexInformation {
 				randomAccessFile.seek(Constants.INDEX_SIZE * (long) id);
 				randomAccessFile.read(buffer, 0, Constants.INDEX_SIZE);
 				final InputStream inputStream = new InputStream(buffer);
-				final ArchiveInformation archiveInformation = new ArchiveInformation(type, inputStream.read24BitInt(), inputStream.read24BitInt());
-				if (archiveInformation.getSize() < 0) {
+				final ArchiveSector archiveSector = new ArchiveSector(type, inputStream.read24BitInt(), inputStream.read24BitInt());
+				if (archiveSector.getSize() < 0) {
 					return null;
-				} else if (archiveInformation.getPosition() <= 0 || archiveInformation.getPosition() > (super.origin.getMainFile().length() / Constants.ARCHIVE_SIZE)) {
+				} else if (archiveSector.getPosition() <= 0 || archiveSector.getPosition() > (super.origin.getMainFile().length() / Constants.ARCHIVE_SIZE)) {
 					return null;
 				}
 				int read = 0;
@@ -200,31 +200,31 @@ public class Index extends IndexInformation {
 					archiveDataSize -= 2;
 					archiveHeaderSize += 2;
 				}
-				while (read < archiveInformation.getSize()) {
-					if (archiveInformation.getPosition() == 0) {
+				while (read < archiveSector.getSize()) {
+					if (archiveSector.getPosition() == 0) {
 						return null;
 					}
-					int requiredToRead = archiveInformation.getSize() - read;
+					int requiredToRead = archiveSector.getSize() - read;
 					if (requiredToRead > archiveDataSize) {
 						requiredToRead = archiveDataSize;
 					}
-					super.origin.getMainFile().seek((long) archiveInformation.getPosition() * Constants.ARCHIVE_SIZE);
+					super.origin.getMainFile().seek((long) archiveSector.getPosition() * Constants.ARCHIVE_SIZE);
 					super.origin.getMainFile().read(inputStream.getBytes(), 0, requiredToRead + archiveHeaderSize);
 					inputStream.setOffset(0);
-					if (!archiveInformation.read(inputStream)) {
+					if (!archiveSector.read(inputStream)) {
 						throw new RuntimeException("Error, could not read the archive.");
-					} else if (!isIndexValid(archiveInformation.getIndex()) || id != archiveInformation.getId() || chunk != archiveInformation.getChunk()) {
-						throw new RuntimeException("Error, the read data is incorrect. Data[currentIndex=" + super.id + ", index=" + archiveInformation.getIndex() + ", currentId=" + id + ", id=" + archiveInformation.getId() + ", currentChunk=" + chunk + ", chunk=" + archiveInformation.getChunk() + "]");
-					} else if (archiveInformation.getNextPosition() < 0 || archiveInformation.getNextPosition() > (super.origin.getMainFile().length() / Constants.ARCHIVE_SIZE)) {
+					} else if (!isIndexValid(archiveSector.getIndex()) || id != archiveSector.getId() || chunk != archiveSector.getChunk()) {
+						throw new RuntimeException("Error, the read data is incorrect. Data[currentIndex=" + super.id + ", index=" + archiveSector.getIndex() + ", currentId=" + id + ", id=" + archiveSector.getId() + ", currentChunk=" + chunk + ", chunk=" + archiveSector.getChunk() + "]");
+					} else if (archiveSector.getNextPosition() < 0 || archiveSector.getNextPosition() > (super.origin.getMainFile().length() / Constants.ARCHIVE_SIZE)) {
 						throw new RuntimeException("Error, the next position is invalid.");
 					}
 					for (int i = 0; i < requiredToRead; i++) {
-						archiveInformation.setData(read++, inputStream.getBytes()[i + archiveHeaderSize]);
+						archiveSector.setData(read++, inputStream.getBytes()[i + archiveHeaderSize]);
 					}
-					archiveInformation.setPosition(archiveInformation.getNextPosition());
+					archiveSector.setPosition(archiveSector.getNextPosition());
 					chunk++;
 				}
-				return archiveInformation;
+				return archiveSector;
 			} catch (Exception exception) {
 				exception.printStackTrace();
 			}
@@ -233,36 +233,27 @@ public class Index extends IndexInformation {
 	}
 
 	/**
-	 * Check if the argued index is equal to this index.
-	 * @param index The id of the index.
-	 * @return If the index is equal ot this index.
-	 */
-	protected boolean isIndexValid(int index) {
-		return super.id == index;
-	}
-
-	/**
-	 * Write the archive information.
+	 * Write the archive sector data.
 	 * @param id The id of the archive.
 	 * @param data The data to write to this archive.
-	 * @return If the archive information was written successfully.
+	 * @return If the archive sector was written successfully.
 	 */
-	public boolean writeArchiveInformation(int id, byte[] data) {
+	public boolean writeArchiveSector(int id, byte[] data) {
 		synchronized (super.origin.getMainFile()) {
 			try {
 				int position;
 				Archive archive = null;
-				ArchiveInformation archiveInformation = null;
+				ArchiveSector archiveSector = null;
 				if (super.id != 255) {
 					archive = getArchive(id, true);
 				}
-				boolean overWrite = (super.id == 255 && (archiveInformation = getArchiveInformation(id)) != null) || (archive != null && !archive.isNew());
+				boolean overWrite = (super.id == 255 && (archiveSector = readArchiveSector(id)) != null) || (archive != null && !archive.isNew());
 				final byte[] buffer = new byte[Constants.ARCHIVE_SIZE];
 				if (overWrite) {
 					if (Constants.INDEX_SIZE * id + Constants.INDEX_SIZE > randomAccessFile.length()) {
 						return false;
 					}
-					archiveInformation = getArchiveInformation(id);
+					archiveSector = readArchiveSector(id);
 					randomAccessFile.seek(id * Constants.INDEX_SIZE);
 					randomAccessFile.read(buffer, 0, Constants.INDEX_SIZE);
 					final InputStream inputStream = new InputStream(buffer);
@@ -295,9 +286,9 @@ public class Index extends IndexInformation {
 					if (overWrite) {
 						super.origin.getMainFile().seek(position * Constants.ARCHIVE_SIZE);
 						super.origin.getMainFile().read(buffer, 0, archiveHeaderSize);
-						archiveInformation.read(new InputStream(buffer));
-						currentPosition = archiveInformation.getNextPosition();
-						if (archiveInformation.getId() != id || chunk != archiveInformation.getChunk() || super.id != archiveInformation.getIndex()) {
+						archiveSector.read(new InputStream(buffer));
+						currentPosition = archiveSector.getNextPosition();
+						if (archiveSector.getId() != id || chunk != archiveSector.getChunk() || !isIndexValid(archiveSector.getIndex())) {
 							return false;
 						}
 						if (currentPosition < 0 || super.origin.getMainFile().length() / Constants.ARCHIVE_SIZE < currentPosition) {
@@ -317,15 +308,15 @@ public class Index extends IndexInformation {
 					if (data.length - written <= archiveDataSize) {
 						currentPosition = 0;
 					}
-					if (archiveInformation == null) {
-						archiveInformation = new ArchiveInformation(0, data.length, position, id, super.id);
+					if (archiveSector == null) {
+						archiveSector = new ArchiveSector(0, data.length, position, id, indexToWrite(super.id));
 					}
-					archiveInformation.setType(archiveDataSize == 510 ? 1 : 0);
-					archiveInformation.setChunk(chunk);
-					archiveInformation.setPosition(currentPosition);
+					archiveSector.setType(archiveDataSize == 510 ? 1 : 0);
+					archiveSector.setChunk(chunk);
+					archiveSector.setPosition(currentPosition);
 					super.origin.getMainFile().seek(position * Constants.ARCHIVE_SIZE);
-					archiveInformation.write(new OutputStream(archiveHeaderSize));
-					super.origin.getMainFile().write(archiveInformation.write(new OutputStream(archiveHeaderSize)), 0, archiveHeaderSize);
+					archiveSector.write(new OutputStream(archiveHeaderSize));
+					super.origin.getMainFile().write(archiveSector.write(new OutputStream(archiveHeaderSize)), 0, archiveHeaderSize);
 					int length = data.length - written;
 					if (length > archiveDataSize) {
 						length = archiveDataSize;
@@ -342,6 +333,24 @@ public class Index extends IndexInformation {
 				return false;
 			}
 		}
+	}
+
+	/**
+	 * Check if the argued index is equal to this index.
+	 * @param index The id of the index.
+	 * @return If the index is equal ot this index.
+	 */
+	protected boolean isIndexValid(int index) {
+		return super.id == index;
+	}
+
+	/**
+	 * Get the index to write when writing the archive sector data.
+	 * @param index The id of the index.
+	 * @return The index to write.
+	 */
+	protected int indexToWrite(int index) {
+		return index;
 	}
 
 	/**
@@ -424,7 +433,7 @@ public class Index extends IndexInformation {
 	 * @return The info.
 	 */
 	public String getInfo() {
-		return "Index[id=" + id + "]";
+		return "Index[id=" + id + ", archives=" + archives.length + ", compression=" + type + "]";
 	}
 
 	@Override
