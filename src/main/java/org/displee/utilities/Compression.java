@@ -1,11 +1,11 @@
 package org.displee.utilities;
 
-import org.displee.cache.index.archive.ArchiveInformation;
+import org.displee.cache.index.archive.ArchiveSector;
 import org.displee.io.impl.InputStream;
 import org.displee.io.impl.OutputStream;
 
 /**
- * A class used to (de)compress the data of an {@link ArchiveInformation}.
+ * A class used to (de)compress the data of an {@link ArchiveSector}.
  * @author Displee
  * @author Apache Ah64
  */
@@ -53,18 +53,18 @@ public class Compression {
 
 	/**
 	 * Decompress an archive its data.
-	 * @param archiveInformation The archive to decompress.
+	 * @param archiveSector The archive to decompress.
 	 * @param keys The tea keys.
 	 * @return The decompressed data.
 	 */
-	public static byte[] decompress(ArchiveInformation archiveInformation, int[] keys) {
-		byte[] packedData = archiveInformation.getData();
+	public static byte[] decompress(ArchiveSector archiveSector, int[] keys) {
+		byte[] packedData = archiveSector.getData();
 		InputStream inputStream = new InputStream(packedData);
 		if(keys != null && (keys[0] != 0 || keys[1] != 0 || keys[2] != 0 || 0 != keys[3])) {
 			inputStream.decodeXTEA(keys, 5, packedData.length);
 		}
 		int type = inputStream.readUnsignedByte();
-		archiveInformation.setCompression(CompressionType.values()[type]);
+		archiveSector.setCompression(CompressionType.values()[type]);
 		if (type > CompressionType.values().length - 1) {
 			throw new RuntimeException("Unknown compression type - type=" + type);
 		}
@@ -73,7 +73,7 @@ public class Compression {
 			int decompressedSize = inputStream.readInt() & 0xFFFFFF;
 			byte[] decompressed = new byte[decompressedSize];
 			if (type == CompressionType.BZIP2.ordinal()) {
-				BZIP2Compressor.decompress(decompressed, decompressed.length, archiveInformation.getData(), compressedSize, 9);
+				BZIP2Compressor.decompress(decompressed, decompressed.length, archiveSector.getData(), compressedSize, 9);
 			} else if (type == CompressionType.GZIP.ordinal()) {
 				if (!GZIPCompressor.inflate(inputStream, decompressed)) {
 					return null;

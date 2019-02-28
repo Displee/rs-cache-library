@@ -9,6 +9,7 @@ import org.displee.cache.index.archive.file.File;
 import org.displee.io.impl.InputStream;
 import org.displee.io.impl.OutputStream;
 import org.displee.utilities.Constants;
+import org.displee.utilities.Miscellaneous;
 
 /**
  * A class that represents a single archive inside a single index.
@@ -19,7 +20,7 @@ public class Archive implements Container {
 	/**
 	 * The id of this archive.
 	 */
-	private int id;
+	private final int id;
 
 	/**
 	 * The unformatted name of this archive.
@@ -54,7 +55,7 @@ public class Archive implements Container {
 	/**
 	 * If this archive has been read.
 	 */
-	private boolean read;
+	protected boolean read;
 
 	/**
 	 * If this archive needs to be updated.
@@ -219,7 +220,8 @@ public class Archive implements Container {
 	 */
 	public File addFile(String name, byte[] data) {
 		final int fileId = getFileId(name);
-		return addFile(fileId == -1 ? (getLastFile() == null ? 0 : getLastFile().getId() + 1) : fileId, data, name == null ? -1 : name.toLowerCase().hashCode());
+		int hashedName = name == null ? -1 : this instanceof Archive317 ? Miscellaneous.to317Hash(name) : name.toLowerCase().hashCode();
+		return addFile(fileId == -1 ? (getLastFile() == null ? 0 : getLastFile().getId() + 1) : fileId, data, hashedName);
 	}
 
 	/**
@@ -374,14 +376,6 @@ public class Archive implements Container {
 	}
 
 	/**
-	 * Set a new id for this archive.
-	 * @param id The new id to set.
-	 */
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	/**
 	 * Set a new unformatted name for this archive.
 	 * @param name The new name to set.
 	 * @return
@@ -484,8 +478,12 @@ public class Archive implements Container {
 	 * @return The file id of the argued name.
 	 */
 	public int getFileId(String name) {
+		if (files == null) {
+			return -1;
+		}
+		boolean is317 = this instanceof Archive317;
 		for (final File file : files) {
-			if (name != null && file.getName() == name.toLowerCase().hashCode()) {
+			if (name != null && (is317 ? file.getName() == Miscellaneous.to317Hash(name) : file.getName() == name.toLowerCase().hashCode())) {
 				return file.getId();
 			}
 		}
@@ -498,6 +496,9 @@ public class Archive implements Container {
 	 * @return The file instance.
 	 */
 	public File getFile(int id) {
+		if (files == null) {
+			return null;
+		}
 		for (final File file : files) {
 			if (file.getId() == id) {
 				return file;
@@ -520,7 +521,7 @@ public class Archive implements Container {
 	 * @return The last file of this archive.
 	 */
 	public File getLastFile() {
-		return files.length == 0 ? null : files[files.length - 1];
+		return files == null || files.length == 0 ? null : files[files.length - 1];
 	}
 
 	/**

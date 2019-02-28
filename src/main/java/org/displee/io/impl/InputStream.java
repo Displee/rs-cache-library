@@ -280,6 +280,14 @@ public class InputStream extends Stream {
 		return Miscellaneous.method2122(buffer, i_22_, i_23_);
 	}
 
+	public String readString317() {
+		int start = offset;
+		while (buffer[offset++] != 10) {
+
+		}
+		return new String(buffer, start, offset - start - 1);
+	}
+
 	public int smf_gvlength() {
 		int i_20_ = readByte();
 		int i_21_ = 0;
@@ -295,8 +303,18 @@ public class InputStream extends Stream {
 	 * @return The bytes.
 	 */
 	public byte[] readBytes(int length) {
+		return readBytes(0, length);
+	}
+
+	/**
+	 * Read the bytes.
+	 * @param offset The offset to start from.
+	 * @param length The amount to read.
+	 * @return The bytes.
+	 */
+	public byte[] readBytes(int offset, int length) {
 		byte[] bytes = new byte[length];
-		readBytes(bytes);
+		readBytes(bytes, offset, bytes.length);
 		return bytes;
 	}
 

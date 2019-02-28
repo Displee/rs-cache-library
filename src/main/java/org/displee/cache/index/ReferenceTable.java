@@ -7,18 +7,20 @@ import org.displee.CacheLibrary;
 import org.displee.CacheLibraryMode;
 import org.displee.cache.Container;
 import org.displee.cache.index.archive.Archive;
-import org.displee.cache.index.archive.ArchiveInformation;
+import org.displee.cache.index.archive.Archive317;
+import org.displee.cache.index.archive.ArchiveSector;
 import org.displee.cache.index.archive.file.File;
 import org.displee.io.impl.InputStream;
 import org.displee.io.impl.OutputStream;
 import org.displee.utilities.Compression;
 import org.displee.utilities.Constants;
+import org.displee.utilities.Miscellaneous;
 
 /**
  * A class that represents contains usefull data of this index.
  * @author Displee
  */
-public class IndexInformation implements Container {
+public class ReferenceTable implements Container {
 
 	/**
 	 * The id of the index.
@@ -78,13 +80,13 @@ public class IndexInformation implements Container {
 	/**
 	 * A list of archive names.
 	 */
-	private List<Integer> archiveNames = new ArrayList<>();
+	protected List<Integer> archiveNames = new ArrayList<>();
 
 	/**
-	 * Constructs a new {@code IndexInformation} {@code Object}.
+	 * Constructs a new {@code ReferenceTable} {@code Object}.
 	 * @param id The id of the index.
 	 */
-	public IndexInformation(CacheLibrary origin, int id) throws IllegalAccessError {
+	public ReferenceTable(CacheLibrary origin, int id) throws IllegalAccessError {
 		if (origin.isClosed()) {
 			throw new IllegalAccessError("Cache library has been closed.");
 		}
@@ -289,15 +291,15 @@ public class IndexInformation implements Container {
 	 * Copy this index.
 	 * @return The new index.
 	 */
-	public IndexInformation copy() {
-		final IndexInformation indexInformation = new IndexInformation(origin, id);
-		indexInformation.version = version;
-		indexInformation.revision = revision;
-		indexInformation.named = named;
-		indexInformation.archiveIds = archiveIds;
-		indexInformation.archives = archives;
-		indexInformation.whirlpool = whirlpool;
-		return indexInformation;
+	public ReferenceTable copy() {
+		final ReferenceTable referenceTable = new ReferenceTable(origin, id);
+		referenceTable.version = version;
+		referenceTable.revision = revision;
+		referenceTable.named = named;
+		referenceTable.archiveIds = archiveIds;
+		referenceTable.archives = archives;
+		referenceTable.whirlpool = whirlpool;
+		return referenceTable;
 	}
 
 	/**
@@ -459,7 +461,8 @@ public class IndexInformation implements Container {
 	 */
 	public Archive addArchive(String name, boolean resetFiles) {
 		final int archiveId = getArchiveId(name);
-		return addArchive(archiveId == -1 ? (getLastArchive().getId() + 1) : archiveId, name == null ? -1 : name.toLowerCase().hashCode(), resetFiles);
+		int hashedName = name == null ? -1 : this instanceof Index317 ? Miscellaneous.to317Hash(name) : name.toLowerCase().hashCode();
+		return addArchive(archiveId == -1 ? (getLastArchive().getId() + 1) : archiveId, hashedName, resetFiles);
 	}
 
 	/**
@@ -655,17 +658,19 @@ public class IndexInformation implements Container {
 				if (direct || archive.isRead()) {
 					return archive;
 				}
-				final ArchiveInformation archiveInformation = origin.getIndex(this.id).getArchiveInformation(id);
-				if (archiveInformation == null) {
+				final ArchiveSector archiveSector = origin.getIndex(this.id).readArchiveSector(id);
+				if (archiveSector == null) {
 					archive.setIsRead(true);
+					archive.setIsNew(true);
+					archive.reset();
 					return archive;
 				}
-				archive.read(new InputStream(Compression.decompress(archiveInformation, xtea)));
+				archive.read(new InputStream(Compression.decompress(archiveSector, xtea)));
 				if (this.id == 5 && !archive.containsData()) {//reset map data if archive has no data
 					archive.setIsRead(false);
 					return archive;
 				}
-				final InputStream inputStream = new InputStream(archiveInformation.getData());
+				final InputStream inputStream = new InputStream(archiveSector.getData());
 				inputStream.setOffset(1);
 				final int remaining = inputStream.getBytes().length - ((inputStream.readInt() & 0xFFFFFF) + inputStream.getOffset());
 				if (remaining >= 2) {
@@ -684,8 +689,9 @@ public class IndexInformation implements Container {
 	 * @return The archive id of the argued name.
 	 */
 	public int getArchiveId(String name) {
-		for (final Archive archive : archives) {
-			if (name != null && archive.getName() == name.toLowerCase().hashCode()) {
+		boolean is317 = origin.is317();
+		for (Archive archive : archives) {
+			if (name != null && (is317 ? archive.getName() == Miscellaneous.to317Hash(name) : archive.getName() == name.toLowerCase().hashCode())) {
 				return archive.getId();
 			}
 		}
@@ -693,7 +699,7 @@ public class IndexInformation implements Container {
 	}
 
 	public boolean containsName(String name) {
-		return archiveNames.indexOf(name.hashCode()) != -1;
+		return archiveNames.indexOf(origin.is317() ? Miscellaneous.to317Hash(name) : name.hashCode()) != -1;
 	}
 
 	/**
