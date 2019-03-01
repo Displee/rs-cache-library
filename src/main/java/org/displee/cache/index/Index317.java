@@ -21,6 +21,12 @@ import org.displee.utilities.*;
  */
 public class Index317 extends Index {
 
+	private static final String[] VERSION_NAMES = { "model_version", "anim_version", "midi_version", "map_version" };
+
+	private static final String[] CRC_NAMES = { "model_crc", "anim_crc", "midi_crc", "map_crc" };
+
+	private static final String[] INDEX_NAMES = { "model_index", "anim_index", "midi_index", "map_index" };
+
 	/**
 	 * Constructs a new {@code Index} {@code Object}.
 	 * @param id The id of this index.
@@ -47,7 +53,6 @@ public class Index317 extends Index {
 			}
 			i++;
 			archive.unFlag();
-			int[] keys = map == null ? null : map.get(archive.getId());
 			if (!updateChecksumTable) {
 				updateChecksumTable = true;
 			}
@@ -74,6 +79,11 @@ public class Index317 extends Index {
 				archive.restore();
 			}
 		}
+		if (id != 0 && updateChecksumTable) {
+			writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::getRevision).toArray(), VERSION_NAMES[id -1], 1);
+			writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::getCRC).toArray(), CRC_NAMES[id - 1], 2);
+			writeArchiveProperties(Arrays.stream(archives).mapToInt(e -> ((Archive317) e).getPriority()).toArray(), INDEX_NAMES[id - 1], id == 2 ? 1 : 0);
+		}
 		if (listener != null) {
 			listener.notify(100, "Successfully updated index " + id + ".");
 		}
@@ -95,18 +105,6 @@ public class Index317 extends Index {
 	 */
 	@Override
 	protected void read() {
-		/*if (id != 0) {
-			Archive versionArchive = origin.getIndex(0).getArchive(6);
-			String[] versions = { "model_version", "anim_version", "midi_version", "map_version" };
-			int length = versions.length;
-			for(int i = 0; i < length; i++) {
-				int index = i + 1;
-				if (id == index) {
-					InputStream buffer = new InputStream(versionArchive.getFile(versions[i]).getData());
-					break;
-				}
-			}
-		}*/
 		int archiveLength;
 		try {
 			archiveLength = (int) (getRandomAccessFile().length() / (long) Constants.INDEX_SIZE);
@@ -115,10 +113,26 @@ public class Index317 extends Index {
 			return;
 		}
 		archiveIds = new int[archiveLength];
-		archives = new Archive317[archiveLength];
+		archives = new Archive[archiveLength];
+		int[] versions = null;
+		int[] crcs = null;
+		int[] priorities = null;
+		if (id != 0) {
+			versions = readArchiveProperties(VERSION_NAMES[id - 1], 1);
+			crcs = readArchiveProperties(CRC_NAMES[id - 1], 2);
+			priorities = readArchiveProperties(INDEX_NAMES[id - 1], id == 2 ? 1 : 0);
+		}
 		for(int i = 0; i < archives.length; i++) {
 			archiveIds[i] = i;
-			archives[i] = new Archive317(i);
+			Archive317 archive = (Archive317) (archives[i] = new Archive317(i));
+			if (versions == null || crcs == null) {
+				continue;
+			}
+			archive.setRevision(versions[i]);
+			archive.setCRC(crcs[i]);
+			if (priorities != null) {
+				archive.setPriority(i < priorities.length ? priorities[i] : 0);
+			}
 		}
 	}
 
@@ -180,13 +194,65 @@ public class Index317 extends Index {
 		archiveIds = Arrays.copyOf(archiveIds, archiveIds.length + 1);
 		archiveIds[archiveIds.length - 1] = id;
 		archives = Arrays.copyOf(archives, archives.length + 1);
-		final Archive archive = new Archive317(id, name);
+		final Archive317 archive = new Archive317(id, name);
+		if (this.id != 0) {
+			archive.setCompressionType(Compression.CompressionType.GZIP);
+		}
 		archive.reset();
 		archive.setIsNew(true);
 		archive.flag();
 		archives[archives.length - 1] = archive;
 		flag();
 		return archive;
+	}
+
+	private int[] readArchiveProperties(String fileId, int type) {
+		if (id == 0 || id == 4 || id > VERSION_NAMES.length) {
+			return null;
+		}
+		byte[] data = origin.getIndex(0).getArchive(5).getFile(fileId).getData();
+		InputStream buffer = new InputStream(data);
+		int[] properties = new int[data.length / (type == 0 ? 1 : type == 1 ? 2 : 4)];
+		switch(type) {
+			case 0:
+				for (int i = 0; i < properties.length; i++) {
+					properties[i] = buffer.readUnsignedByte();
+				}
+				break;
+			case 1:
+				for (int i = 0; i < properties.length; i++) {
+					properties[i] = buffer.readUnsignedShort();
+				}
+				break;
+			case 2:
+				for (int i = 0; i < properties.length; i++) {
+					properties[i] = buffer.readInt();
+				}
+				break;
+		}
+		return properties;
+	}
+
+	private boolean writeArchiveProperties(int[] properties, String fileId, int type) {
+		if (id == 0 || id == 4 || id > VERSION_NAMES.length) {
+			return false;
+		}
+		OutputStream buffer = new OutputStream(properties.length);
+		if (type == 0) {
+			for (int i : properties) {
+				buffer.writeByte(i);
+			}
+		} else if (type == 1) {
+			for (int i : properties) {
+				buffer.writeShort(i);
+			}
+		} else if (type == 2) {
+			for (int i : properties) {
+				buffer.writeInt(i);
+			}
+		}
+		origin.getIndex(0).getArchive(5).addFile(fileId, buffer.flip());
+		return origin.getIndex(0).update();
 	}
 
 }

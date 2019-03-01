@@ -579,7 +579,7 @@ public class Archive implements Container {
 	 * @return The info.
 	 */
 	public String getInfo() {
-		return "Archive[id=" + id + ", name=" + name + ", revision=" + revision + ", read=" + read + ", files=" + Arrays.toString(fileIds) + "]";
+		return "Archive[id=" + id + ", name=" + name + ", revision=" + revision + ", crc=" + crc + ", read=" + read + ", files=" + Arrays.toString(fileIds) + "]";
 	}
 
 	public int getFlag8Value() {
@@ -588,11 +588,6 @@ public class Archive implements Container {
 
 	public void setFlag8Value(int flag8Value) {
 		this.flag8Value = flag8Value;
-	}
-
-	@Override
-	public String toString() {
-		return "Archive " + id;
 	}
 
 	public int getFlag4Value1() {
@@ -610,4 +605,10 @@ public class Archive implements Container {
 	public void setFlag4Value2(int flag4Value2) {
 		this.flag4Value2 = flag4Value2;
 	}
+
+	@Override
+	public String toString() {
+		return "Archive " + id;
+	}
+
 }

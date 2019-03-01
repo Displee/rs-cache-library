@@ -13,6 +13,8 @@ public class Archive317 extends Archive {
 
 	private Compression.CompressionType compressionType;
 
+	private int priority;
+
 	public Archive317(int id) {
 		super(id);
 	}
@@ -98,6 +100,14 @@ public class Archive317 extends Archive {
 
 	public void setCompressionType(Compression.CompressionType compressionType) {
 		this.compressionType = compressionType;
+	}
+
+	public int getPriority() {
+		return priority;
+	}
+
+	public void setPriority(int priority) {
+		this.priority = priority;
 	}
 
 }
