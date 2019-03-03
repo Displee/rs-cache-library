@@ -79,7 +79,7 @@ public class Index317 extends Index {
 				archive.restore();
 			}
 		}
-		if (id != 0 && updateChecksumTable) {
+		if (id != 0 && id < VERSION_NAMES.length && updateChecksumTable) {
 			writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::getRevision).toArray(), VERSION_NAMES[id -1], 1);
 			writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::getCRC).toArray(), CRC_NAMES[id - 1], 2);
 			writeArchiveProperties(Arrays.stream(archives).mapToInt(e -> ((Archive317) e).getPriority()).toArray(), INDEX_NAMES[id - 1], id == 2 ? 1 : 0);
