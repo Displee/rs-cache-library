@@ -117,7 +117,7 @@ public class Index317 extends Index {
 		int[] versions = null;
 		int[] crcs = null;
 		int[] priorities = null;
-		if (id != 0) {
+		if (id != 0 && id < VERSION_NAMES.length) {
 			versions = readArchiveProperties(VERSION_NAMES[id - 1], 1);
 			crcs = readArchiveProperties(CRC_NAMES[id - 1], 2);
 			priorities = readArchiveProperties(INDEX_NAMES[id - 1], id == 2 ? 1 : 0);
@@ -125,7 +125,7 @@ public class Index317 extends Index {
 		for(int i = 0; i < archives.length; i++) {
 			archiveIds[i] = i;
 			Archive317 archive = (Archive317) (archives[i] = new Archive317(i));
-			if (versions == null || crcs == null) {
+			if (versions == null || crcs == null || i >= versions.length) {
 				continue;
 			}
 			archive.setRevision(versions[i]);

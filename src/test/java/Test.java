@@ -22,9 +22,9 @@ public class Test {
 
 	//0 = config, models = 1, animation = 2, midi = 3, maps = 4
 	private static void test1() throws Exception {
-		CacheLibrary cache = new CacheLibrary("C:\\Users\\Maffia\\Documents\\RSPS\\317\\317 cache", CacheLibraryMode.UN_CACHED);
-		Index index = cache.getIndex(1);
-		Archive archive = index.getArchive(9358);
+		CacheLibrary cache = new CacheLibrary("C:\\Users\\Maffia\\RuthlessPSCache", CacheLibraryMode.UN_CACHED);
+		Index index = cache.getIndex(7);
+		Archive archive = index.getArchive(0);
 		System.out.println(archive.getInfo());
 	}
 
