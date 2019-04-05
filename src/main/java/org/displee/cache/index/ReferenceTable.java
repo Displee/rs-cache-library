@@ -655,7 +655,7 @@ public class ReferenceTable implements Container {
 		}
 		for (final Archive archive : archives) {
 			if (archive.getId() == id) {
-				if (direct || archive.isRead()) {
+				if (direct || archive.isRead() || archive.isNew()) {
 					return archive;
 				}
 				final ArchiveSector archiveSector = origin.getIndex(this.id).readArchiveSector(id);
