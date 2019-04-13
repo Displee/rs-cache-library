@@ -348,6 +348,7 @@ public class Archive implements Container {
 			file.setData(null);
 		}
 		read = false;
+		isNew = false;
 	}
 
 	/**
