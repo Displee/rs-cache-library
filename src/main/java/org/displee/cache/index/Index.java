@@ -284,7 +284,7 @@ public class Index extends ReferenceTable {
 				while (written < data.length) {
 					int currentPosition = 0;
 					if (overWrite) {
-						super.origin.getMainFile().seek(position * Constants.ARCHIVE_SIZE);
+						super.origin.getMainFile().seek((long) position * Constants.ARCHIVE_SIZE);
 						super.origin.getMainFile().read(buffer, 0, archiveHeaderSize);
 						archiveSector.read(new InputStream(buffer));
 						currentPosition = archiveSector.getNextPosition();
@@ -314,7 +314,7 @@ public class Index extends ReferenceTable {
 					archiveSector.setType(archiveDataSize == 510 ? 1 : 0);
 					archiveSector.setChunk(chunk);
 					archiveSector.setPosition(currentPosition);
-					super.origin.getMainFile().seek(position * Constants.ARCHIVE_SIZE);
+					super.origin.getMainFile().seek((long) position * Constants.ARCHIVE_SIZE);
 					archiveSector.write(new OutputStream(archiveHeaderSize));
 					super.origin.getMainFile().write(archiveSector.write(new OutputStream(archiveHeaderSize)), 0, archiveHeaderSize);
 					int length = data.length - written;
