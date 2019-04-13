@@ -48,7 +48,7 @@ public class OutputStream extends Stream {
 	 */
 	@Deprecated
 	public void writePacketVarByte(int id) {
-		writeSmart(id);
+		writeUnsignedSmart(id);
 		writeByte(0);
 		opcodeStart = getOffset() - 1;
 	}
@@ -67,7 +67,7 @@ public class OutputStream extends Stream {
 	 */
 	@Deprecated
 	public void writePacketVarShort(int id) {
-		writeSmart(id);
+		writeUnsignedSmart(id);
 		writeShort(0);
 		opcodeStart = getOffset() - 2;
 	}
@@ -94,28 +94,28 @@ public class OutputStream extends Stream {
 	 * Write a smart.
 	 * @param i The integer.
 	 */
-	public void writeSmart(int i) {
-		if (i >= 128) {
-			writeShort(i + 32768);
-		} else {
+	public void writeUnsignedSmart(int i) {
+		if (i < 128) {
 			writeByte((byte) i);
+			return;
 		}
+		writeShort(i + 32768);
 	}
 
 	public void writeSmart2(int i) {
 		while (i >= 32767) {
-			writeSmart(32767);
+			writeUnsignedSmart(32767);
 			i -= 32767;
 		}
-		writeSmart(i);
+		writeUnsignedSmart(i);
 	}
 
 	/**
 	 * Writes an unsigned smart value to the buffer.
 	 * @param value The value to write.
 	 */
-	public void writeUnsignedSmart(int value) {
-		if (value < 64 && value >= -64) {
+	public void writeSmart(int value) {
+		if (value < 64 && value > -64) {
 			writeByte(value + 64);
 			return;
 		}
