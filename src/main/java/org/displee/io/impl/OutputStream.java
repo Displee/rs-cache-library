@@ -115,7 +115,7 @@ public class OutputStream extends Stream {
 	 * @param value The value to write.
 	 */
 	public void writeSmart(int value) {
-		if (value < 64 && value > -64) {
+		if (value < 64 && value >= -64) {
 			writeByte(value + 64);
 			return;
 		}

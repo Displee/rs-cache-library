@@ -87,7 +87,7 @@ public class CacheLibrary {
 		this.path = path;
 		this.mode = mode;
 		final File file = new File(path + "main_file_cache.dat");
-		if (file.exists()) {
+		if (file.exists() && file.length() != 0) {
 			load317(listener);
 			return;
 		}
