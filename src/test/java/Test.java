@@ -1,9 +1,5 @@
-import org.displee.CacheLibrary;
-import org.displee.CacheLibraryMode;
 import org.displee.io.impl.InputStream;
 import org.displee.io.impl.OutputStream;
-
-import java.util.Arrays;
 
 public class Test {
 
