@@ -169,7 +169,7 @@ public class Index extends ReferenceTable {
 
 	/**
 	 * Get the archive sector from this index.
-	 * @param id The id of the archive to get.
+	 * @param id The id of the archive sector to get.
 	 * @return The archive sector instance.
 	 */
 	public ArchiveSector readArchiveSector(int id) {
@@ -183,7 +183,7 @@ public class Index extends ReferenceTable {
 					throw new RuntimeException("File is too small.");
 				}
 				final byte[] buffer = new byte[Constants.ARCHIVE_SIZE];
-				randomAccessFile.seek(Constants.INDEX_SIZE * (long) id);
+				randomAccessFile.seek((long) id * Constants.INDEX_SIZE);
 				randomAccessFile.read(buffer, 0, Constants.INDEX_SIZE);
 				final InputStream inputStream = new InputStream(buffer);
 				final ArchiveSector archiveSector = new ArchiveSector(type, inputStream.read24BitInt(), inputStream.read24BitInt());
@@ -235,7 +235,7 @@ public class Index extends ReferenceTable {
 	/**
 	 * Write the archive sector data.
 	 * @param id The id of the archive.
-	 * @param data The data to write to this archive.
+	 * @param data The data to write to the archive sector.
 	 * @return If the archive sector was written successfully.
 	 */
 	public boolean writeArchiveSector(int id, byte[] data) {
@@ -254,7 +254,7 @@ public class Index extends ReferenceTable {
 						return false;
 					}
 					archiveSector = readArchiveSector(id);
-					randomAccessFile.seek(id * Constants.INDEX_SIZE);
+					randomAccessFile.seek((long) id * Constants.INDEX_SIZE);
 					randomAccessFile.read(buffer, 0, Constants.INDEX_SIZE);
 					final InputStream inputStream = new InputStream(buffer);
 					inputStream.setOffset(3);
@@ -271,7 +271,7 @@ public class Index extends ReferenceTable {
 				final OutputStream outputStream = new OutputStream();
 				outputStream.write24BitInt(data.length);
 				outputStream.write24BitInt(position);
-				randomAccessFile.seek(id * Constants.INDEX_SIZE);
+				randomAccessFile.seek((long) id * Constants.INDEX_SIZE);
 				randomAccessFile.write(outputStream.flip(), 0, Constants.INDEX_SIZE);
 				int written = 0;
 				int chunk = 0;

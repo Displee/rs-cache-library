@@ -226,17 +226,21 @@ public class ReferenceTable implements Container {
 			for (int i = 0; i < archives.length; i++) {
 				outputStream.writeInt(archives[i].getCRC());
 			}
-			for (int i = 0; i < archives.length; i++) {
-				outputStream.writeInt(archives[i].getFlag8Value());
+			if (flag8) {
+				for (int i = 0; i < archives.length; i++) {
+					outputStream.writeInt(archives[i].getFlag8Value());
+				}
 			}
 			if (whirlpool) {
 				for (int i = 0; i < archives.length; i++) {
 					outputStream.writeBytes(archives[i].getWhirlpool());
 				}
 			}
-			for (int i = 0; i < archives.length; i++) {
-				outputStream.writeInt(archives[i].getFlag4Value1());
-				outputStream.writeInt(archives[i].getFlag4Value2());
+			if (flag4) {
+				for (int i = 0; i < archives.length; i++) {
+					outputStream.writeInt(archives[i].getFlag4Value1());
+					outputStream.writeInt(archives[i].getFlag4Value2());
+				}
 			}
 		} else {
 			if (whirlpool) {

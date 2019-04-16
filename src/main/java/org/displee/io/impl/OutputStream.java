@@ -48,7 +48,7 @@ public class OutputStream extends Stream {
 	 */
 	@Deprecated
 	public void writePacketVarByte(int id) {
-		writeSmart(id);
+		writeUnsignedSmart(id);
 		writeByte(0);
 		opcodeStart = getOffset() - 1;
 	}
@@ -67,7 +67,7 @@ public class OutputStream extends Stream {
 	 */
 	@Deprecated
 	public void writePacketVarShort(int id) {
-		writeSmart(id);
+		writeUnsignedSmart(id);
 		writeShort(0);
 		opcodeStart = getOffset() - 2;
 	}
@@ -94,27 +94,27 @@ public class OutputStream extends Stream {
 	 * Write a smart.
 	 * @param i The integer.
 	 */
-	public void writeSmart(int i) {
-		if (i >= 128) {
-			writeShort(i + 32768);
-		} else {
+	public void writeUnsignedSmart(int i) {
+		if (i < 128) {
 			writeByte((byte) i);
+			return;
 		}
+		writeShort(i + 32768);
 	}
 
 	public void writeSmart2(int i) {
-		while (i >= 32767) {
-			writeSmart(32767);
-			i -= 32767;
+		while (i >= Short.MAX_VALUE) {
+			writeUnsignedSmart(Short.MAX_VALUE);
+			i -= Short.MAX_VALUE;
 		}
-		writeSmart(i);
+		writeUnsignedSmart(i);
 	}
 
 	/**
 	 * Writes an unsigned smart value to the buffer.
 	 * @param value The value to write.
 	 */
-	public void writeUnsignedSmart(int value) {
+	public void writeSmart(int value) {
 		if (value < 64 && value >= -64) {
 			writeByte(value + 64);
 			return;
@@ -147,7 +147,7 @@ public class OutputStream extends Stream {
 		if (i >= Short.MAX_VALUE) {
 			writeInt(i - Integer.MAX_VALUE - 1);
 		} else {
-			writeShort(i >= 0 ? i : 32767);
+			writeShort(i >= 0 ? i : Short.MAX_VALUE);
 		}
 	}
 
@@ -172,7 +172,7 @@ public class OutputStream extends Stream {
 	 */
 	public void write5ByteInteger(long value) {
 		writeByte((int) (value >> 32));
-		writeInt((int) (value & 0xffffffff));
+		writeInt((int) value);
 	}
 
 	/**
@@ -299,9 +299,10 @@ public class OutputStream extends Stream {
 	public void method13177(int i) {
 		if ((i & ~0x7f) != 0) {
 			if ((i & ~0x3fff) != 0) {
-				if (0 != (i & ~0x1fffff)) {
-					if ((i & ~0xfffffff) != 0)
+				if ((i & ~0x1fffff) != 0) {
+					if ((i & ~0xfffffff) != 0) {
 						writeByte(i >>> 28 | 0x80);
+					}
 					writeByte(i >>> 21 | 0x80);
 				}
 				writeByte(i >>> 14 | 0x80);
@@ -328,7 +329,7 @@ public class OutputStream extends Stream {
 	/**
 	 * Write bits.
 	 * @param numBits The bit numbers.
-	 * @param value The values.
+	 * @param value   The values.
 	 */
 	public void writeBits(int numBits, int value) {
 		int bytePos = bitPosition >> 3;
@@ -407,7 +408,7 @@ public class OutputStream extends Stream {
 
 	/**
 	 * Write bytes.
-	 * @param bytes The bytes.
+	 * @param bytes  The bytes.
 	 * @param offset The offset.
 	 * @param length The length.
 	 */
@@ -419,7 +420,7 @@ public class OutputStream extends Stream {
 
 	/**
 	 * Write reversed bytes.
-	 * @param bytes The bytes.
+	 * @param bytes  The bytes.
 	 * @param offset The offset.
 	 * @param length The length.
 	 */
@@ -435,9 +436,9 @@ public class OutputStream extends Stream {
 
 	public void write2DIntArray(int[][] array) {
 		writeShort(array.length);
-		for(int[] i : array) {
+		for (int[] i : array) {
 			writeShort(i.length);
-			for(int i2 : i) {
+			for (int i2 : i) {
 				writeShort(i2);
 			}
 		}
@@ -445,7 +446,7 @@ public class OutputStream extends Stream {
 
 	public void write2DByteArray(byte[][] array) {
 		writeShort(array.length);
-		for(byte[] i : array) {
+		for (byte[] i : array) {
 			writeShort(i.length);
 			writeBytes(i);
 		}
@@ -453,9 +454,9 @@ public class OutputStream extends Stream {
 
 	public void write2DBooleanArray(boolean[][] array) {
 		writeShort(array.length);
-		for(boolean[] i : array) {
+		for (boolean[] i : array) {
 			writeShort(i.length);
-			for(boolean i2 : i) {
+			for (boolean i2 : i) {
 				writeByte(i2 ? 1 : 0);
 			}
 		}
