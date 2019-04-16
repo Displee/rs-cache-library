@@ -89,9 +89,9 @@ public class InputStream extends Stream {
 	public int readSmart2() {
 		int i = 0;
 		int i_33_ = readUnsignedSmart();
-		while (i_33_ == 32767) {
+		while (i_33_ == Short.MAX_VALUE) {
 			i_33_ = readUnsignedSmart();
-			i += 32767;
+			i += Short.MAX_VALUE;
 		}
 		i += i_33_;
 		return i;
@@ -141,8 +141,8 @@ public class InputStream extends Stream {
 		if (buffer[offset] < 0) {
 			return readInt() & 0x7fffffff;
 		}
-		int value = readShort() & 0xFFFF;
-		if (value == 32767) {
+		int value = readUnsignedShort();
+		if (value == Short.MAX_VALUE) {
 			return -1;
 		}
 		return value;
@@ -158,7 +158,7 @@ public class InputStream extends Stream {
 	 */
 	public int readShort() {
 		int s = ((readByte() & 0xFF) << 8) + (readByte() & 0xFF);
-		if (s > 32767) {
+		if (s > Short.MAX_VALUE) {
 			s -= 0x10000;
 		}
 		return s;
@@ -180,7 +180,7 @@ public class InputStream extends Stream {
 	 */
 	public int readShortLE() {
 		int s = (readByte() & 0xFF) + ((readByte() & 0xFF) << 8);
-		if (s > 32767) {
+		if (s > Short.MAX_VALUE) {
 			s -= 0x10000;
 		}
 		return s;
@@ -192,7 +192,7 @@ public class InputStream extends Stream {
 	 */
 	public int readShort128() {
 		int s = ((readByte() & 0xFF) << 8) + (readByte() - 128 & 0xFF);
-		if (s > 32767) {
+		if (s > Short.MAX_VALUE) {
 			s -= 0x10000;
 		}
 		return s;
@@ -204,7 +204,7 @@ public class InputStream extends Stream {
 	 */
 	public int readShortLE128() {
 		int s = (readByte() - 128 & 0xFF) + ((readByte() & 0xFF) << 8);
-		if (s > 32767) {
+		if (s > Short.MAX_VALUE) {
 			s -= 0x10000;
 		}
 		return s;
@@ -216,7 +216,7 @@ public class InputStream extends Stream {
 	 */
 	public int read128ShortLE() {
 		int s = (128 - readByte() & 0xFF) + ((readByte() & 0xFF) << 8);
-		if (s > 32767) {
+		if (s > Short.MAX_VALUE) {
 			s -= 0x10000;
 		}
 		return s;
@@ -378,9 +378,9 @@ public class InputStream extends Stream {
 	}
 
 	public int[][] read2DIntArray() {
-		int[][] array = new int[readShort() & 0xFFFF][];
+		int[][] array = new int[readUnsignedShort()][];
 		for(int i = 0; i < array.length; i++) {
-			array[i] = new int[readShort() & 0xFFFF];
+			array[i] = new int[readUnsignedShort()];
 			for(int i2 = 0; i2 < array[i].length; i2++) {
 				array[i][i2] = readShort();
 			}
@@ -389,18 +389,18 @@ public class InputStream extends Stream {
 	}
 
 	public byte[][] read2DByteArray() {
-		byte[][] array = new byte[readShort() & 0xFFFF][];
+		byte[][] array = new byte[readUnsignedShort()][];
 		for(int i = 0; i < array.length; i++) {
-			array[i] = new byte[readShort() & 0xFFFF];
+			array[i] = new byte[readUnsignedShort()];
 			readBytes(array[i]);
 		}
 		return array;
 	}
 
 	public boolean[][] read2DBooleanArray() {
-		boolean[][] array = new boolean[readShort() & 0xFFFF][];
+		boolean[][] array = new boolean[readUnsignedShort()][];
 		for(int i = 0; i < array.length; i++) {
-			array[i] = new boolean[readShort() & 0xFFFF];
+			array[i] = new boolean[readUnsignedShort()];
 			for(int i2 = 0; i2 < array[i].length; i2++) {
 				array[i][i2] = readByte() == 1;
 			}

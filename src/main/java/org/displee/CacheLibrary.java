@@ -135,13 +135,13 @@ public class CacheLibrary {
 	 */
 	private void load(ProgressListener listener) throws IOException {
 		final File main = new File(path + "main_file_cache.dat2");
-		if (!main.exists()) {
+		if (main.exists()) {
+			mainFile = new RandomAccessFile(main, "rw");
+		} else {
 			if (listener != null) {
 				listener.notify(-1, "Error, main file could not be found");
 			}
 			throw new FileNotFoundException("File[path=" + main.getAbsolutePath() + "] could not be found.");
-		} else {
-			mainFile = new RandomAccessFile(main, "rw");
 		}
 		final File index255 = new File(path + "main_file_cache.idx255");
 		if (!index255.exists()) {
