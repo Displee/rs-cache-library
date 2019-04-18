@@ -387,6 +387,14 @@ public class CacheLibrary {
 	}
 
 	/**
+	 * Check if this is a OSRS cache.
+	 * @return If the revision of index 2 is greater or equal to 300.
+	 */
+	public boolean isOSRS() {
+		return getIndex(2).getRevision() >= 300;
+	}
+
+	/**
 	 * Check if this is a RS3 cache.
 	 * @return If the amount of indices is greater than 39.
 	 */
