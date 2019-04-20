@@ -391,7 +391,7 @@ public class CacheLibrary {
 	 * @return If the revision of index 2 is greater or equal to 300.
 	 */
 	public boolean isOSRS() {
-		return getIndex(2).getRevision() >= 300;
+		return getIndex(2).getRevision() >= 300 && indices.length <= 23;
 	}
 
 	/**

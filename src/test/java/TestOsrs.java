@@ -24,6 +24,24 @@ public class TestOsrs {
 	}
 
 	@Test
+	public void checkCache508() throws IOException {
+		CacheLibrary repository = new CacheLibrary("C:\\Users\\Maffia\\Documents\\RSPS\\RS2\\508\\508 Clean RS2HD\\data\\cache");
+		assert !repository.isOSRS();
+	}
+
+	@Test
+	public void checkCache614() throws IOException {
+		CacheLibrary repository = new CacheLibrary("C:\\Users\\Maffia\\Documents\\RSPS\\RS2\\614\\runescape");
+		assert !repository.isOSRS();
+	}
+
+	@Test
+	public void checkCache666() throws IOException {
+		CacheLibrary repository = new CacheLibrary("C:\\Users\\Maffia\\Documents\\RSPS\\RS2\\666\\cache");
+		assert !repository.isOSRS();
+	}
+
+	@Test
 	public void checkCacheOsrs31() throws IOException {
 		CacheLibrary repository = new CacheLibrary("C:\\Users\\Maffia\\Documents\\RSPS\\OSRS\\31\\data");
 		assert repository.isOSRS();
