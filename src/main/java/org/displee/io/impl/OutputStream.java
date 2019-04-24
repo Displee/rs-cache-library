@@ -90,6 +90,10 @@ public class OutputStream extends Stream {
 		writeByte((byte) size, opcodeStart);
 	}
 
+	public void writeBoolean(boolean value) {
+		writeByte(value ? 1 : 0);
+	}
+
 	/**
 	 * Write a smart.
 	 * @param i The integer.

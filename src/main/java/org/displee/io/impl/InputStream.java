@@ -296,6 +296,10 @@ public class InputStream extends Stream {
 		return i_21_ | i_20_;
 	}
 
+	public boolean readBoolean() {
+		return readUnsignedByte() == 1;
+	}
+
 	/**
 	 * Read the bytes.
 	 * @param length The amount to read.
