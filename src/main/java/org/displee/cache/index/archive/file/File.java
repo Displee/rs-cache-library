@@ -11,7 +11,7 @@ public class File {
 	/**
 	 * The id of this file.
 	 */
-	private final int id;
+	private int id;
 
 	/**
 	 * The unformatted name of this file.
@@ -66,6 +66,14 @@ public class File {
 	 */
 	public int getId() {
 		return id;
+	}
+
+	/**
+	 * Set a new id for this file.
+	 * @param id The new id to set.
+	 */
+	public void setId(int id) {
+		this.id = id;
 	}
 
 	/**

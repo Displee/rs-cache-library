@@ -1,4 +1,4 @@
-import org.displee.CacheLibrary;
+
 import org.displee.io.impl.InputStream;
 import org.displee.io.impl.OutputStream;
 
@@ -6,13 +6,20 @@ import java.util.Arrays;
 
 public class Test {
 
-	public static void main(String[] args) throws Exception {
-		CacheLibrary repository498 = new CacheLibrary("C:\\Users\\Maffia\\Documents\\RSPS\\RS2\\468");
-		CacheLibrary repository179 = new CacheLibrary("C:\\Users\\Maffia\\Documents\\RSPS\\OSRS\\31\\data");
+	public static void main(String[] args) {
+		debug(new byte[] { -65, -64 });
+		debug(new byte[] { 0 });
+	}
 
-		System.out.println(Arrays.toString(repository498.getIndex(2).getArchiveIds()));
-		System.out.println(Arrays.toString(repository179.getIndex(2).getArchiveIds()));
-		System.out.println(repository498.getIndex(2).getArchiveIds().length);
+	private static void debug(byte[] data) {
+		System.out.println("Input=" + Arrays.toString(data));
+		InputStream input = new InputStream(data);
+		int value = input.readSmart();
+		System.out.println("Read value=" + value);
+
+		OutputStream out = new OutputStream(2);
+		out.writeSmart(value);
+		System.out.println("Output=" + Arrays.toString(out.flip()));
 	}
 
 }

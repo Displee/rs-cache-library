@@ -10,6 +10,7 @@ import org.displee.CacheLibraryMode;
 import org.displee.cache.index.archive.Archive;
 import org.displee.cache.index.archive.Archive317;
 import org.displee.cache.index.archive.ArchiveSector;
+import org.displee.cache.index.archive.file.File;
 import org.displee.io.impl.InputStream;
 import org.displee.io.impl.OutputStream;
 import org.displee.progress.ProgressListener;
@@ -210,7 +211,21 @@ public class Index317 extends Index {
 		if (id == 0 || id == 4 || id > VERSION_NAMES.length) {
 			return null;
 		}
-		byte[] data = origin.getIndex(0).getArchive(5).getFile(fileId).getData();
+		Archive archive = origin.getIndex(0).getArchive(5);
+		if (archive == null) {
+			System.err.println("Missing archive 5 for " + fileId + ", type=" + type);
+			return null;
+		}
+		File file = archive.getFile(fileId);
+		if (file == null) {
+			System.err.println("Missing file for " + fileId + ", type=" + type);
+			return null;
+		}
+		byte[] data = file.getData();
+		if (data == null) {
+			System.err.println("Missing file data for " + fileId + ", type=" + type);
+			return null;
+		}
 		InputStream buffer = new InputStream(data);
 		int[] properties = new int[data.length / (type == 0 ? 1 : type == 1 ? 2 : 4)];
 		switch(type) {
