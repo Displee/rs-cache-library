@@ -123,12 +123,11 @@ public class OutputStream extends Stream {
 			writeByte(value + 64);
 			return;
 		}
-		if (value < 16384 && value >= -16384) {
+		//if (value < 16384 && value >= -16384) {
 			writeShort(value + 49152);
-		} else {
-			writeShort(value + 49152);
+		/*} else {
 			System.err.println("Error psmart out of range: " + value);
-		}
+		}*/
 	}
 
 	/**

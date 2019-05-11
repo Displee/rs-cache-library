@@ -187,13 +187,13 @@ public class CacheLibrary {
 	 */
 	private void load317(ProgressListener listener) throws IOException {
 		final File main = new File(path + "main_file_cache.dat");
-		if (!main.exists()) {
+		if (main.exists()) {
+			mainFile = new RandomAccessFile(main, "rw");
+		} else {
 			if (listener != null) {
 				listener.notify(-1, "Error, main file could not be found");
 			}
 			throw new FileNotFoundException("File[path=" + main.getAbsolutePath() + "] could not be found.");
-		} else {
-			mainFile = new RandomAccessFile(main, "rw");
 		}
 		final File[] indexFiles = new File(path).listFiles((dir, name) -> {
 			boolean list = name.startsWith("main_file_cache.idx");
@@ -213,9 +213,15 @@ public class CacheLibrary {
 		if (listener != null) {
 			listener.notify(0.0, "Reading indices...");
 		}
-		for(File file : indexFiles) {
-			final int i = Integer.parseInt(file.getName().replace("main_file_cache.idx", ""));
+		for(int i = 0; i < indices.length; i++) {
+			final File file = new File(path, "main_file_cache.idx" + i);
 			final double progress = (i / (indices.length - 1.0)) * 100;
+			if (!file.exists()) {
+				if (listener != null) {
+					listener.notify(progress, "Could not load index " + i + ", missing idx file...");
+				}
+				continue;
+			}
 			try {
 				indices[i] = new Index317(this, i, new RandomAccessFile(file, "rw"));
 				if (listener != null) {

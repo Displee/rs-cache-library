@@ -122,7 +122,7 @@ public class InputStream extends Stream {
 	 * @return The smart value.
 	 */
 	public int readUnsignedSmart() {
-		final int i = 0xFF & buffer[offset];
+		final int i = buffer[offset] & 0xFF;
 		if (i < 128) {
 			return readUnsignedByte();
 		}
