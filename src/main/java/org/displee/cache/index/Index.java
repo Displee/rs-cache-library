@@ -64,13 +64,13 @@ public class Index extends ReferenceTable {
 	protected void read() {
 		if (id < 255) {
 			final ArchiveSector archiveSector = super.origin.getChecksumTable().readArchiveSector(id);
-			if (archiveSector != null) {
+			if (archiveSector == null) {
+				this.randomAccessFile = null;
+			} else {
 				crc = HashGenerator.getCRCHash(archiveSector.getData());
 				whirlpool = Whirlpool.getHash(archiveSector.getData(), 0, archiveSector.getData().length);
 				super.read(new InputStream(Compression.decompress(archiveSector, null)));
 				type = archiveSector.getCompression();
-			} else {
-				this.randomAccessFile = null;
 			}
 		}
 	}
