@@ -79,7 +79,7 @@ public class GZIPCompressor {
 		return compressed.toByteArray();
 	}
 
-	private static byte[] gzipBuffer = new byte[65000];
+	private static byte[] gzipBuffer = new byte[999999];
 
 	public static byte[] deflate317(byte[] data) {
 		int read = 0;

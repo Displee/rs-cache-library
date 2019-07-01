@@ -71,6 +71,21 @@ public abstract class Stream {
 		writeByte(i);
 	}
 
+	public void writeReversedInt(int i) {
+		writeByte(i);
+		writeByte(i >> 8);
+		writeByte(i >> 16);
+		writeByte(i >> 24);
+	}
+
+	public void writeFloatAsInt(float i) {
+		writeInt(Float.floatToRawIntBits(i));
+	}
+
+	public void writeFloatAsReversedInt(float i) {
+		writeReversedInt(Float.floatToRawIntBits(i));
+	}
+
 	/**
 	 * Read an integer.
 	 *
