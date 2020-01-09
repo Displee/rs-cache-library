@@ -70,7 +70,7 @@ public class GZIPCompressor {
 		ByteArrayOutputStream compressed = new ByteArrayOutputStream();
 		try {
 			GZIPOutputStream gzipOutputStream = new GZIPOutputStream(compressed);
-			gzipOutputStream.write(data);
+			gzipOutputStream.write(data == null ? new byte[0] : data);
 			gzipOutputStream.finish();
 			gzipOutputStream.close();
 		} catch (Exception e) {

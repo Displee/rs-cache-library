@@ -189,6 +189,14 @@ public class Archive implements Container {
 	}
 
 	/**
+	 * Add a file to the end of this archive.
+	 * @return The new file.
+	 */
+	public File addFile() {
+		return addFile(getLastFile().getId() + 1, null);
+	}
+
+	/**
 	 * Add a file instance to this archive.
 	 * @param file The file instance.
 	 */
