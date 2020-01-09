@@ -23,48 +23,48 @@ public class Miscellaneous {
 	public static final byte[] getFormattedMessage(String message) {
 		int i_0_ = message.length();
 		byte[] is = new byte[i_0_];
-		for (int i_1_ = 0; (i_1_ ^ 0xffffffff) > (i_0_ ^ 0xffffffff); i_1_++) {
+		for (int i_1_ = 0; (~i_1_) > (~i_0_); i_1_++) {
 			int i_2_ = message.charAt(i_1_);
-			if (((i_2_ ^ 0xffffffff) >= -1 || i_2_ >= 128) && (i_2_ < 160 || i_2_ > 255)) {
-				if ((i_2_ ^ 0xffffffff) != -8365) {
-					if ((i_2_ ^ 0xffffffff) == -8219) {
+			if (((~i_2_) >= -1 || i_2_ >= 128) && (i_2_ < 160 || i_2_ > 255)) {
+				if ((~i_2_) != -8365) {
+					if ((~i_2_) == -8219) {
 						is[i_1_] = (byte) -126;
-					} else if ((i_2_ ^ 0xffffffff) == -403) {
+					} else if ((~i_2_) == -403) {
 						is[i_1_] = (byte) -125;
 					} else if (i_2_ == 8222) {
 						is[i_1_] = (byte) -124;
 					} else if (i_2_ != 8230) {
-						if ((i_2_ ^ 0xffffffff) != -8225) {
-							if ((i_2_ ^ 0xffffffff) != -8226) {
-								if ((i_2_ ^ 0xffffffff) == -711) {
+						if ((~i_2_) != -8225) {
+							if ((~i_2_) != -8226) {
+								if ((~i_2_) == -711) {
 									is[i_1_] = (byte) -120;
 								} else if (i_2_ == 8240) {
 									is[i_1_] = (byte) -119;
-								} else if ((i_2_ ^ 0xffffffff) == -353) {
+								} else if ((~i_2_) == -353) {
 									is[i_1_] = (byte) -118;
-								} else if ((i_2_ ^ 0xffffffff) != -8250) {
+								} else if ((~i_2_) != -8250) {
 									if (i_2_ == 338) {
 										is[i_1_] = (byte) -116;
 									} else if (i_2_ == 381) {
 										is[i_1_] = (byte) -114;
-									} else if ((i_2_ ^ 0xffffffff) == -8217) {
+									} else if ((~i_2_) == -8217) {
 										is[i_1_] = (byte) -111;
 									} else if (i_2_ == 8217) {
 										is[i_1_] = (byte) -110;
 									} else if (i_2_ != 8220) {
 										if (i_2_ == 8221) {
 											is[i_1_] = (byte) -108;
-										} else if ((i_2_ ^ 0xffffffff) == -8227) {
+										} else if ((~i_2_) == -8227) {
 											is[i_1_] = (byte) -107;
-										} else if ((i_2_ ^ 0xffffffff) != -8212) {
+										} else if ((~i_2_) != -8212) {
 											if (i_2_ == 8212) {
 												is[i_1_] = (byte) -105;
-											} else if ((i_2_ ^ 0xffffffff) != -733) {
+											} else if ((~i_2_) != -733) {
 												if (i_2_ != 8482) {
 													if (i_2_ == 353) {
 														is[i_1_] = (byte) -102;
 													} else if (i_2_ != 8250) {
-														if ((i_2_ ^ 0xffffffff) == -340) {
+														if ((~i_2_) == -340) {
 															is[i_1_] = (byte) -100;
 														} else if (i_2_ != 382) {
 															if (i_2_ == 376) {
@@ -189,6 +189,14 @@ public class Miscellaneous {
 			hash = (hash * 61 + name.charAt(i)) - 32;
 		}
 		return hash;
+	}
+
+	public static int[] toPrimitive(Integer[] array) {
+		int[] primitive = new int[array.length];
+		for(int i = 0; i < array.length;i ++) {
+			primitive[i] = array[i];
+		}
+		return primitive;
 	}
 
 }
