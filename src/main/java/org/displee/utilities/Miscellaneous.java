@@ -15,6 +15,22 @@ public class Miscellaneous {
 	 */
 	private static char[] aCharArray6385 = {'€', '\0', '‚', 'ƒ', '„', '…', '†', '‡', 'ˆ', '‰', 'Š', '‹', 'Œ', '\0', 'Ž', '\0', '\0', '‘', '’', '“', '”', '•', '–', '—', '˜', '™', 'š', '›', 'œ', '\0', 'ž', 'Ÿ'};
 
+	private static int[] anIntArray8173 = new int[256];
+
+	static {
+		for (int i = 0; i < 256; i++) {
+			int i_83_ = i;
+			for (int i_84_ = 0; i_84_ < 8; i_84_++) {
+				if (1 == (i_83_ & 0x1)) {
+					i_83_ = i_83_ >>> 1 ^ ~0x12477cdf;
+				} else {
+					i_83_ >>>= 1;
+				}
+			}
+			anIntArray8173[i] = i_83_;
+		}
+	}
+
 	/**
 	 * Converts a string to an byte array.
 	 * @param message The message.
@@ -197,6 +213,17 @@ public class Miscellaneous {
 			primitive[i] = array[i];
 		}
 		return primitive;
+	}
+
+
+
+	public static int method3658(byte[] data, int offset, int length) {
+		int i_11_ = -1;
+		for (int i = offset; i < length; i++) {
+			i_11_ = i_11_ >>> 8 ^ (anIntArray8173[(i_11_ ^ data[i]) & 0xff]);
+		}
+		i_11_ ^= 0xffffffff;
+		return i_11_;
 	}
 
 }

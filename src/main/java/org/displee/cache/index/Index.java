@@ -10,11 +10,8 @@ import org.displee.cache.index.archive.ArchiveSector;
 import org.displee.io.impl.InputStream;
 import org.displee.io.impl.OutputStream;
 import org.displee.progress.ProgressListener;
-import org.displee.utilities.Compression;
+import org.displee.utilities.*;
 import org.displee.utilities.Compression.CompressionType;
-import org.displee.utilities.Constants;
-import org.displee.utilities.HashGenerator;
-import org.displee.utilities.Whirlpool;
 
 /**
  * A class that represents a single index inside the cache.
@@ -67,7 +64,8 @@ public class Index extends ReferenceTable {
 			if (archiveSector == null) {
 				this.randomAccessFile = null;
 			} else {
-				crc = HashGenerator.getCRCHash(archiveSector.getData());
+				byte[] archiveSectorData = archiveSector.getData();
+				crc = Miscellaneous.method3658(archiveSectorData, 0, archiveSectorData.length);
 				whirlpool = Whirlpool.getHash(archiveSector.getData(), 0, archiveSector.getData().length);
 				super.read(new InputStream(Compression.decompress(archiveSector, null)));
 				type = archiveSector.getCompression();
@@ -157,7 +155,7 @@ public class Index extends ReferenceTable {
 			super.revision++;
 			final byte[] indexData = Compression.compress(super.write(new OutputStream()), type, null, -1);
 			byte[] clonedData = indexData.clone();
-			crc = HashGenerator.getCRCHash(clonedData);
+			crc = Miscellaneous.method3658(clonedData, 0, clonedData.length);
 			whirlpool = Whirlpool.getHash(clonedData, 0, clonedData.length);
 			super.origin.getChecksumTable().writeArchiveSector(super.id, indexData);
 		}
