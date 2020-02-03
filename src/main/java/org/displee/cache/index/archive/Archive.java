@@ -273,6 +273,7 @@ public class Archive implements Container {
 		}
 		fileIds = Arrays.copyOf(fileIds, fileIds.length + 1);
 		fileIds[fileIds.length - 1] = id;
+		syncedData = Arrays.copyOf(syncedData, syncedData.length + 1);
 		files = Arrays.copyOf(files, files.length + 1);
 		final File file = new File(id, data, name);
 		files[files.length - 1] = file;
@@ -373,6 +374,7 @@ public class Archive implements Container {
 	public Archive copy() {
 		final Archive archive = new Archive(id, name);
 		archive.fileIds = Arrays.copyOf(fileIds, fileIds.length);
+		archive.syncedData = Arrays.copyOf(syncedData, syncedData.length);
 		archive.files = new File[files.length];
 		for(int i = 0; i < files.length; i++) {
 			archive.files[i] = files[i].copy();
