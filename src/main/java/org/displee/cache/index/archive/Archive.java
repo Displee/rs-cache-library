@@ -357,6 +357,7 @@ public class Archive implements Container {
 	public void reset() {
 		files = new File[0];
 		fileIds = new int[0];
+		syncedData = new byte[0][0];
 	}
 
 	public void restore() {
