@@ -74,14 +74,6 @@ public class File implements Comparable<File> {
 	}
 
 	/**
-	 * Set a new id for this file.
-	 * @param id The new id to set.
-	 */
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	/**
 	 * Set a new unformatted name for this file.
 	 * @param name The new name to set.
 	 */
