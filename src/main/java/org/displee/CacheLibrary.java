@@ -9,11 +9,15 @@ import java.util.Arrays;
 import org.displee.cache.index.ChecksumTable;
 import org.displee.cache.index.Index;
 import org.displee.cache.index.Index317;
+import org.displee.cache.index.archive.Archive;
+import org.displee.cache.index.archive.ArchiveSector;
 import org.displee.io.impl.OutputStream;
 import org.displee.progress.ProgressListener;
 import org.displee.utilities.Compression;
 import org.displee.utilities.Compression.CompressionType;
 import org.displee.utilities.Constants;
+import org.displee.utilities.HashGenerator;
+import org.displee.utilities.Miscellaneous;
 
 /**
  * A class that represents the main entry point of this cache library.
@@ -286,6 +290,36 @@ public class CacheLibrary {
 			indices = Arrays.copyOfRange(indices, 0, indices.length - 1);
 		} catch(Exception exception) {
 			exception.printStackTrace();
+		}
+	}
+
+	public void fixCRCs(boolean update) {
+		for(Index index : indices) {
+			if (index == null || index.getArchiveIds() == null) {
+				continue;
+			}
+			boolean flag = false;
+			for(int i : index.getArchiveIds()) {
+				ArchiveSector sector = index.readArchiveSector(i);
+				int correctCRC = HashGenerator.getCRCHash(sector.getData(), 0, sector.getData().length - 2);
+				Archive archive = index.getArchive(i);
+				int currentCRC = archive.getCRC();
+				if (currentCRC == correctCRC) {
+					continue;
+				}
+				System.out.println("Incorrect CRC in index " + index.getId() + " -> archive " + i + ", current_crc=" + currentCRC + ", correct_crc=" + correctCRC);
+				archive.flag();
+				flag = true;
+			}
+			byte[] sectorData = checksumTable.readArchiveSector(index.getId()).getData();
+			int indexCRC = Miscellaneous.method3658(sectorData, 0, sectorData.length);
+			if (index.getCRC() != indexCRC) {
+				flag = true;
+			}
+			if (flag && update) {
+				index.update();
+			}
+			index.uncache();
 		}
 	}
 
