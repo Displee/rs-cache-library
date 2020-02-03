@@ -6,7 +6,7 @@ import org.displee.cache.index.archive.Archive;
  * A class that represents the a single file inside an {@link Archive}.
  * @author Displee
  */
-public class File {
+public class File implements Comparable<File> {
 
 	/**
 	 * The id of this file.
@@ -50,6 +50,11 @@ public class File {
 		this.id = id;
 		this.data = data;
 		this.name = name;
+	}
+
+	@Override
+	public int compareTo(File o) {
+		return Integer.compare(id, o.id);
 	}
 
 	/**

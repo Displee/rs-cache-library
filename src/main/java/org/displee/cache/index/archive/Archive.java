@@ -271,12 +271,19 @@ public class Archive implements Container {
 			}
 			return current;
 		}
+		if (id < syncedData.length) {
+			syncedData = Miscellaneous.insertAt(syncedData, data, id);
+		} else {
+			syncedData = Arrays.copyOf(syncedData, syncedData.length + 1);
+			syncedData[syncedData.length - 1] = data;
+		}
 		fileIds = Arrays.copyOf(fileIds, fileIds.length + 1);
 		fileIds[fileIds.length - 1] = id;
-		syncedData = Arrays.copyOf(syncedData, syncedData.length + 1);
+		Arrays.sort(fileIds);
 		files = Arrays.copyOf(files, files.length + 1);
 		final File file = new File(id, data, name);
 		files[files.length - 1] = file;
+		Arrays.sort(files);
 		flag();
 		return file;
 

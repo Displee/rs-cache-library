@@ -179,9 +179,8 @@ public class Miscellaneous {
 	/**
 	 * Copies all bytes from the input stream to the output stream. Does not close or flush either
 	 * stream.
-	 *
 	 * @param from the input stream to read from
-	 * @param to the output stream to write to
+	 * @param to   the output stream to write to
 	 * @return the number of bytes copied
 	 */
 	public static long copy(InputStream from, OutputStream to) throws IOException {
@@ -209,13 +208,11 @@ public class Miscellaneous {
 
 	public static int[] toPrimitive(Integer[] array) {
 		int[] primitive = new int[array.length];
-		for(int i = 0; i < array.length;i ++) {
+		for (int i = 0; i < array.length; i++) {
 			primitive[i] = array[i];
 		}
 		return primitive;
 	}
-
-
 
 	public static int method3658(byte[] data, int offset, int length) {
 		int i_11_ = -1;
@@ -224,6 +221,21 @@ public class Miscellaneous {
 		}
 		i_11_ ^= 0xffffffff;
 		return i_11_;
+	}
+
+	public static byte[][] insertAt(byte[][] source, byte[] data, int index) {
+		index++;
+		byte[][] target = new byte[source.length + 1][];
+		for (int i = 0; i < target.length; i++) {
+			if (i < index - 1) {
+				target[i] = source[i];
+			} else if (i == index - 1) {
+				target[i] = data;
+			} else {
+				target[i] = source[i - 1];
+			}
+		}
+		return target;
 	}
 
 }
