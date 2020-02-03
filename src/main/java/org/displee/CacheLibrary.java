@@ -298,28 +298,7 @@ public class CacheLibrary {
 			if (index == null || index.getArchiveIds() == null) {
 				continue;
 			}
-			boolean flag = false;
-			for(int i : index.getArchiveIds()) {
-				ArchiveSector sector = index.readArchiveSector(i);
-				int correctCRC = HashGenerator.getCRCHash(sector.getData(), 0, sector.getData().length - 2);
-				Archive archive = index.getArchive(i);
-				int currentCRC = archive.getCRC();
-				if (currentCRC == correctCRC) {
-					continue;
-				}
-				System.out.println("Incorrect CRC in index " + index.getId() + " -> archive " + i + ", current_crc=" + currentCRC + ", correct_crc=" + correctCRC);
-				archive.flag();
-				flag = true;
-			}
-			byte[] sectorData = checksumTable.readArchiveSector(index.getId()).getData();
-			int indexCRC = Miscellaneous.method3658(sectorData, 0, sectorData.length);
-			if (index.getCRC() != indexCRC) {
-				flag = true;
-			}
-			if (flag && update) {
-				index.update();
-			}
-			index.uncache();
+			index.fixCRCs(update);
 		}
 	}
 

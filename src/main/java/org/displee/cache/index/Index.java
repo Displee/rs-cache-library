@@ -333,6 +333,35 @@ public class Index extends ReferenceTable {
 		}
 	}
 
+	public void fixCRCs(boolean update) {
+		int[] archiveIds = getArchiveIds();
+		if (archiveIds == null) {
+			return;
+		}
+		boolean flag = false;
+		for(int i : archiveIds) {
+			ArchiveSector sector = readArchiveSector(i);
+			int correctCRC = HashGenerator.getCRCHash(sector.getData(), 0, sector.getData().length - 2);
+			Archive archive = getArchive(i);
+			int currentCRC = archive.getCRC();
+			if (currentCRC == correctCRC) {
+				continue;
+			}
+			System.out.println("Incorrect CRC in index " + id + " -> archive " + i + ", current_crc=" + currentCRC + ", correct_crc=" + correctCRC);
+			archive.flag();
+			flag = true;
+		}
+		byte[] sectorData = origin.getChecksumTable().readArchiveSector(id).getData();
+		int indexCRC = Miscellaneous.method3658(sectorData, 0, sectorData.length);
+		if (crc != indexCRC) {
+			flag = true;
+		}
+		if (flag && update) {
+			update();
+		}
+		uncache();
+	}
+
 	/**
 	 * Check if the argued index is equal to this index.
 	 * @param index The id of the index.
