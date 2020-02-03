@@ -82,6 +82,8 @@ public class Archive implements Container {
 	 */
 	private int flag4Value2;
 
+	private byte[][] syncedData;
+
 	/**
 	 * Constructs a new {@code Archive} {@code Object}.
 	 * @param id The id of this archive.
@@ -103,12 +105,13 @@ public class Archive implements Container {
 	@Override
 	public boolean read(InputStream inputStream) {
 		if (fileIds.length == 1) {
+			syncedData[0] = inputStream.getBytes();
 			files[0].setData(inputStream.getBytes());
 		} else {
 			int offsetPosition = inputStream.getBytes().length;
 			int length = inputStream.getBytes()[--offsetPosition] & 0xFF;
 			offsetPosition -= length * (fileIds.length * 4);
-			int filesSize[] = new int[fileIds.length];
+			int[] filesSize = new int[fileIds.length];
 			inputStream.setOffset(offsetPosition);
 			for (int i = 0; i < length; i++) {
 				int offset = 0;
@@ -134,6 +137,7 @@ public class Archive implements Container {
 				}
 			}
 			for (int i = 0; i < fileIds.length; i++) {
+				syncedData[i] = filesData[i];
 				getFile(fileIds[i]).setData(filesData[i]);
 			}
 		}
@@ -146,16 +150,18 @@ public class Archive implements Container {
 			return files[0].getData();
 		} else {
 			for (int i = 0; i < fileIds.length; i++) {
-				final File file = getFile(fileIds[i]);
-				if (file != null && file.getData() != null) {
-					outputStream.writeBytes(file.getData());
+				byte[] data = syncedData[i];
+				if (data == null) {
+					continue;
 				}
+				outputStream.writeBytes(data);
 			}
-			for (int i = 0; i < files.length; i++) {
-				final File file = getFile(fileIds[i]);
-				if (file != null && file.getData() != null) {
-					outputStream.writeInt(file.getData().length - ((i == 0 || getFile(fileIds[i - 1]) == null || getFile(fileIds[i - 1]).getData() == null) ? 0 : getFile(fileIds[i - 1]).getData().length));
+			for (int i = 0; i < fileIds.length; i++) {
+				byte[] data = syncedData[i];
+				if (data == null) {
+					continue;
 				}
+				outputStream.writeInt(data.length - (i == 0 || syncedData[i - 1] == null ? 0 : syncedData[i - 1].length));
 			}
 		}
 		outputStream.writeByte(1);
@@ -253,6 +259,7 @@ public class Archive implements Container {
 			boolean flag = false;
 			if (!Arrays.equals(current.getData(), data)) {
 				current.setData(data);
+				syncedData[id] = data;
 				flag = true;
 			}
 			if (name != -1 && current.getName() != name) {
@@ -455,6 +462,7 @@ public class Archive implements Container {
 	 */
 	public void setFileIds(int length) {
 		fileIds = new int[length];
+		syncedData = new byte[length][];
 	}
 
 	/**
