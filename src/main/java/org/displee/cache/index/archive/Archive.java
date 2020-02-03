@@ -259,7 +259,12 @@ public class Archive implements Container {
 			boolean flag = false;
 			if (!Arrays.equals(current.getData(), data)) {
 				current.setData(data);
-				syncedData[id] = data;
+				if (id >= syncedData.length) {
+					syncedData = Arrays.copyOf(syncedData, syncedData.length + 1);
+					syncedData[syncedData.length - 1] = data;
+				} else {
+					syncedData[id] = data;
+				}
 				flag = true;
 			}
 			if (name != -1 && current.getName() != name) {
