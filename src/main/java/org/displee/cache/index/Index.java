@@ -447,6 +447,10 @@ public class Index extends ReferenceTable {
 		this.crc = crc;
 	}
 
+	public void setCompressionType(CompressionType type) {
+		this.type = type;
+	}
+
 	/**
 	 * Geth the compression type.
 	 * @return {@code type}
