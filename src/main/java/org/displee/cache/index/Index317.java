@@ -83,7 +83,7 @@ public class Index317 extends Index {
 		if (id != 0 && id < VERSION_NAMES.length && updateChecksumTable) {
 			writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::getRevision).toArray(), VERSION_NAMES[id -1], 1);
 			writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::getCRC).toArray(), CRC_NAMES[id - 1], 2);
-			writeArchiveProperties(Arrays.stream(archives).mapToInt(e -> ((Archive317) e).getPriority()).toArray(), INDEX_NAMES[id - 1], id == 2 ? 1 : 0);
+			writeArchiveProperties(Arrays.stream(archives).mapToInt(e -> ((Archive317) e).priority).toArray(), INDEX_NAMES[id - 1], id == 2 ? 1 : 0);
 		}
 		if (listener != null) {
 			listener.notify(100, "Successfully updated index " + id + ".");
@@ -132,7 +132,7 @@ public class Index317 extends Index {
 			archive.setRevision(versions[i]);
 			archive.setCRC(crcs[i]);
 			if (priorities != null) {
-				archive.setPriority(i < priorities.length ? priorities[i] : 0);
+				archive.priority = i < priorities.length ? priorities[i] : 0;
 			}
 		}
 	}
@@ -164,7 +164,7 @@ public class Index317 extends Index {
 					archive.reset();
 					return archive;
 				}
-				((Archive317) archive).setCompressionType(this.id == 0 ? Compression.CompressionType.BZIP2 : Compression.CompressionType.GZIP);
+				((Archive317) archive).compressionType = this.id == 0 ? Compression.CompressionType.BZIP2 : Compression.CompressionType.GZIP;
 				archive.read(new InputStream(archiveSector.getData()));
 				return archive;
 			}
@@ -197,7 +197,7 @@ public class Index317 extends Index {
 		archives = Arrays.copyOf(archives, archives.length + 1);
 		final Archive317 archive = new Archive317(id, name);
 		if (this.id != 0) {
-			archive.setCompressionType(Compression.CompressionType.GZIP);
+			archive.compressionType = Compression.CompressionType.GZIP;
 		}
 		archive.reset();
 		archive.setIsNew(true);

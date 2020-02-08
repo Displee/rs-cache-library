@@ -108,15 +108,16 @@ public class Index extends ReferenceTable {
 	public boolean update(ProgressListener listener, Map<Integer, int[]> map) {
 		boolean updateChecksumTable = false;
 		int updateCount = 0;
+		Archive[] archives = archives();
 		for(Archive archive : archives) {
-			if (archive == null || !archive.isUpdateRequired()) {
+			if (archive == null || !archive.flagged()) {
 				continue;
 			}
 			updateCount++;
 		}
 		double i = 0;
 		for (Archive archive : archives) {
-			if (archive == null || !archive.isUpdateRequired()) {
+			if (archive == null || !archive.flagged()) {
 				continue;
 			}
 			i++;
@@ -128,8 +129,8 @@ public class Index extends ReferenceTable {
 			if (listener != null) {
 				listener.notify((i / updateCount) * 80.0, "Repacking archive " + archive.getId() + "...");
 			}
-			final byte[] compressed = Compression.compress(archive.write(new OutputStream(0)), super.id == 7 ? CompressionType.NONE : CompressionType.GZIP, keys, archive.getRevision());
-			archive.setCRC(HashGenerator.getCRCHash(compressed, 0, compressed.length - 2));
+			final byte[] compressed = Compression.compress(archive.write(), super.id == 7 ? CompressionType.NONE : CompressionType.GZIP, keys, archive.getRevision());
+			archive.setCrc(HashGenerator.getCRCHash(compressed, 0, compressed.length - 2));
 			archive.setWhirlpool(Whirlpool.getHash(compressed, 0, compressed.length - 2));
 			final ArchiveSector backup = readArchiveSector(archive.getId());
 			if (!writeArchiveSector(archive.getId(), compressed)) {
@@ -151,9 +152,11 @@ public class Index extends ReferenceTable {
 		if (listener != null) {
 			listener.notify(85, "Updating checksum table...");
 		}
-		if (updateChecksumTable || super.needUpdate) {
-			super.revision++;
-			final byte[] indexData = Compression.compress(super.write(new OutputStream()), type, null, -1);
+		if (updateChecksumTable && !flagged()) {
+			flag();
+		}
+		if (flagged()) {
+			final byte[] indexData = Compression.compress(super.write(), type, null, -1);
 			byte[] clonedData = indexData.clone();
 			crc = Miscellaneous.method3658(clonedData, 0, clonedData.length);
 			whirlpool = Whirlpool.getHash(clonedData, 0, clonedData.length);
@@ -243,7 +246,7 @@ public class Index extends ReferenceTable {
 				Archive archive = null;
 				ArchiveSector archiveSector = null;
 				if (super.id != 255) {
-					archive = getArchive(id, true);
+					archive = archive(id, null, true);
 				}
 				boolean overWrite = (super.id == 255 && (archiveSector = readArchiveSector(id)) != null) || (archive != null && !archive.isNew());
 				final byte[] buffer = new byte[Constants.ARCHIVE_SIZE];
@@ -334,7 +337,7 @@ public class Index extends ReferenceTable {
 	}
 
 	public void fixCRCs(boolean update) {
-		int[] archiveIds = getArchiveIds();
+		int[] archiveIds = archiveIds();
 		if (archiveIds == null) {
 			return;
 		}
@@ -342,8 +345,8 @@ public class Index extends ReferenceTable {
 		for(int i : archiveIds) {
 			ArchiveSector sector = readArchiveSector(i);
 			int correctCRC = HashGenerator.getCRCHash(sector.getData(), 0, sector.getData().length - 2);
-			Archive archive = getArchive(i);
-			int currentCRC = archive.getCRC();
+			Archive archive = archive(i, null, false);
+			int currentCRC = archive.getCrc();
 			if (currentCRC == correctCRC) {
 				continue;
 			}
@@ -393,9 +396,9 @@ public class Index extends ReferenceTable {
 	 */
 	public boolean cache(int[][] xteas)  {
 		if (!cached) {
-			for (final int archive : super.archiveIds) {
+			for (final int archive : archiveIds()) {
 				try {
-					super.getArchive(archive, xteas == null ? null : xteas[archive]);
+					super.archive(archive, xteas == null ? null : xteas[archive], false);
 				} catch(Throwable t) {
 					t.printStackTrace();
 				}
@@ -409,7 +412,7 @@ public class Index extends ReferenceTable {
 	 * Uncache this index (clears all stored data).
 	 */
 	public void uncache() {
-		for (Archive archive : super.archives) {
+		for (Archive archive : super.archives()) {
 			archive.restore();
 		}
 		cached = false;
@@ -464,7 +467,7 @@ public class Index extends ReferenceTable {
 	 * @return The info.
 	 */
 	public String getInfo() {
-		return "Index[id=" + id + ", archives=" + archives.length + ", compression=" + type + "]";
+		return "Index[id=" + id + ", archives=" + archives.size() + ", compression=" + type + "]";
 	}
 
 	@Override
