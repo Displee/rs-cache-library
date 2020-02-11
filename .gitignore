@@ -15,9 +15,12 @@ bin
 # IntellIJ
 hs_err_pid*
 /.idea/
-
 target
 classes
 
 # Gradle
 .gradle
+
+# Test files
+src/test/java/Test.java
+src/test/kotlin/TestOsrs.kt
