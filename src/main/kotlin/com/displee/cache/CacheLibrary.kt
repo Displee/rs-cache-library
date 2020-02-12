@@ -1,28 +1,27 @@
 package com.displee.cache
 
-import com.displee.cache.index.ChecksumTable
 import com.displee.cache.index.Index
 import com.displee.cache.index.Index.Companion.INDEX_SIZE
 import com.displee.cache.index.Index317
 import com.displee.cache.index.ReferenceTable.Companion.FLAG_NAME
 import com.displee.cache.index.ReferenceTable.Companion.FLAG_WHIRLPOOL
 import com.displee.compress.CompressionType
+import com.displee.io.Buffer
 import com.displee.io.impl.OutputBuffer
-import com.displee.util.Compression
+import com.displee.util.Whirlpool
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.RandomAccessFile
-import java.nio.file.Files
+import java.math.BigInteger
 import java.util.*
-import kotlin.collections.ArrayList
 
 open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = false, private val listener: ProgressListener? = null) {
 
     lateinit var mainFile: RandomAccessFile
 
     private val indices: SortedMap<Int, Index> = TreeMap<Int, Index>()
-    var checksumTable: ChecksumTable? = null
+    var index255: Index? = null
 
     var closed = false
 
@@ -44,15 +43,15 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
             listener?.notify(-1.0, "Error, main file could not be found")
             throw FileNotFoundException("File[path=" + main.absolutePath + "] could not be found.")
         }
-        val index255 = File(path, "main_file_cache.idx255")
-        if (!index255.exists()) {
+        val index255File = File(path, "main_file_cache.idx255")
+        if (!index255File.exists()) {
             listener?.notify(-1.0, "Error, checksum file could not be found.")
-            throw FileNotFoundException("File[path=" + index255.absolutePath + "] could not be found.")
+            throw FileNotFoundException("File[path=" + index255File.absolutePath + "] could not be found.")
         }
-        val checksumTable = ChecksumTable(this, 255, RandomAccessFile(index255, "rw"))
-        this.checksumTable = checksumTable
+        val index255 = Index(this, 255, RandomAccessFile(index255File, "rw"))
+        this.index255 = index255
         listener?.notify(0.0, "Reading indices...")
-        val indicesLength = checksumTable.randomAccessFile.length().toInt() / INDEX_SIZE
+        val indicesLength = index255.raf.length().toInt() / INDEX_SIZE
         for (i in 0 until indicesLength) {
             val file = File(path, "main_file_cache.idx$i")
             val progress = i / (indices.size - 1.0) * 100
@@ -68,7 +67,6 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
                 listener?.notify(progress, "Failed to load index $i...")
             }
         }
-        checksumTable.generate()
     }
 
     @Throws(IOException::class)
@@ -124,23 +122,6 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         return index
     }
 
-    fun rebuild(directory: File) {
-        val indexMetaData = OutputBuffer(6).write24BitInt(0).write24BitInt(0).array()
-        for(index in indices.values) {
-            val file = File(directory.path, "main_file_cache.idx${index.id}")
-            file.createNewFile()
-            Files.write(file.toPath(), indexMetaData)
-        }
-        val checksumFile = File(directory.path, "main_file_cache.idx255")
-        checksumFile.createNewFile()
-        Files.write(checksumFile.toPath(), indexMetaData)
-        File(directory.path,  "main_file_cache.dat2").createNewFile()
-        val newLibrary = CacheLibrary(directory.path)
-        for(index in indices.values) {
-            newLibrary.createIndex(index.isNamed(), index.hasWhirlpool(), index.compressionType)
-        }
-    }
-
     fun index(id: Int): Index? {
         return indices[id]
     }
@@ -167,8 +148,35 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         if (!file.exists() || !file.delete()) {
             throw RuntimeException("Failed to remove the random access file of the argued index[id=" + id + ", file exists=" + file.exists() + "]")
         }
-        checksumTable?.randomAccessFile?.setLength(id * INDEX_SIZE.toLong())
+        index255?.raf?.setLength(id * INDEX_SIZE.toLong())
         indices.remove(id)
+    }
+
+    fun generateOldUkeys(): ByteArray {
+        val buffer = OutputBuffer(indices.size * 8)
+        for (index in indices()) {
+            buffer.writeInt(index.crc)
+            buffer.writeInt(index.revision)
+        }
+        return buffer.array()
+    }
+
+    fun generateNewUkeys(exponent: BigInteger, modulus: BigInteger): ByteArray {
+        val buffer = OutputBuffer(indices.size * 72 + 5)
+        buffer.offset = 5
+        buffer.write(indices.size)
+        val emptyWhirlpool = ByteArray(64)
+        for (index in indices()) {
+            buffer.writeInt(index.crc)
+            buffer.writeInt(index.revision)
+            buffer.write(index.whirlpool ?: emptyWhirlpool)
+        }
+        val indexArray = buffer.array()
+        val whirlpoolBuffer = OutputBuffer(65)
+        whirlpoolBuffer.write(0)//whirlpool = 64 bytes, add 1 byte because Jagex
+        whirlpoolBuffer.write(Whirlpool.generate(indexArray))
+        buffer.write(Buffer.cryptRSA(whirlpoolBuffer.array(), exponent, modulus))
+        return buffer.array()
     }
 
     fun fixCRCs(update: Boolean) {
@@ -185,7 +193,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
             return
         }
         mainFile.close()
-        checksumTable?.close()
+        index255?.close()
         indices.values.forEach { it.close() }
         closed = true
     }
@@ -205,7 +213,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     }
 
     fun is317(): Boolean {
-        return checksumTable == null
+        return index255 == null
     }
 
     fun isOSRS(): Boolean {

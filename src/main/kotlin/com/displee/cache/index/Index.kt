@@ -9,11 +9,11 @@ import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
 import com.displee.util.CRCHash
 import com.displee.util.Compression
-import com.displee.util.Utils
 import com.displee.util.Whirlpool
+import com.displee.util.generateCrc
 import java.io.RandomAccessFile
 
-open class Index(origin: CacheLibrary, id: Int, var randomAccessFile: RandomAccessFile) : ReferenceTable(origin, id) {
+open class Index(origin: CacheLibrary, id: Int, var raf: RandomAccessFile) : ReferenceTable(origin, id) {
 
     var crc = 0
     var whirlpool: ByteArray? = null
@@ -31,9 +31,9 @@ open class Index(origin: CacheLibrary, id: Int, var randomAccessFile: RandomAcce
         if (id < 0 || id >= 255) {
             return
         }
-        val archiveSector = origin.checksumTable?.readArchiveSector(id) ?: return
+        val archiveSector = origin.index255?.readArchiveSector(id) ?: return
         val archiveSectorData = archiveSector.data
-        crc = Utils.generateCrc(archiveSectorData)
+        crc = generateCrc(archiveSectorData)
         whirlpool = Whirlpool.generate(archiveSectorData, 0, archiveSectorData.size)
         read(InputBuffer(Compression.decompress(archiveSector)))
         compressionType = archiveSector.compressionType
@@ -94,9 +94,9 @@ open class Index(origin: CacheLibrary, id: Int, var randomAccessFile: RandomAcce
         }
         if (flagged()) {
             val indexData = Compression.compress(write(), compressionType)
-            crc = Utils.generateCrc(indexData)
+            crc = generateCrc(indexData)
             whirlpool = Whirlpool.generate(indexData, 0, indexData.size)
-            val written = origin.checksumTable?.writeArchiveSector(this.id, indexData) ?: false
+            val written = origin.index255?.writeArchiveSector(this.id, indexData) ?: false
             check(written) { "Unable to write data to checksum table. Your cache may be corrupt." }
         }
         listener?.notify(100.0, "Successfully updated index $id.")
@@ -111,17 +111,18 @@ open class Index(origin: CacheLibrary, id: Int, var randomAccessFile: RandomAcce
                     return null
                 }
                 val sectorData = ByteArray(SECTOR_SIZE)
-                randomAccessFile.seek(id.toLong() * INDEX_SIZE)
-                randomAccessFile.read(sectorData, 0, INDEX_SIZE)
+                raf.seek(id.toLong() * INDEX_SIZE)
+                raf.read(sectorData, 0, INDEX_SIZE)
+                val bigSector = id > 65535
                 val buffer = InputBuffer(sectorData)
-                val archiveSector = ArchiveSector(id > 65535, buffer.read24BitInt(), buffer.read24BitInt())
+                val archiveSector = ArchiveSector(bigSector, buffer.read24BitInt(), buffer.read24BitInt())
                 if (archiveSector.size < 0 || archiveSector.position <= 0 || archiveSector.position > origin.mainFile.length() / SECTOR_SIZE) {
                     return null
                 }
                 var read = 0
                 var chunk = 0
-                val sectorHeaderSize = SECTOR_HEADER_SIZE + if (id > 65535) 2 else 0
-                val sectorDataSize = SECTOR_DATA_SIZE - if (id > 65535) 2 else 0
+                val sectorHeaderSize = if (bigSector) SECTOR_HEADER_SIZE_BIG else SECTOR_HEADER_SIZE_SMALL
+                val sectorDataSize = if (bigSector) SECTOR_DATA_SIZE_BIG else SECTOR_DATA_SIZE_SMALL
                 while (read < archiveSector.size) {
                     if (archiveSector.position == 0) {
                         return null
@@ -166,14 +167,15 @@ open class Index(origin: CacheLibrary, id: Int, var randomAccessFile: RandomAcce
                 }
                 var overWrite = (this.id == 255 && archiveSector != null) || !(archive?.new ?: false)
                 val sectorData = ByteArray(SECTOR_SIZE)
+                val bigSector = id > 65535
                 if (overWrite) {
-                    if (INDEX_SIZE * id + INDEX_SIZE > randomAccessFile.length()) {
+                    if (INDEX_SIZE * id + INDEX_SIZE > raf.length()) {
                         return false
                     }
-                    randomAccessFile.seek(id.toLong() * INDEX_SIZE)
-                    randomAccessFile.read(sectorData, 0, INDEX_SIZE)
+                    raf.seek(id.toLong() * INDEX_SIZE)
+                    raf.read(sectorData, 0, INDEX_SIZE)
                     val buffer = InputBuffer(sectorData)
-                    buffer.offset = 3
+                    buffer.jump(3)
                     position = buffer.read24BitInt()
                     if (position <= 0 || position > origin.mainFile.length() / SECTOR_SIZE) {
                         return false
@@ -183,18 +185,18 @@ open class Index(origin: CacheLibrary, id: Int, var randomAccessFile: RandomAcce
                     if (position == 0) {
                         position = 1
                     }
-                    archiveSector = ArchiveSector(id > 65535, data.size, position, id, indexToWrite(this.id))
+                    archiveSector = ArchiveSector(bigSector, data.size, position, id, indexToWrite(this.id))
                 }
                 archiveSector ?: return false
                 val buffer = OutputBuffer(6)
                 buffer.write24BitInt(data.size)
                 buffer.write24BitInt(position)
-                randomAccessFile.seek(id.toLong() * INDEX_SIZE)
-                randomAccessFile.write(buffer.array(), 0, INDEX_SIZE)
+                raf.seek(id.toLong() * INDEX_SIZE)
+                raf.write(buffer.array(), 0, INDEX_SIZE)
                 var written = 0
                 var chunk = 0
-                val archiveHeaderSize = SECTOR_HEADER_SIZE + if (id > 65535) 2 else 0
-                val archiveDataSize = SECTOR_DATA_SIZE - if (id > 65535) 2 else 0
+                val archiveHeaderSize = if (bigSector) SECTOR_HEADER_SIZE_BIG else SECTOR_HEADER_SIZE_SMALL
+                val archiveDataSize = if (bigSector) SECTOR_DATA_SIZE_BIG else SECTOR_DATA_SIZE_SMALL
                 while (written < data.size) {
                     var currentPosition = 0
                     if (overWrite) {
@@ -259,8 +261,8 @@ open class Index(origin: CacheLibrary, id: Int, var randomAccessFile: RandomAcce
             archive.flag()
             flag = true
         }
-        val sectorData = origin.checksumTable?.readArchiveSector(id)?.data ?: return
-        val indexCRC = Utils.generateCrc(sectorData)
+        val sectorData = origin.index255?.readArchiveSector(id)?.data ?: return
+        val indexCRC = generateCrc(sectorData)
         if (crc != indexCRC) {
             flag = true
         }
@@ -277,7 +279,7 @@ open class Index(origin: CacheLibrary, id: Int, var randomAccessFile: RandomAcce
         if (closed) {
             return
         }
-        randomAccessFile.close()
+        raf.close()
         closed = true
     }
 
@@ -296,9 +298,11 @@ open class Index(origin: CacheLibrary, id: Int, var randomAccessFile: RandomAcce
     companion object {
 
         const val INDEX_SIZE = 6
-        const val SECTOR_HEADER_SIZE = 8
-        const val SECTOR_DATA_SIZE = 512
-        const val SECTOR_SIZE = SECTOR_HEADER_SIZE + SECTOR_DATA_SIZE
+        const val SECTOR_HEADER_SIZE_SMALL = 8
+        const val SECTOR_DATA_SIZE_SMALL = 512
+        const val SECTOR_HEADER_SIZE_BIG = 10
+        const val SECTOR_DATA_SIZE_BIG = 510
+        const val SECTOR_SIZE = 520
         const val WHIRLPOOL_SIZE = 64
 
     }

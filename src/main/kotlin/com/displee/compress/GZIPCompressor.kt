@@ -1,86 +1,84 @@
-package com.displee.compress;
+package com.displee.compress
 
-import com.displee.io.impl.InputBuffer;
+import com.displee.io.impl.InputBuffer
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.util.zip.GZIPInputStream
+import java.util.zip.GZIPOutputStream
+import java.util.zip.Inflater
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.zip.DeflaterOutputStream;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
-import java.util.zip.Inflater;
+object GZIPCompressor {
 
-public class GZIPCompressor {
+    private var inflater: Inflater? = null
+    private val gzipBuffer = ByteArray(1000000)
 
-	private static Inflater inflater;
-	private static byte[] gzipBuffer = new byte[1000000];
+    fun inflate(buffer: InputBuffer, data: ByteArray?): Boolean {
+        val bytes = buffer.raw()
+        val offset = buffer.offset
+        if (bytes[offset].toInt() != 31 || bytes[offset + 1].toInt() != -117) {
+            return false
+        }
+        if (inflater == null) {
+            inflater = Inflater(true)
+        }
+        try {
+            inflater!!.setInput(bytes, offset + 10, bytes.size - (10 + offset + 8))
+            inflater!!.inflate(data)
+        } catch (exception: Exception) {
+            inflater!!.reset()
+            return false
+        }
+        inflater!!.reset()
+        return true
+    }
 
-	public static boolean inflate(InputBuffer buffer, byte[] data) {
-		byte[] bytes = buffer.raw();
-		int offset = buffer.getOffset();
-		if (bytes[offset] != 31 || bytes[offset + 1] != -117) {
-			return false;
-		}
-		if (inflater == null) {
-			inflater = new Inflater(true);
-		}
-		try {
-			inflater.setInput(bytes, offset + 10, bytes.length - (10 + offset + 8));
-			inflater.inflate(data);
-		} catch (Exception exception) {
-			inflater.reset();
-			return false;
-		}
-		inflater.reset();
-		return true;
-	}
+    fun deflate(data: ByteArray): ByteArray {
+        val compressed = ByteArrayOutputStream()
+        try {
+            val gzipOutputStream = GZIPOutputStream(compressed)
+            gzipOutputStream.write(data)
+            gzipOutputStream.finish()
+            gzipOutputStream.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return compressed.toByteArray()
+    }
 
-	public static byte[] inflate317(byte[] uncompressed) {
-		try {
-			ByteArrayOutputStream bout = new ByteArrayOutputStream();
-			try (DeflaterOutputStream os = new GZIPOutputStream(bout)) {
-				os.write(uncompressed);
-				os.finish();
-				return bout.toByteArray();
-			}
-		} catch (IOException e) {
-			return null;
-		}
-	}
+    fun inflate317(uncompressed: ByteArray): ByteArray {
+        val bout = ByteArrayOutputStream()
+        try {
+            GZIPOutputStream(bout).use { os ->
+                os.write(uncompressed)
+                os.finish()
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        return bout.toByteArray()
+    }
 
-	public static byte[] deflate(byte[] data) {
-		ByteArrayOutputStream compressed = new ByteArrayOutputStream();
-		try {
-			GZIPOutputStream gzipOutputStream = new GZIPOutputStream(compressed);
-			gzipOutputStream.write(data);
-			gzipOutputStream.finish();
-			gzipOutputStream.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return compressed.toByteArray();
-	}
-
-	public static byte[] deflate317(byte[] data) {
-		int read = 0;
-		try {
-			GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(data));
-			do {
-				if (read == gzipBuffer.length) {
-					throw new RuntimeException("buffer overflow!");
-				}
-				int in = gis.read(gzipBuffer, read, gzipBuffer.length - read);
-				if (in == -1) {
-					break;
-				}
-				read += in;
-			} while (true);
-		} catch (IOException ex) {
-			throw new RuntimeException("error unzipping");
-		}
-		byte[] deflated = new byte[read];
-		System.arraycopy(gzipBuffer, 0, deflated, 0, deflated.length);
-		return deflated;
-	}
+    fun deflate317(data: ByteArray?): ByteArray {
+        var read = 0
+        try {
+            val gis = GZIPInputStream(ByteArrayInputStream(data))
+            do {
+                if (read == gzipBuffer.size) {
+                    throw RuntimeException("buffer overflow!")
+                }
+                val length = gis.read(gzipBuffer, read, gzipBuffer.size - read)
+                if (length == -1) {
+                    break
+                }
+                read += length
+            } while (true)
+        } catch (ex: IOException) {
+            throw RuntimeException("error unzipping")
+        }
+        val deflated = ByteArray(read)
+        System.arraycopy(gzipBuffer, 0, deflated, 0, deflated.size)
+        return deflated
+    }
 
 }

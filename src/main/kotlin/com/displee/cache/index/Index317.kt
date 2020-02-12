@@ -7,7 +7,6 @@ import com.displee.cache.index.archive.Archive317
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
 import com.displee.util.CRCHash
-import com.displee.util.Utils
 import com.displee.util.Whirlpool
 import com.displee.util.hashCode317
 import java.io.IOException
@@ -53,7 +52,7 @@ class Index317(origin: CacheLibrary, id: Int, randomAccessFile: RandomAccessFile
 
     override fun init() {
         val archiveLength = try {
-            (randomAccessFile.length() / INDEX_SIZE.toLong()).toInt()
+            (raf.length() / INDEX_SIZE.toLong()).toInt()
         } catch (e: IOException) {
             e.printStackTrace()
             return

@@ -6,7 +6,6 @@ import com.displee.compress.CompressionType
 import com.displee.compress.GZIPCompressor
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
-import com.displee.util.Utils
 import com.displee.util.hashCode317
 
 class Archive317 : Archive {
@@ -15,6 +14,7 @@ class Archive317 : Archive {
     var priority = 0
 
     constructor(id: Int) : super(id)
+
     constructor(id: Int, name: Int) : super(id, name)
 
     override fun read(buffer: InputBuffer) {
@@ -51,8 +51,7 @@ class Archive317 : Archive {
 
     override fun write(): ByteArray {
         if (compressionType == CompressionType.GZIP) {
-            val first = first()
-            return GZIPCompressor.inflate317(if (first == null) ByteArray(0) else first.data)
+            return GZIPCompressor.inflate317(first()?.data ?: ByteArray(0))
         }
         val metaBuffer = OutputBuffer(10 * files.size)
         val files: Collection<File> = files.values
