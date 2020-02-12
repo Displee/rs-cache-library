@@ -84,7 +84,7 @@ class Index317(origin: CacheLibrary, id: Int, randomAccessFile: RandomAccessFile
     }
 
     override fun write(): ByteArray {
-        return ByteArray(0)
+        return byteArrayOf()
     }
 
     private fun readArchiveProperties(fileId: String, type: BufferType): IntArray? {

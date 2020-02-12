@@ -51,7 +51,7 @@ class Archive317 : Archive {
 
     override fun write(): ByteArray {
         if (compressionType == CompressionType.GZIP) {
-            return GZIPCompressor.inflate317(first()?.data ?: ByteArray(0))
+            return GZIPCompressor.inflate317(first()?.data ?: byteArrayOf())
         }
         val metaBuffer = OutputBuffer(10 * files.size)
         val files: Collection<File> = files.values

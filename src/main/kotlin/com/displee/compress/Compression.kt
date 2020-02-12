@@ -43,7 +43,7 @@ fun decompress(archiveSector: ArchiveSector, keys: IntArray? = null): ByteArray 
     when (compressionType) {
         CompressionType.NONE -> decompressed = inputStream.read(compressedSize)
         CompressionType.BZIP2 -> BZIP2Compressor.decompress(decompressed, decompressed.size, archiveSector.data, compressedSize, 9)
-        CompressionType.GZIP -> if (!GZIPCompressor.inflate(inputStream, decompressed)) return ByteArray(0)
+        CompressionType.GZIP -> if (!GZIPCompressor.inflate(inputStream, decompressed)) return byteArrayOf()
         CompressionType.LZMA -> decompressed = LZMACompressor.decompress(inputStream, decompressedSize)
     }
     return decompressed
