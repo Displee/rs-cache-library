@@ -6,16 +6,16 @@ import com.displee.cache.index.archive.Archive
 import com.displee.cache.index.archive.Archive317
 import com.displee.cache.index.archive.file.File
 import com.displee.compress.CompressionType
+import com.displee.compress.decompress
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
-import com.displee.util.Compression
 import java.util.*
 import kotlin.collections.ArrayList
 
 open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
 
     var revision = 0
-    var mask = 0x0
+    private var mask = 0x0
     private var needUpdate = false
     protected var archives: SortedMap<Int, Archive> = TreeMap()
 
@@ -242,7 +242,7 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
             if (is317) {
                 (archive as Archive317).compressionType = if (this.id == 0) CompressionType.BZIP2 else CompressionType.GZIP
             }
-            archive.read(InputBuffer(Compression.decompress(sector, xtea)))
+            archive.read(InputBuffer(decompress(sector, xtea)))
             archive.compressionType = sector.compressionType
             val mapsIndex = if (is317) 4 else 5
             if (this.id == mapsIndex && !archive.containsData()) {
@@ -331,6 +331,10 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
 
     fun flagMask(flag: Int) {
         mask = mask or flag
+    }
+
+    fun unFlagMask(flag: Int) {
+        mask = mask and flag.inv()
     }
 
     fun isNamed(): Boolean {

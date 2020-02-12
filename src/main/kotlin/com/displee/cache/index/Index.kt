@@ -5,15 +5,16 @@ import com.displee.cache.ProgressListener
 import com.displee.cache.index.archive.Archive
 import com.displee.cache.index.archive.ArchiveSector
 import com.displee.compress.CompressionType
+import com.displee.compress.compress
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
 import com.displee.util.CRCHash
-import com.displee.util.Compression
+import com.displee.compress.decompress
 import com.displee.util.Whirlpool
 import com.displee.util.generateCrc
 import java.io.RandomAccessFile
 
-open class Index(origin: CacheLibrary, id: Int, var raf: RandomAccessFile) : ReferenceTable(origin, id) {
+open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : ReferenceTable(origin, id) {
 
     var crc = 0
     var whirlpool: ByteArray? = null
@@ -21,7 +22,7 @@ open class Index(origin: CacheLibrary, id: Int, var raf: RandomAccessFile) : Ref
     private var cached = false
     protected var closed = false
 
-    val info: String get() = "Index[id=" + id + ", archives=" + archives.size + ", compression=" + compressionType + "]"
+    val info get() = "Index[id=" + id + ", archives=" + archives.size + ", compression=" + compressionType + "]"
 
     init {
         init()
@@ -35,7 +36,7 @@ open class Index(origin: CacheLibrary, id: Int, var raf: RandomAccessFile) : Ref
         val archiveSectorData = archiveSector.data
         crc = generateCrc(archiveSectorData)
         whirlpool = Whirlpool.generate(archiveSectorData, 0, archiveSectorData.size)
-        read(InputBuffer(Compression.decompress(archiveSector)))
+        read(InputBuffer(decompress(archiveSector)))
         compressionType = archiveSector.compressionType
     }
 
@@ -79,7 +80,7 @@ open class Index(origin: CacheLibrary, id: Int, var raf: RandomAccessFile) : Ref
             i++
             it.unFlag()
             listener?.notify(i / updateCount * 80.0, "Repacking archive ${it.id}...")
-            val compressed = Compression.compress(it.write(), compressionType, xteas[it.id], it.revision)
+            val compressed = compress(it.write(), it.compressionType, xteas[it.id], it.revision)
             it.crc = CRCHash.generate(compressed, 0, compressed.size - 2)
             it.whirlpool = Whirlpool.generate(compressed, 0, compressed.size - 2)
             val written = writeArchiveSector(it.id, compressed)
@@ -93,7 +94,7 @@ open class Index(origin: CacheLibrary, id: Int, var raf: RandomAccessFile) : Ref
             flag()
         }
         if (flagged()) {
-            val indexData = Compression.compress(write(), compressionType)
+            val indexData = compress(write(), compressionType)
             crc = generateCrc(indexData)
             whirlpool = Whirlpool.generate(indexData, 0, indexData.size)
             val written = origin.index255?.writeArchiveSector(this.id, indexData) ?: false
@@ -247,6 +248,9 @@ open class Index(origin: CacheLibrary, id: Int, var raf: RandomAccessFile) : Ref
 
     fun fixCRCs(update: Boolean) {
         check(!closed) { "Index is closed." }
+        if (is317()) {
+            return
+        }
         val archiveIds = archiveIds()
         var flag = false
         for (i in archiveIds) {
@@ -289,6 +293,10 @@ open class Index(origin: CacheLibrary, id: Int, var raf: RandomAccessFile) : Ref
 
     protected open fun indexToWrite(index: Int): Int {
         return index
+    }
+
+    fun is317(): Boolean {
+        return this is Index317
     }
 
     override fun toString(): String {

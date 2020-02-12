@@ -2,6 +2,7 @@ package com.displee.cache
 
 import com.displee.cache.index.Index
 import com.displee.cache.index.Index.Companion.INDEX_SIZE
+import com.displee.cache.index.Index255
 import com.displee.cache.index.Index317
 import com.displee.cache.index.ReferenceTable.Companion.FLAG_NAME
 import com.displee.cache.index.ReferenceTable.Companion.FLAG_WHIRLPOOL
@@ -21,7 +22,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     lateinit var mainFile: RandomAccessFile
 
     private val indices: SortedMap<Int, Index> = TreeMap<Int, Index>()
-    var index255: Index? = null
+    var index255: Index255? = null
 
     var closed = false
 
@@ -48,7 +49,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
             listener?.notify(-1.0, "Error, checksum file could not be found.")
             throw FileNotFoundException("File[path=" + index255File.absolutePath + "] could not be found.")
         }
-        val index255 = Index(this, 255, RandomAccessFile(index255File, "rw"))
+        val index255 = Index255(this, RandomAccessFile(index255File, "rw"))
         this.index255 = index255
         listener?.notify(0.0, "Reading indices...")
         val indicesLength = index255.raf.length().toInt() / INDEX_SIZE
