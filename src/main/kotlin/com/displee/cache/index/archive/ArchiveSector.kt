@@ -6,7 +6,7 @@ import com.displee.compress.CompressionType
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
 
-class ArchiveSector(private val bigHeader: Boolean, val size: Int, var position: Int, var id: Int = 0, var index: Int = 0) {
+class ArchiveSector(private val bigSector: Boolean, val size: Int, var position: Int, var id: Int = 0, var index: Int = 0) {
 
     var chunk = 0
     var nextPosition = 0
@@ -15,7 +15,7 @@ class ArchiveSector(private val bigHeader: Boolean, val size: Int, var position:
     lateinit var compressionType: CompressionType
 
     fun read(buffer: InputBuffer) {
-        id = if (bigHeader) {
+        id = if (bigSector) {
             buffer.readInt()
         } else {
             buffer.readUnsignedShort()
@@ -26,8 +26,8 @@ class ArchiveSector(private val bigHeader: Boolean, val size: Int, var position:
     }
 
     fun write(): ByteArray {
-        val buffer = OutputBuffer(if (bigHeader) SECTOR_HEADER_SIZE_BIG else SECTOR_HEADER_SIZE_SMALL)
-        if (bigHeader) {
+        val buffer = OutputBuffer(if (bigSector) SECTOR_HEADER_SIZE_BIG else SECTOR_HEADER_SIZE_SMALL)
+        if (bigSector) {
             buffer.writeInt(id)
         } else {
             buffer.writeShort(id)
