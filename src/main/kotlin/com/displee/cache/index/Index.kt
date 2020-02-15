@@ -6,10 +6,10 @@ import com.displee.cache.index.archive.Archive
 import com.displee.cache.index.archive.ArchiveSector
 import com.displee.compress.CompressionType
 import com.displee.compress.compress
+import com.displee.compress.decompress
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
 import com.displee.util.CRCHash
-import com.displee.compress.decompress
 import com.displee.util.Whirlpool
 import com.displee.util.generateCrc
 import java.io.RandomAccessFile
@@ -34,24 +34,29 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         }
         val archiveSector = origin.index255?.readArchiveSector(id) ?: return
         val archiveSectorData = archiveSector.data
-        crc = generateCrc(archiveSectorData)
+        crc = archiveSectorData.generateCrc()
         whirlpool = Whirlpool.generate(archiveSectorData, 0, archiveSectorData.size)
-        read(InputBuffer(decompress(archiveSector)))
+        read(InputBuffer(archiveSector.decompress()))
         compressionType = archiveSector.compressionType
     }
 
-    fun cache() {
-        cache(emptyMap())
+    fun cacheByName(namedXteas: Map<String, IntArray>) {
+        val xteas = mutableMapOf<Int, IntArray>()
+        namedXteas.forEach {
+            xteas[archiveId(it.key)] = it.value
+        }
+        cache(xteas)
     }
 
-    fun cache(xteas: Map<Int, IntArray> = emptyMap()) {
+    @JvmOverloads
+    fun cache(xteas: MutableMap<Int, IntArray> = mutableMapOf()) {
         check(!closed) { "Index is closed." }
         if (cached) {
             return
         }
-        for (archiveId in archiveIds()) {
+        archiveIds().forEach {
             try {
-                archive(archiveId, xteas[archiveId], false)
+                archive(it, xteas[it], false)
             } catch (t: Throwable) {
                 t.printStackTrace()
             }
@@ -78,9 +83,10 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
                 return@forEach
             }
             i++
+            it.revision++
             it.unFlag()
             listener?.notify(i / updateCount * 80.0, "Repacking archive ${it.id}...")
-            val compressed = compress(it.write(), it.compressionType, xteas[it.id], it.revision)
+            val compressed = it.write().compress(it.compressionType ?: CompressionType.GZIP, xteas[it.id], it.revision)
             it.crc = CRCHash.generate(compressed, 0, compressed.size - 2)
             it.whirlpool = Whirlpool.generate(compressed, 0, compressed.size - 2)
             val written = writeArchiveSector(it.id, compressed)
@@ -94,8 +100,8 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
             flag()
         }
         if (flagged()) {
-            val indexData = compress(write(), compressionType)
-            crc = generateCrc(indexData)
+            val indexData = write().compress(compressionType)
+            crc = indexData.generateCrc()
             whirlpool = Whirlpool.generate(indexData, 0, indexData.size)
             val written = origin.index255?.writeArchiveSector(this.id, indexData) ?: false
             check(written) { "Unable to write data to checksum table. Your cache may be corrupt." }
@@ -266,7 +272,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
             flag = true
         }
         val sectorData = origin.index255?.readArchiveSector(id)?.data ?: return
-        val indexCRC = generateCrc(sectorData)
+        val indexCRC = sectorData.generateCrc()
         if (crc != indexCRC) {
             flag = true
         }
@@ -295,16 +301,11 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         return index
     }
 
-    fun is317(): Boolean {
-        return this is Index317
-    }
-
     override fun toString(): String {
         return "Index $id"
     }
 
     companion object {
-
         const val INDEX_SIZE = 6
         const val SECTOR_HEADER_SIZE_SMALL = 8
         const val SECTOR_DATA_SIZE_SMALL = 512
@@ -312,7 +313,6 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         const val SECTOR_DATA_SIZE_BIG = 510
         const val SECTOR_SIZE = 520
         const val WHIRLPOOL_SIZE = 64
-
     }
 
 }

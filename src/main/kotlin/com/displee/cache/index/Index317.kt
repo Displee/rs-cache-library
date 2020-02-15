@@ -26,6 +26,7 @@ class Index317(origin: CacheLibrary, id: Int, randomAccessFile: RandomAccessFile
                 return@forEach
             }
             i++
+            it.revision++
             it.unFlag()
             listener?.notify(i / updateCount * 80.0, "Repacking archive ${it.id}...")
             val compressed = it.write()
@@ -91,7 +92,7 @@ class Index317(origin: CacheLibrary, id: Int, randomAccessFile: RandomAccessFile
         if (id == CONFIG_INDEX || id == MAPS_INDEX || id > VERSION_NAMES.size) {
             return null
         }
-        val data = origin.index(CONFIG_INDEX)?.archive(VERSION_ARCHIVE)?.file(fileId)?.data
+        val data = origin.index(CONFIG_INDEX).archive(VERSION_ARCHIVE)?.file(fileId)?.data
         if (data == null) {
             System.err.println("Missing file data for $fileId, type=$type.")
             return null
@@ -132,7 +133,7 @@ class Index317(origin: CacheLibrary, id: Int, randomAccessFile: RandomAccessFile
             }
         }
         properties.forEach(bufferFun)
-        val index = origin.index(CONFIG_INDEX) ?: return false
+        val index = origin.index(CONFIG_INDEX)
         index.archive(VERSION_ARCHIVE)?.add(fileId, buffer.array())
         return index.update()
     }

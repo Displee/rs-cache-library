@@ -1,10 +1,14 @@
 package com.displee.compress
 
 import com.displee.cache.index.archive.ArchiveSector
+import com.displee.compress.type.BZIP2Compressor
+import com.displee.compress.type.GZIPCompressor
+import com.displee.compress.type.LZMACompressor
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
 
-fun compress(uncompressed: ByteArray, compressionType: CompressionType, xteas: IntArray? = null, revision: Int = -1): ByteArray {
+fun ByteArray.compress(compressionType: CompressionType, xteas: IntArray? = null, revision: Int = -1): ByteArray {
+    val uncompressed = this
     val compressed: ByteArray = when (compressionType) {
         CompressionType.NONE -> uncompressed
         CompressionType.BZIP2 -> BZIP2Compressor.compress(uncompressed)
@@ -26,25 +30,25 @@ fun compress(uncompressed: ByteArray, compressionType: CompressionType, xteas: I
     return buffer.array()
 }
 
-fun decompress(archiveSector: ArchiveSector, keys: IntArray? = null): ByteArray {
-    val packedData = archiveSector.data
-    val inputStream = InputBuffer(packedData)
+fun ArchiveSector.decompress(keys: IntArray? = null): ByteArray {
+    val compressedData = data
+    val buffer = InputBuffer(compressedData)
     if (keys != null && (keys[0] != 0 || keys[1] != 0 || keys[2] != 0 || 0 != keys[3])) {
-        inputStream.decryptXTEA(keys, 5, packedData.size)
+        buffer.decryptXTEA(keys, 5, compressedData.size)
     }
-    val type = inputStream.readUnsigned()
-    val compressionType = CompressionType.compressionTypes[type].also { archiveSector.compressionType = it }
-    val compressedSize = inputStream.readInt() and 0xFFFFFF
+    val type = buffer.readUnsigned()
+    val compressionType = CompressionType.compressionTypes[type].also { compressionType = it }
+    val compressedSize = buffer.readInt() and 0xFFFFFF
     var decompressedSize = 0
     if (compressionType != CompressionType.NONE) {
-        decompressedSize = inputStream.readInt() and 0xFFFFFF
+        decompressedSize = buffer.readInt() and 0xFFFFFF
     }
     var decompressed = ByteArray(decompressedSize)
     when (compressionType) {
-        CompressionType.NONE -> decompressed = inputStream.read(compressedSize)
-        CompressionType.BZIP2 -> BZIP2Compressor.decompress(decompressed, decompressed.size, archiveSector.data, compressedSize, 9)
-        CompressionType.GZIP -> if (!GZIPCompressor.inflate(inputStream, decompressed)) return byteArrayOf()
-        CompressionType.LZMA -> decompressed = LZMACompressor.decompress(inputStream, decompressedSize)
+        CompressionType.NONE -> decompressed = buffer.read(compressedSize)
+        CompressionType.BZIP2 -> BZIP2Compressor.decompress(decompressed, decompressed.size, compressedData, compressedSize, 9)
+        CompressionType.GZIP -> if (!GZIPCompressor.inflate(buffer, decompressed)) return byteArrayOf()
+        CompressionType.LZMA -> decompressed = LZMACompressor.decompress(buffer, decompressedSize)
     }
     return decompressed
 }

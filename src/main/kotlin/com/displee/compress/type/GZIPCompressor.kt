@@ -1,4 +1,4 @@
-package com.displee.compress
+package com.displee.compress.type
 
 import com.displee.io.impl.InputBuffer
 import java.io.ByteArrayInputStream
@@ -11,25 +11,23 @@ import java.util.zip.Inflater
 object GZIPCompressor {
 
     private var inflater: Inflater? = null
-    private val gzipBuffer = ByteArray(1000000)
+    private val gzipBuffer = ByteArray(1000000) //because in 317 Jagex stores a lot of data in one file
 
-    fun inflate(buffer: InputBuffer, data: ByteArray?): Boolean {
+    fun inflate(buffer: InputBuffer, data: ByteArray): Boolean {
         val bytes = buffer.raw()
         val offset = buffer.offset
         if (bytes[offset].toInt() != 31 || bytes[offset + 1].toInt() != -117) {
             return false
         }
-        if (inflater == null) {
-            inflater = Inflater(true)
-        }
+        val inflater = this.inflater ?: Inflater(true).also { inflater = it }
         try {
-            inflater!!.setInput(bytes, offset + 10, bytes.size - (10 + offset + 8))
-            inflater!!.inflate(data)
+            inflater.setInput(bytes, offset + 10, bytes.size - (10 + offset + 8))
+            inflater.inflate(data)
         } catch (exception: Exception) {
-            inflater!!.reset()
+            inflater.reset()
             return false
         }
-        inflater!!.reset()
+        inflater.reset()
         return true
     }
 
@@ -63,7 +61,7 @@ object GZIPCompressor {
         var read = 0
         try {
             val gis = GZIPInputStream(ByteArrayInputStream(data))
-            do {
+            while (true) {
                 if (read == gzipBuffer.size) {
                     throw RuntimeException("buffer overflow!")
                 }
@@ -72,7 +70,7 @@ object GZIPCompressor {
                     break
                 }
                 read += length
-            } while (true)
+            }
         } catch (ex: IOException) {
             throw RuntimeException("error unzipping")
         }

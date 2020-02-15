@@ -1,4 +1,4 @@
-package com.displee.compress
+package com.displee.compress.type
 
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer

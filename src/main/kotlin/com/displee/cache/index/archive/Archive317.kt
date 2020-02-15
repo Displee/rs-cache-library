@@ -1,9 +1,9 @@
 package com.displee.cache.index.archive
 
 import com.displee.cache.index.archive.file.File
-import com.displee.compress.BZIP2Compressor
 import com.displee.compress.CompressionType
-import com.displee.compress.GZIPCompressor
+import com.displee.compress.type.BZIP2Compressor
+import com.displee.compress.type.GZIPCompressor
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
 import com.displee.util.hashCode317
@@ -53,7 +53,7 @@ class Archive317 : Archive {
         if (compressionType == CompressionType.GZIP) {
             return GZIPCompressor.inflate317(first()?.data ?: byteArrayOf())
         }
-        val metaBuffer = OutputBuffer(10 * files.size)
+        val metaBuffer = OutputBuffer(files.size * 10)
         val files: Collection<File> = files.values
         metaBuffer.writeShort(files.size)
         val filesBuffer = OutputBuffer(2048)
@@ -66,10 +66,10 @@ class Archive317 : Archive {
             filesBuffer.write(toWrite)
         }
         metaBuffer.write(filesBuffer.array())
-        val uncompressed = metaBuffer.array()
-        val compressed = if (extracted) BZIP2Compressor.compress(uncompressed) else uncompressed
+        val decompressed = metaBuffer.array()
+        val compressed = if (extracted) BZIP2Compressor.compress(decompressed) else decompressed
         val buffer = OutputBuffer(compressed.size + 6)
-        buffer.write24BitInt(uncompressed.size)
+        buffer.write24BitInt(decompressed.size)
         buffer.write24BitInt(compressed.size)
         buffer.write(compressed)
         return buffer.array()

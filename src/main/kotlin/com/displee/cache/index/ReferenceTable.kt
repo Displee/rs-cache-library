@@ -180,17 +180,46 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
         return buffer.array()
     }
 
-    fun add(vararg archives: Archive): Array<Archive> {
+    fun add(data: ByteArray): Archive {
+        val archive = add()
+        archive.add(data)
+        return archive
+    }
+
+    fun add(vararg archives: Archive?, replace: Boolean = true): Array<Archive> {
         val newArchives = ArrayList<Archive>(archives.size)
-        newArchives.forEach { newArchives.add(add(it)) }
+        if (replace) {
+            this.archives.clear()
+        }
+        archives.forEach {
+            it ?: return@forEach
+            newArchives.add(add(it, overwrite = replace))
+        }
         return newArchives.toTypedArray()
     }
 
-    fun add(archive: Archive): Archive {
-        return add(archive.id, archive.hashName)
+    @JvmOverloads
+    fun add(archive: Archive, newId: Int = archive.id, overwrite: Boolean = true): Archive {
+        val new = add(newId, archive.hashName, overwrite)
+        if (overwrite) {
+            new.clear()
+            new.add(*archive.copyFiles())
+            new.flag()
+        }
+        return new
     }
 
-    fun add(id: Int, hashName: Int = 0): Archive {
+    @JvmOverloads
+    fun add(name: String? = null): Archive {
+        var id = if (name == null) nextId() else archiveId(name)
+        if (id == -1) {
+            id = nextId()
+        }
+        return add(id, toHash(name ?: ""))
+    }
+
+    @JvmOverloads
+    fun add(id: Int, hashName: Int = 0, overwrite: Boolean = true): Archive {
         var existing = archive(id, direct = true)
         if (existing != null && !existing.read && !existing.new && !existing.flagged()) {
             existing = archive(id)
@@ -203,11 +232,12 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
                 }
             } else {
                 existing = Archive(id, hashName)
+                existing.compressionType = CompressionType.GZIP
             }
             existing.new = true
             existing.flag()
             flag()
-        } else {
+        } else if (overwrite) {
             var flag = false
             if (existing.hashName != hashName) {
                 existing.hashName = hashName
@@ -232,18 +262,20 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
         if (direct || archive.read || archive.new) {
             return archive
         }
-        val sector = origin.index(this.id)?.readArchiveSector(id)
+        val sector = origin.index(this.id).readArchiveSector(id)
         if (sector == null) {
             archive.read = true
             archive.new = true
             archive.clear()
         } else {
-            val is317 = this is Index317
+            val is317 = is317()
             if (is317) {
                 (archive as Archive317).compressionType = if (this.id == 0) CompressionType.BZIP2 else CompressionType.GZIP
+                archive.read(InputBuffer(sector.data))
+            } else {
+                archive.compressionType = sector.compressionType
+                archive.read(InputBuffer(sector.decompress(xtea)))
             }
-            archive.read(InputBuffer(decompress(sector, xtea)))
-            archive.compressionType = sector.compressionType
             val mapsIndex = if (is317) 4 else 5
             if (this.id == mapsIndex && !archive.containsData()) {
                 archive.read = false
@@ -363,6 +395,10 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
 
     open fun toHash(name: String): Int {
         return name.hashCode()
+    }
+
+    fun is317(): Boolean {
+        return this is Index317
     }
 
     companion object {

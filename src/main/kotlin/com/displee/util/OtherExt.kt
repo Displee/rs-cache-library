@@ -15,10 +15,10 @@ private val CRC_TABLE = IntArray(256) {
     crc
 }
 
-fun generateCrc(data: ByteArray, offset: Int = 0, length: Int = data.size): Int {
+fun ByteArray.generateCrc(offset: Int = 0, length: Int = size): Int {
     var crc = -1
     for (i in offset until length) {
-        crc = crc ushr 8 xor CRC_TABLE[crc xor data[i].toInt() and 0xff]
+        crc = crc ushr 8 xor CRC_TABLE[crc xor this[i].toInt() and 0xff]
     }
     crc = crc xor -0x1
     return crc

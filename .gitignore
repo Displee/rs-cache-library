@@ -24,3 +24,4 @@ classes
 # Test files
 src/test/java/Test.java
 src/test/kotlin/TestOsrs.kt
+src/test/kotlin/TestCache.kt

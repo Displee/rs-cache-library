@@ -6,6 +6,7 @@ import com.displee.cache.index.Index255
 import com.displee.cache.index.Index317
 import com.displee.cache.index.ReferenceTable.Companion.FLAG_NAME
 import com.displee.cache.index.ReferenceTable.Companion.FLAG_WHIRLPOOL
+import com.displee.cache.index.archive.Archive
 import com.displee.compress.CompressionType
 import com.displee.io.Buffer
 import com.displee.io.impl.OutputBuffer
@@ -123,18 +124,83 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         return index
     }
 
-    fun index(id: Int): Index? {
-        return indices[id]
+    fun index(id: Int): Index {
+        val index = indices[id]
+        checkNotNull(index) { "Index $id doesn't exist. Please use the {@link exists(int) exists} function to verify whether an index exists." }
+        return index
     }
 
-    @JvmOverloads
-    fun data(index: Int, archive: String, xtea: IntArray? = null, file: Int = 0): ByteArray? {
-        return index(index)?.archive(archive, xtea)?.file(file)?.data
+    fun exists(id: Int): Boolean {
+        return indices.containsKey(id)
+    }
+
+    fun put(index: Int, archive: Int, file: Int, data: ByteArray): com.displee.cache.index.archive.file.File {
+        return index(index).add(archive).add(file, data)
+    }
+
+    fun put(index: Int, archive: Int, data: ByteArray): Archive {
+        val currentArchive = index(index).add(archive)
+        currentArchive.add(0, data)
+        return currentArchive
+    }
+
+    fun put(index: Int, archive: Int, file: String, data: ByteArray): com.displee.cache.index.archive.file.File {
+        return index(index).add(archive).add(file, data)
+    }
+
+    fun put(index: Int, archive: String, data: ByteArray): Archive {
+        val currentArchive = index(index).add(archive)
+        currentArchive.add(0, data)
+        return currentArchive
+    }
+
+    fun put(index: Int, archive: String, file: String, data: ByteArray): com.displee.cache.index.archive.file.File {
+        return index(index).add(archive).add(file, data)
     }
 
     @JvmOverloads
     fun data(index: Int, archive: Int, file: Int = 0, xtea: IntArray? = null): ByteArray? {
-        return index(index)?.archive(archive, xtea)?.file(file)?.data
+        return index(index).archive(archive, xtea)?.file(file)?.data
+    }
+
+    @JvmOverloads
+    fun data(index: Int, archive: Int, file: String, xtea: IntArray? = null): ByteArray? {
+        return index(index).archive(archive, xtea)?.file(file)?.data
+    }
+
+    @JvmOverloads
+    fun data(index: Int, archive: String, file: Int, xtea: IntArray? = null): ByteArray? {
+        return index(index).archive(archive, xtea)?.file(file)?.data
+    }
+
+    @JvmOverloads
+    fun data(index: Int, archive: String, file: String, xtea: IntArray? = null): ByteArray? {
+        return index(index).archive(archive, xtea)?.file(file)?.data
+    }
+
+    @JvmOverloads
+    fun data(index: Int, archive: String, xtea: IntArray? = null): ByteArray? {
+        return data(index, archive, 0, xtea)
+    }
+
+    fun remove(index: Int, archive: Int, file: Int): com.displee.cache.index.archive.file.File? {
+        return index(index).archive(archive)?.remove(file)
+    }
+
+    fun remove(index: Int, archive: Int, file: String): com.displee.cache.index.archive.file.File? {
+        return index(index).archive(archive)?.remove(file)
+    }
+
+    fun remove(index: Int, archive: String, file: String): com.displee.cache.index.archive.file.File? {
+        return index(index).archive(archive)?.remove(file)
+    }
+
+    fun remove(index: Int, archive: Int): Archive? {
+        return index(index).remove(archive)
+    }
+
+    fun remove(index: Int, archive: String): Archive? {
+        return index(index).remove(archive)
     }
 
     @Throws(RuntimeException::class)
@@ -180,7 +246,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         return buffer.array()
     }
 
-    fun fixCRCs(update: Boolean) {
+    fun fixCrcs(update: Boolean) {
         indices.values.forEach {
             if (it.archiveIds().isEmpty()) {
                 return@forEach
@@ -199,14 +265,14 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         closed = true
     }
 
-    fun firstIndex(): Index? {
+    fun first(): Index? {
         if (indices.isEmpty()) {
             return null
         }
         return indices[indices.firstKey()]
     }
 
-    fun lastIndex(): Index? {
+    fun last(): Index? {
         if (indices.isEmpty()) {
             return null
         }
@@ -218,7 +284,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     }
 
     fun isOSRS(): Boolean {
-        val index = index(2) ?: return false
+        val index = index(2)
         return index.revision >= 300 && indices.size <= 23
     }
 

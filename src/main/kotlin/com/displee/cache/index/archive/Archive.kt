@@ -8,7 +8,7 @@ import java.util.*
 
 open class Archive(val id: Int, var hashName: Int = 0) {
 
-    var compressionType = CompressionType.GZIP
+    var compressionType: CompressionType? = null
 
     var revision = 0
     private var needUpdate = false
@@ -88,7 +88,7 @@ open class Archive(val id: Int, var hashName: Int = 0) {
             for (file in files) {
                 buffer.write(file.data ?: byteArrayOf())
             }
-            val chunks = 1 //TODO Implement multiple chunk support
+            val chunks = 1 //TODO Implement multiple chunk writing support
             for (i in files.indices) {
                 val file = files[i]
                 val fileDataSize = file.data?.size ?: 0
@@ -109,37 +109,41 @@ open class Archive(val id: Int, var hashName: Int = 0) {
         return false
     }
 
-    fun add(vararg files: File): Array<File> {
+    @JvmOverloads
+    fun add(vararg files: File, overwrite: Boolean = true): Array<File> {
         val newFiles = ArrayList<File>(files.size)
-        files.forEach { newFiles.add(add(it)) }
+        files.forEach { newFiles.add(add(it, overwrite)) }
         return newFiles.toTypedArray()
     }
 
-    fun add(file: File): File {
+    @JvmOverloads
+    fun add(file: File, overwrite: Boolean = true): File {
         val fileData = file.data
         checkNotNull(fileData) { "File data is null." }
-        return add(file.id, fileData, file.hashName)
+        return add(file.id, fileData, file.hashName, overwrite)
     }
 
-    fun add(name: String, data: ByteArray): File {
+    fun add(data: ByteArray): File {
+        return add(nextId(), data)
+    }
+
+    @JvmOverloads
+    fun add(name: String, data: ByteArray, overwrite: Boolean = true): File {
         var id = fileId(name)
         if (id == -1) {
             id = nextId()
         }
-        return add(id, data, toHash(name))
+        return add(id, data, toHash(name), overwrite)
     }
 
-    fun add(id: Int, data: ByteArray): File {
-        return add(id, data, 0)
-    }
-
-    fun add(id: Int, data: ByteArray, hashName: Int): File {
+    @JvmOverloads
+    fun add(id: Int, data: ByteArray, hashName: Int = 0, overwrite: Boolean = true): File {
         var file = files[id]
         if (file == null) {
             file = File(id, data, hashName)
             files[id] = file
             flag()
-        } else {
+        } else if (overwrite) {
             var flag = false
             if (!Arrays.equals(file.data, data)) {
                 file.data = data
@@ -172,6 +176,10 @@ open class Archive(val id: Int, var hashName: Int = 0) {
         val file = files.remove(id)
         flag()
         return file
+    }
+
+    fun remove(name: String): File? {
+        return remove(fileId(name))
     }
 
     fun first(): File? {
@@ -213,7 +221,6 @@ open class Archive(val id: Int, var hashName: Int = 0) {
     }
 
     fun flag() {
-        revision++
         needUpdate = true
     }
 
@@ -225,7 +232,6 @@ open class Archive(val id: Int, var hashName: Int = 0) {
         if (!flagged()) {
             return
         }
-        revision--
         needUpdate = false
     }
 

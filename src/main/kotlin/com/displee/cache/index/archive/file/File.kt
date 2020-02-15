@@ -1,10 +1,19 @@
 package com.displee.cache.index.archive.file
 
-class File(val id: Int, var data: ByteArray? = null, var hashName: Int = -1) : Comparable<File> {
+class File : Comparable<File> {
 
-    constructor(id: Int) : this(id, null, -1)
+    val id: Int
+    var data: ByteArray?
+    var hashName: Int
 
-    constructor(id: Int, data: ByteArray?) : this(id, data, -1)
+    internal constructor(id: Int, data: ByteArray? = null, hashName: Int = 0, @Suppress("UNUSED_PARAMETER") checkData: Boolean = false) {
+        this.id = id
+        this.data = data
+        this.hashName = hashName
+    }
+
+    @JvmOverloads
+    constructor(id: Int, data: ByteArray, hashName: Int = 0) : this(id, data, hashName, true)
 
     constructor(file: File) : this(file.id, file.data?.clone(), file.hashName)
 

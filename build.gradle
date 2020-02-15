@@ -15,7 +15,7 @@ buildscript {
     }
 }
 
-group = 'RS-Cache-Library'
+group = 'com.displee'
 version = '6.0'
 
 description = ""
