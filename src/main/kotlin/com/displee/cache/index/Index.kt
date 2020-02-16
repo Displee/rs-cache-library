@@ -12,6 +12,7 @@ import com.displee.io.impl.OutputBuffer
 import com.displee.util.CRCHash
 import com.displee.util.Whirlpool
 import com.displee.util.generateCrc
+import com.sun.org.apache.xpath.internal.operations.Bool
 import java.io.RandomAccessFile
 
 open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : ReferenceTable(origin, id) {
@@ -41,15 +42,11 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
     }
 
     fun cacheByName(namedXteas: Map<String, IntArray>) {
-        val xteas = mutableMapOf<Int, IntArray>()
-        namedXteas.forEach {
-            xteas[archiveId(it.key)] = it.value
-        }
-        cache(xteas)
+        cache(archiveNamesToIdsMap(namedXteas))
     }
 
     @JvmOverloads
-    fun cache(xteas: MutableMap<Int, IntArray> = mutableMapOf()) {
+    fun cache(xteas: Map<Int, IntArray> = mapOf()) {
         check(!closed) { "Index is closed." }
         if (cached) {
             return
@@ -74,9 +71,8 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
     @JvmOverloads
     open fun update(xteas: Map<Int, IntArray> = emptyMap(), listener: ProgressListener? = null): Boolean {
         check(!closed) { "Index is closed." }
-        var updateCount = 0
+        val updateCount = countFlaggedArchives()
         val archives = archives()
-        archives.forEach { if (it.flagged()) updateCount++ }
         var i = 0.0
         archives.forEach {
             if (!it.flagged()) {
@@ -291,6 +287,10 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         }
         raf.close()
         closed = true
+    }
+
+    fun countFlaggedArchives(): Int {
+        return archives.values.sumBy { if (it.flagged()) 1 else 0 }
     }
 
     protected open fun isIndexValid(index: Int): Boolean {

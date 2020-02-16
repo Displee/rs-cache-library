@@ -203,6 +203,16 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         return index(index).remove(archive)
     }
 
+    @JvmOverloads
+    fun update(namedXteas: Map<String, IntArray> = emptyMap()) {
+        for(index in indices.values) {
+            if (index.countFlaggedArchives() == 0 && !index.flagged()) {
+                continue
+            }
+            index.update(if (index.id == 5) index.archiveNamesToIdsMap(namedXteas) else emptyMap())
+        }
+    }
+
     @Throws(RuntimeException::class)
     fun deleteLastIndex() {
         if (is317()) {

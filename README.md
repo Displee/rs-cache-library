@@ -62,6 +62,17 @@ library.remove(5, "l60_62")
 ```kotlin
 library.remove(18, 10, 2)
 ```
+#### Write your changes (important)
+Update a specific index
+```kotlin
+val xteas = mapOf<Int, IntArray>(...) //optional
+library.index(7).update(xteas) //returns true if changes have been written with success, else false
+```
+or just update all changed indices with one line
+```kotlin
+val mapsXteas = mapOf("l50_50" to intArrayOf(1, 2, 3, 4)) //required when updating maps index (5), otherwise optional
+library.update(mapsXteas)
+```
 ## Advanced usage
 #### Add an archive to an index
 ```kotlin
@@ -137,12 +148,18 @@ library.index(5).cacheByName(xteaMap) //xteaMap is optional
 ```
 #### Cross cache copying
 This is actually done in the above examples. You can copy archives and files from one cache to another.
-#### Update your indices after changes (important)
-```kotlin
-...
-library.index(7).update() //returns true if changes have been written with success, else false
-```
 
+#### Generate ukeys
+```kotlin
+val exponent = BigInteger(...)
+val modulus = BigInteger(...)
+val newUkeys = library.generateNewUkeys(exponent, modulus)
+```
+Generate old ukeys for < 600 caches
+```kotlin
+val oldUkeys = library.generateOldUkeys()
+```
+---
 #### Example (replace musics in a cache with the ones from another cache)
 ```kotlin
 val cacheFrom = CacheLibrary.create("...")

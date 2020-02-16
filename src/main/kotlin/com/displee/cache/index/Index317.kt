@@ -17,9 +17,8 @@ class Index317(origin: CacheLibrary, id: Int, randomAccessFile: RandomAccessFile
 
     override fun update(xteas: Map<Int, IntArray>, listener: ProgressListener?): Boolean {
         check(!closed) { "Index is closed." }
-        var updateCount = 0
+        val updateCount = countFlaggedArchives()
         val archives = archives()
-        archives.forEach { if (it.flagged()) updateCount++ }
         var i = 0.0
         archives.forEach {
             if (!it.flagged()) {

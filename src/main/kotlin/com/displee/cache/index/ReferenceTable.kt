@@ -369,6 +369,14 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
         mask = mask and flag.inv()
     }
 
+    fun archiveNamesToIdsMap(stringMap: Map<String, IntArray>): Map<Int, IntArray> {
+        val intMap = mutableMapOf<Int, IntArray>()
+        stringMap.forEach {
+            intMap[archiveId(it.key)] = it.value
+        }
+        return intMap
+    }
+
     fun isNamed(): Boolean {
         return mask and FLAG_NAME != 0
     }
