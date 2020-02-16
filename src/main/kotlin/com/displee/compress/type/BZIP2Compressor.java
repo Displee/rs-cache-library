@@ -54,7 +54,7 @@ public class BZIP2Compressor {
 
 	public static byte[] decompress317(int decompressedLength, int compressedLength, InputBuffer inputBuffer) {
 		byte[] decompressed = new byte[decompressedLength];
-		byte[] compressed = inputBuffer.read(compressedLength);
+		byte[] compressed = inputBuffer.readBytes(compressedLength);
 		decompress(decompressed, decompressed.length, compressed, compressed.length, 0);
 		return decompressed;
 	}

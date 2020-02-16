@@ -22,12 +22,12 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
     var version = 0
 
     open fun read(buffer: InputBuffer) {
-        version = buffer.readUnsigned()
+        version = buffer.readUnsignedByte()
         if (version < 5 || version > 7) {
             throw RuntimeException("Unknown version: $version")
         }
         revision = if (version >= 6) buffer.readInt() else 0
-        mask = buffer.read().toInt()
+        mask = buffer.readByte().toInt()
         val named = mask and FLAG_NAME != 0
         val whirlpool = mask and FLAG_WHIRLPOOL != 0
         val flag4 = mask and FLAG_4 != 0
@@ -65,7 +65,7 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
                         archiveWhirlpool = ByteArray(WHIRLPOOL_SIZE)
                         it.whirlpool = archiveWhirlpool
                     }
-                    buffer.read(archiveWhirlpool)
+                    buffer.readBytes(archiveWhirlpool)
                 }
             }
             if (flag4) {
@@ -82,7 +82,7 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
                         archiveWhirlpool2 = ByteArray(WHIRLPOOL_SIZE)
                         it.whirlpool = archiveWhirlpool2
                     }
-                    buffer.read(archiveWhirlpool2)
+                    buffer.readBytes(archiveWhirlpool2)
                 }
             }
             archives.forEach { it.crc = buffer.readInt() }
@@ -113,11 +113,11 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
 
     open fun write(): ByteArray {
         val buffer = OutputBuffer(1000)
-        buffer.write(version)
+        buffer.writeByte(version)
         if (version >= 6) {
             buffer.writeInt(revision)
         }
-        buffer.write(mask)
+        buffer.writeByte(mask)
 
         val writeFun: (Int) -> Unit = if (version >= 7) {
             {
@@ -145,7 +145,7 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
             }
             if (hasWhirlpool()) {
                 val empty = ByteArray(WHIRLPOOL_SIZE)
-                archives.forEach { buffer.write(it.whirlpool ?: empty) }
+                archives.forEach { buffer.writeBytes(it.whirlpool ?: empty) }
             }
             if (hasFlag4()) {
                 archives.forEach {
@@ -156,7 +156,7 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
         } else {
             if (hasWhirlpool()) {
                 val empty = ByteArray(WHIRLPOOL_SIZE)
-                archives.forEach { buffer.write(it.whirlpool ?: empty) }
+                archives.forEach { buffer.writeBytes(it.whirlpool ?: empty) }
             }
             archives.forEach { buffer.writeInt(it.crc) }
         }

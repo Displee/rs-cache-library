@@ -22,7 +22,7 @@ class ArchiveSector(private val bigSector: Boolean, val size: Int, var position:
         }
         chunk = buffer.readUnsignedShort()
         nextPosition = buffer.read24BitInt()
-        index = buffer.readUnsigned()
+        index = buffer.readUnsignedByte()
     }
 
     fun write(): ByteArray {
@@ -34,7 +34,7 @@ class ArchiveSector(private val bigSector: Boolean, val size: Int, var position:
         }
         buffer.writeShort(chunk)
         buffer.write24BitInt(position)
-        buffer.write(index)
+        buffer.writeByte(index)
         return buffer.array()
     }
 

@@ -30,7 +30,7 @@ class Archive317 : Archive {
             decompressed = BZIP2Compressor.decompress317(decompressedLength, compressedLength, buffer)
             extracted = true
         } else {
-            decompressed = buffer.read(buffer.remaining())
+            decompressed = buffer.readBytes(buffer.remaining())
         }
         val metaBuffer = InputBuffer(decompressed)
         val filesLength = metaBuffer.readUnsignedShort()
@@ -41,7 +41,7 @@ class Archive317 : Archive {
             decompressedLength = metaBuffer.read24BitInt()
             compressedLength = metaBuffer.read24BitInt()
             val data: ByteArray = if (extracted) {
-                filesBuffer.read(decompressedLength)
+                filesBuffer.readBytes(decompressedLength)
             } else {
                 BZIP2Compressor.decompress317(decompressedLength, compressedLength, filesBuffer)
             }
@@ -63,15 +63,15 @@ class Archive317 : Archive {
             metaBuffer.write24BitInt(fileData.size)
             val toWrite = if (extracted) fileData else BZIP2Compressor.compress(file.data)
             metaBuffer.write24BitInt(toWrite.size)
-            filesBuffer.write(toWrite)
+            filesBuffer.writeBytes(toWrite)
         }
-        metaBuffer.write(filesBuffer.array())
+        metaBuffer.writeBytes(filesBuffer.array())
         val decompressed = metaBuffer.array()
         val compressed = if (extracted) BZIP2Compressor.compress(decompressed) else decompressed
         val buffer = OutputBuffer(compressed.size + 6)
         buffer.write24BitInt(decompressed.size)
         buffer.write24BitInt(compressed.size)
-        buffer.write(compressed)
+        buffer.writeBytes(compressed)
         return buffer.array()
     }
 

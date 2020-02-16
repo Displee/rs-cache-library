@@ -231,18 +231,18 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     fun generateNewUkeys(exponent: BigInteger, modulus: BigInteger): ByteArray {
         val buffer = OutputBuffer(indices.size * 72 + 5)
         buffer.offset = 5
-        buffer.write(indices.size)
+        buffer.writeByte(indices.size)
         val emptyWhirlpool = ByteArray(64)
         for (index in indices()) {
             buffer.writeInt(index.crc)
             buffer.writeInt(index.revision)
-            buffer.write(index.whirlpool ?: emptyWhirlpool)
+            buffer.writeBytes(index.whirlpool ?: emptyWhirlpool)
         }
         val indexArray = buffer.array()
         val whirlpoolBuffer = OutputBuffer(65)
-        whirlpoolBuffer.write(0)//whirlpool = 64 bytes, add 1 byte because Jagex
-        whirlpoolBuffer.write(Whirlpool.generate(indexArray))
-        buffer.write(Buffer.cryptRSA(whirlpoolBuffer.array(), exponent, modulus))
+        whirlpoolBuffer.writeByte(0)//whirlpool = 64 bytes, add 1 byte because Jagex
+        whirlpoolBuffer.writeBytes(Whirlpool.generate(indexArray))
+        buffer.writeBytes(Buffer.cryptRSA(whirlpoolBuffer.array(), exponent, modulus))
         return buffer.array()
     }
 

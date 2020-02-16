@@ -86,7 +86,7 @@ open class Archive(val id: Int, var hashName: Int = 0) {
             return first()?.data ?: byteArrayOf()
         } else {
             for (file in files) {
-                buffer.write(file.data ?: byteArrayOf())
+                buffer.writeBytes(file.data ?: byteArrayOf())
             }
             val chunks = 1 //TODO Implement multiple chunk writing support
             for (i in files.indices) {
@@ -95,7 +95,7 @@ open class Archive(val id: Int, var hashName: Int = 0) {
                 val previousFileDataSize = if (i == 0) 0 else files[i - 1].data?.size ?: 0
                 buffer.writeInt(fileDataSize - previousFileDataSize)
             }
-            buffer.write(chunks)
+            buffer.writeByte(chunks)
         }
         return buffer.array()
     }

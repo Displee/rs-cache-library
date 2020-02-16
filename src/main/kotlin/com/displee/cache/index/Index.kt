@@ -182,7 +182,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
                     raf.seek(id.toLong() * INDEX_SIZE)
                     raf.read(sectorData, 0, INDEX_SIZE)
                     val buffer = InputBuffer(sectorData)
-                    buffer.jump(3)
+                    buffer.offset += 3
                     position = buffer.read24BitInt()
                     if (position <= 0 || position > origin.mainFile.length() / SECTOR_SIZE) {
                         return false

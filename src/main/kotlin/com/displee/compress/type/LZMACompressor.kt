@@ -50,7 +50,7 @@ object LZMACompressor {
 
     fun decompress(buffer: InputBuffer, decompressedLength: Int): ByteArray {
         val output = OutputBuffer(buffer.remaining())
-        output.write(buffer.raw(), buffer.offset, buffer.remaining())
+        output.writeBytes(buffer.raw(), buffer.offset, buffer.remaining())
         return decompress(output.raw(), decompressedLength)
     }
 

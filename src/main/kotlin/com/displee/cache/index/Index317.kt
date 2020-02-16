@@ -101,7 +101,7 @@ class Index317(origin: CacheLibrary, id: Int, randomAccessFile: RandomAccessFile
         val properties = IntArray(data.size / (1 shl type.ordinal))
         val bufferFun: () -> Int = when (type) {
             BufferType.BYTE -> {
-                { buffer.readUnsigned() }
+                { buffer.readUnsignedByte() }
             }
             BufferType.SHORT -> {
                 { buffer.readUnsignedShort() }
@@ -123,7 +123,7 @@ class Index317(origin: CacheLibrary, id: Int, randomAccessFile: RandomAccessFile
         val buffer = OutputBuffer(properties.size)
         val bufferFun: (Int) -> Unit = when (type) {
             BufferType.BYTE -> {
-                { buffer.write(it) }
+                { buffer.writeByte(it) }
             }
             BufferType.SHORT -> {
                 { buffer.writeShort(it) }

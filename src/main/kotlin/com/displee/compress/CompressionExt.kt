@@ -16,11 +16,11 @@ fun ByteArray.compress(compressionType: CompressionType, xteas: IntArray? = null
         CompressionType.LZMA -> LZMACompressor.compress(uncompressed)
     }
     val buffer = OutputBuffer(5 + compressed.size + if (revision == -1) 0 else 2)
-    buffer.write(compressionType.ordinal).writeInt(compressed.size)
+    buffer.writeByte(compressionType.ordinal).writeInt(compressed.size)
     if (compressionType != CompressionType.NONE) {
         buffer.writeInt(uncompressed.size)
     }
-    buffer.write(compressed)
+    buffer.writeBytes(compressed)
     if (xteas != null && (xteas[0] != 0 || xteas[1] != 0 || xteas[2] != 0 || 0 != xteas[3])) {
         buffer.encryptXTEA(xteas, 5, buffer.offset)
     }
@@ -36,7 +36,7 @@ fun ArchiveSector.decompress(keys: IntArray? = null): ByteArray {
     if (keys != null && (keys[0] != 0 || keys[1] != 0 || keys[2] != 0 || 0 != keys[3])) {
         buffer.decryptXTEA(keys, 5, compressedData.size)
     }
-    val type = buffer.readUnsigned()
+    val type = buffer.readUnsignedByte()
     val compressionType = CompressionType.compressionTypes[type].also { compressionType = it }
     val compressedSize = buffer.readInt() and 0xFFFFFF
     var decompressedSize = 0
@@ -45,7 +45,7 @@ fun ArchiveSector.decompress(keys: IntArray? = null): ByteArray {
     }
     var decompressed = ByteArray(decompressedSize)
     when (compressionType) {
-        CompressionType.NONE -> decompressed = buffer.read(compressedSize)
+        CompressionType.NONE -> decompressed = buffer.readBytes(compressedSize)
         CompressionType.BZIP2 -> BZIP2Compressor.decompress(decompressed, decompressed.size, compressedData, compressedSize, 9)
         CompressionType.GZIP -> if (!GZIPCompressor.inflate(buffer, decompressed)) return byteArrayOf()
         CompressionType.LZMA -> decompressed = LZMACompressor.decompress(buffer, decompressedSize)
