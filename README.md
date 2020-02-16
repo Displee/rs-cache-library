@@ -65,13 +65,13 @@ library.remove(18, 10, 2)
 #### Write your changes (important)
 Update a specific index
 ```kotlin
-val xteas = mapOf<Int, IntArray>(...) //optional
+val xteas = mapOf(0 to intArrayOf(...)) //optional
 library.index(7).update(xteas) //returns true if changes have been written with success, else false
 ```
 or just update all changed indices with one line
 ```kotlin
-val mapsXteas = mapOf("l50_50" to intArrayOf(1, 2, 3, 4)) //required when updating maps index (5), otherwise optional
-library.update(mapsXteas)
+val xteas = mapOf("l50_50" to intArrayOf(...)) //required when updating maps index (5), otherwise optional
+library.update(xteas)
 ```
 ## Advanced usage
 #### Add an archive to an index

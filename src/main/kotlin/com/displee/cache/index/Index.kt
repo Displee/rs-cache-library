@@ -41,7 +41,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         compressionType = archiveSector.compressionType
     }
 
-    fun cacheByName(namedXteas: Map<String, IntArray>) {
+    fun cacheByArchiveNames(namedXteas: Map<String, IntArray>) {
         cache(archiveNamesToIdsMap(namedXteas))
     }
 
@@ -66,6 +66,11 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
             archive.restore()
         }
         cached = false
+    }
+
+    @JvmOverloads
+    fun updateByArchiveNames(xteas: Map<String, IntArray> = emptyMap(), listener: ProgressListener? = null): Boolean {
+        return update(archiveNamesToIdsMap(xteas), listener)
     }
 
     @JvmOverloads
