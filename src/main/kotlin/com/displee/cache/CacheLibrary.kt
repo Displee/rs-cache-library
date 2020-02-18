@@ -124,14 +124,14 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         return index
     }
 
+    fun exists(id: Int): Boolean {
+        return indices.containsKey(id)
+    }
+
     fun index(id: Int): Index {
         val index = indices[id]
         checkNotNull(index) { "Index $id doesn't exist. Please use the {@link exists(int) exists} function to verify whether an index exists." }
         return index
-    }
-
-    fun exists(id: Int): Boolean {
-        return indices.containsKey(id)
     }
 
     @JvmOverloads
@@ -209,7 +209,6 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     }
 
     fun update() {
-        val test: IntArray = intArrayOf()
         for (index in indices.values) {
             if (index.flaggedArchives().isEmpty() && !index.flagged()) {
                 continue
