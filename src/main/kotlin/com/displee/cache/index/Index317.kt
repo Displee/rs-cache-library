@@ -15,19 +15,16 @@ import java.util.*
 
 class Index317(origin: CacheLibrary, id: Int, randomAccessFile: RandomAccessFile) : Index(origin, id, randomAccessFile) {
 
-    override fun update(xteas: Map<Int, IntArray>, listener: ProgressListener?): Boolean {
+    override fun update(listener: ProgressListener?): Boolean {
         check(!closed) { "Index is closed." }
-        val updateCount = countFlaggedArchives()
+        val flaggedArchives = flaggedArchives()
         val archives = archives()
         var i = 0.0
-        archives.forEach {
-            if (!it.flagged()) {
-                return@forEach
-            }
+        flaggedArchives.forEach {
             i++
             it.revision++
             it.unFlag()
-            listener?.notify(i / updateCount * 80.0, "Repacking archive ${it.id}...")
+            listener?.notify(i / flaggedArchives.size * 80.0, "Repacking archive ${it.id}...")
             val compressed = it.write()
             it.crc = CRCHash.generate(compressed)
             it.whirlpool = Whirlpool.generate(compressed)
@@ -38,7 +35,7 @@ class Index317(origin: CacheLibrary, id: Int, randomAccessFile: RandomAccessFile
             }
         }
         listener?.notify(85.0, "Updating version archive for index $id...")
-        if (updateCount != 0 && !flagged()) {
+        if (flaggedArchives.isNotEmpty() && !flagged()) {
             flag()
         }
         if (id != CONFIG_INDEX && id < VERSION_NAMES.size && flagged()) {

@@ -12,7 +12,6 @@ import com.displee.io.impl.OutputBuffer
 import com.displee.util.CRCHash
 import com.displee.util.Whirlpool
 import com.displee.util.generateCrc
-import com.sun.org.apache.xpath.internal.operations.Bool
 import java.io.RandomAccessFile
 
 open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : ReferenceTable(origin, id) {
@@ -41,19 +40,15 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         compressionType = archiveSector.compressionType
     }
 
-    fun cacheByArchiveNames(namedXteas: Map<String, IntArray>) {
-        cache(archiveNamesToIdsMap(namedXteas))
-    }
-
     @JvmOverloads
-    fun cache(xteas: Map<Int, IntArray> = mapOf()) {
+    fun cache() {
         check(!closed) { "Index is closed." }
         if (cached) {
             return
         }
-        archiveIds().forEach {
+        archives.values.forEach {
             try {
-                archive(it, xteas[it], false)
+                archive(it.id, it.xtea, false)
             } catch (t: Throwable) {
                 t.printStackTrace()
             }
@@ -69,25 +64,16 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
     }
 
     @JvmOverloads
-    fun updateByArchiveNames(xteas: Map<String, IntArray> = emptyMap(), listener: ProgressListener? = null): Boolean {
-        return update(archiveNamesToIdsMap(xteas), listener)
-    }
-
-    @JvmOverloads
-    open fun update(xteas: Map<Int, IntArray> = emptyMap(), listener: ProgressListener? = null): Boolean {
+    open fun update(listener: ProgressListener? = null): Boolean {
         check(!closed) { "Index is closed." }
-        val updateCount = countFlaggedArchives()
-        val archives = archives()
+        val flaggedArchives = flaggedArchives()
         var i = 0.0
-        archives.forEach {
-            if (!it.flagged()) {
-                return@forEach
-            }
+        flaggedArchives.forEach {
             i++
             it.revision++
             it.unFlag()
-            listener?.notify(i / updateCount * 80.0, "Repacking archive ${it.id}...")
-            val compressed = it.write().compress(it.compressionType ?: CompressionType.GZIP, xteas[it.id], it.revision)
+            listener?.notify(i / flaggedArchives.size * 80.0, "Repacking archive ${it.id}...")
+            val compressed = it.write().compress(it.compressionType ?: CompressionType.GZIP, it.xtea, it.revision)
             it.crc = CRCHash.generate(compressed, 0, compressed.size - 2)
             it.whirlpool = Whirlpool.generate(compressed, 0, compressed.size - 2)
             val written = writeArchiveSector(it.id, compressed)
@@ -97,7 +83,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
             }
         }
         listener?.notify(85.0, "Updating checksum table for index $id...")
-        if (updateCount != 0 && !flagged()) {
+        if (flaggedArchives.isNotEmpty() && !flagged()) {
             flag()
         }
         if (flagged()) {
@@ -294,8 +280,8 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         closed = true
     }
 
-    fun countFlaggedArchives(): Int {
-        return archives.values.sumBy { if (it.flagged()) 1 else 0 }
+    fun flaggedArchives(): Array<Archive> {
+        return archives.values.filter { it.flagged() }.toTypedArray()
     }
 
     protected open fun isIndexValid(index: Int): Boolean {

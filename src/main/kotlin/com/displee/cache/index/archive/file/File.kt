@@ -22,7 +22,7 @@ class File : Comparable<File> {
     }
 
     override fun toString(): String {
-        return "File $id[data_length=${data?.size}]"
+        return "File $id[data_length=${data?.size}, hash_name=$hashName]"
     }
 
 }

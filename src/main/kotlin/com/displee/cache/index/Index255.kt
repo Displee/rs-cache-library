@@ -6,7 +6,7 @@ import java.io.RandomAccessFile
 
 class Index255(origin: CacheLibrary, raf: RandomAccessFile) : Index(origin, 255, raf) {
 
-    override fun update(xteas: Map<Int, IntArray>, listener: ProgressListener?): Boolean {
+    override fun update(listener: ProgressListener?): Boolean {
         throw IllegalAccessException("Not allowed.")
     }
 

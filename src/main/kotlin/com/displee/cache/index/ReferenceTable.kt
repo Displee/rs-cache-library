@@ -12,7 +12,7 @@ import com.displee.io.impl.OutputBuffer
 import java.util.*
 import kotlin.collections.ArrayList
 
-open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
+open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Comparable<ReferenceTable> {
 
     var revision = 0
     private var mask = 0x0
@@ -20,6 +20,10 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
     protected var archives: SortedMap<Int, Archive> = TreeMap()
 
     var version = 0
+
+    override fun compareTo(other: ReferenceTable): Int {
+        return id.compareTo(other.id)
+    }
 
     open fun read(buffer: InputBuffer) {
         version = buffer.readUnsignedByte()
@@ -46,8 +50,7 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
         val archiveIds = IntArray(readFun())
         for (i in archiveIds.indices) {
             val archiveId = readFun() + if (i == 0) 0 else archiveIds[i - 1]
-            archiveIds[i] = archiveId
-            archives[archiveId] = Archive(archiveId)
+            archiveIds[i] = archiveId.also { archives[it] = Archive(it) }
         }
         val archives = archives()
         if (named) {
@@ -180,8 +183,9 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
         return buffer.array()
     }
 
-    fun add(data: ByteArray): Archive {
-        val archive = add()
+    @JvmOverloads
+    fun add(data: ByteArray, xtea: IntArray? = null): Archive {
+        val archive = add(xtea = xtea)
         archive.add(data)
         return archive
     }
@@ -199,8 +203,8 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
     }
 
     @JvmOverloads
-    fun add(archive: Archive, newId: Int = archive.id, overwrite: Boolean = true): Archive {
-        val new = add(newId, archive.hashName, overwrite)
+    fun add(archive: Archive, newId: Int = archive.id, xtea: IntArray? = null, overwrite: Boolean = true): Archive {
+        val new = add(newId, archive.hashName, xtea, overwrite)
         if (overwrite) {
             new.clear()
             new.add(*archive.copyFiles())
@@ -210,36 +214,43 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
     }
 
     @JvmOverloads
-    fun add(name: String? = null): Archive {
+    fun add(name: String? = null, xtea: IntArray? = null): Archive {
         var id = if (name == null) nextId() else archiveId(name)
         if (id == -1) {
             id = nextId()
         }
-        return add(id, toHash(name ?: ""))
+        return add(id, toHash(name ?: ""), xtea)
     }
 
     @JvmOverloads
-    fun add(id: Int, hashName: Int = 0, overwrite: Boolean = true): Archive {
+    fun add(id: Int, hashName: Int = -1, xtea: IntArray? = null, overwrite: Boolean = true): Archive {
         var existing = archive(id, direct = true)
         if (existing != null && !existing.read && !existing.new && !existing.flagged()) {
-            existing = archive(id)
+            existing = archive(id, xtea)
         }
         if (existing == null) {
             if (this is Index317) {
-                existing = Archive317(id, hashName)
+                existing = Archive317(id, if (hashName == -1) 0 else hashName)
                 if (this.id != 0) {
                     existing.compressionType = CompressionType.GZIP
                 }
             } else {
-                existing = Archive(id, hashName)
+                existing = Archive(id, if (hashName == -1) 0 else hashName, xtea)
                 existing.compressionType = CompressionType.GZIP
             }
+            archives[id] = existing
             existing.new = true
             existing.flag()
             flag()
         } else if (overwrite) {
             var flag = false
-            if (existing.hashName != hashName) {
+            val existingXtea = existing.xtea
+            if (xtea == null && existingXtea != null || xtea != null && existingXtea == null ||
+                    xtea != null && existingXtea != null && !xtea.contentEquals(existingXtea)) {
+                existing.xtea = xtea
+                flag = true
+            }
+            if (hashName != -1 && existing.hashName != hashName) {
                 existing.hashName = hashName
                 flag = true
             }
@@ -251,6 +262,7 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
         return existing
     }
 
+    @JvmOverloads
     fun archive(name: String, xtea: IntArray? = null, direct: Boolean = false): Archive? {
         return archive(archiveId(name), xtea, direct)
     }
@@ -273,8 +285,12 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
                 (archive as Archive317).compressionType = if (this.id == 0) CompressionType.BZIP2 else CompressionType.GZIP
                 archive.read(InputBuffer(sector.data))
             } else {
+                val decompressed = sector.decompress(xtea)
                 archive.compressionType = sector.compressionType
-                archive.read(InputBuffer(sector.decompress(xtea)))
+                if (decompressed.isNotEmpty()) {
+                    archive.read(InputBuffer(decompressed))
+                    archive.xtea = xtea
+                }
             }
             val mapsIndex = if (is317) 4 else 5
             if (this.id == mapsIndex && !archive.containsData()) {
@@ -293,12 +309,16 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
         return archive
     }
 
-    fun data(archive: Int, file: Int, xtea: IntArray?): ByteArray? {
-        return archive(archive, xtea)?.file(file)?.data
+    fun contains(id: Int): Boolean {
+        return archives.containsKey(id)
+    }
+
+    fun contains(name: String): Boolean {
+        return archiveId(name) != -1
     }
 
     fun remove(id: Int): Archive? {
-        val archive = archives.remove(id)
+        val archive = archives.remove(id) ?: return null
         flag()
         return archive
     }
@@ -328,7 +348,7 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
                 return it.id
             }
         }
-        return 0
+        return -1
     }
 
     fun nextId(): Int {
@@ -367,14 +387,6 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) {
 
     fun unFlagMask(flag: Int) {
         mask = mask and flag.inv()
-    }
-
-    fun archiveNamesToIdsMap(stringMap: Map<String, IntArray>): Map<Int, IntArray> {
-        val intMap = mutableMapOf<Int, IntArray>()
-        stringMap.forEach {
-            intMap[archiveId(it.key)] = it.value
-        }
-        return intMap
     }
 
     fun isNamed(): Boolean {

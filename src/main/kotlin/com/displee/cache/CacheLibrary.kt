@@ -134,28 +134,33 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         return indices.containsKey(id)
     }
 
-    fun put(index: Int, archive: Int, file: Int, data: ByteArray): com.displee.cache.index.archive.file.File {
-        return index(index).add(archive).add(file, data)
+    @JvmOverloads
+    fun put(index: Int, archive: Int, file: Int, data: ByteArray, xtea: IntArray? = null): com.displee.cache.index.archive.file.File {
+        return index(index).add(archive, xtea = xtea).add(file, data)
     }
 
-    fun put(index: Int, archive: Int, data: ByteArray): Archive {
-        val currentArchive = index(index).add(archive)
+    @JvmOverloads
+    fun put(index: Int, archive: Int, data: ByteArray, xtea: IntArray? = null): Archive {
+        val currentArchive = index(index).add(archive, -1, xtea)
         currentArchive.add(0, data)
         return currentArchive
     }
 
-    fun put(index: Int, archive: Int, file: String, data: ByteArray): com.displee.cache.index.archive.file.File {
-        return index(index).add(archive).add(file, data)
+    @JvmOverloads
+    fun put(index: Int, archive: Int, file: String, data: ByteArray, xtea: IntArray? = null): com.displee.cache.index.archive.file.File {
+        return index(index).add(archive, xtea = xtea).add(file, data)
     }
 
-    fun put(index: Int, archive: String, data: ByteArray): Archive {
-        val currentArchive = index(index).add(archive)
+    @JvmOverloads
+    fun put(index: Int, archive: String, data: ByteArray, xtea: IntArray? = null): Archive {
+        val currentArchive = index(index).add(archive, xtea = xtea)
         currentArchive.add(0, data)
         return currentArchive
     }
 
-    fun put(index: Int, archive: String, file: String, data: ByteArray): com.displee.cache.index.archive.file.File {
-        return index(index).add(archive).add(file, data)
+    @JvmOverloads
+    fun put(index: Int, archive: String, file: String, data: ByteArray, xtea: IntArray? = null): com.displee.cache.index.archive.file.File {
+        return index(index).add(archive, xtea = xtea).add(file, data)
     }
 
     @JvmOverloads
@@ -203,13 +208,13 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         return index(index).remove(archive)
     }
 
-    @JvmOverloads
-    fun update(namedXteas: Map<String, IntArray> = emptyMap()) {
-        for(index in indices.values) {
-            if (index.countFlaggedArchives() == 0 && !index.flagged()) {
+    fun update() {
+        val test: IntArray = intArrayOf()
+        for (index in indices.values) {
+            if (index.flaggedArchives().isEmpty() && !index.flagged()) {
                 continue
             }
-            index.update(if (index.id == 5) index.archiveNamesToIdsMap(namedXteas) else emptyMap())
+            index.update()
         }
     }
 
@@ -239,7 +244,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     }
 
     fun generateNewUkeys(exponent: BigInteger, modulus: BigInteger): ByteArray {
-        val buffer = OutputBuffer(indices.size * 72 + 5)
+        val buffer = OutputBuffer(indices.size * 72 + 6)
         buffer.offset = 5
         buffer.writeByte(indices.size)
         val emptyWhirlpool = ByteArray(64)

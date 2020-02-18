@@ -6,7 +6,7 @@ import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
 import java.util.*
 
-open class Archive(val id: Int, var hashName: Int = 0) {
+open class Archive(val id: Int, var hashName: Int = 0, internal var xtea: IntArray? = null) : Comparable<Archive> {
 
     var compressionType: CompressionType? = null
 
@@ -32,6 +32,11 @@ open class Archive(val id: Int, var hashName: Int = 0) {
         revision = archive.revision
         crc = archive.crc
         whirlpool = archive.whirlpool?.clone()
+        xtea = archive.xtea?.clone()
+    }
+
+    override fun compareTo(other: Archive): Int {
+        return id.compareTo(other.id)
     }
 
     open fun read(buffer: InputBuffer) {
@@ -88,7 +93,7 @@ open class Archive(val id: Int, var hashName: Int = 0) {
             for (file in files) {
                 buffer.writeBytes(file.data ?: byteArrayOf())
             }
-            val chunks = 1 //TODO Implement multiple chunk writing support
+            val chunks = 1 //TODO Implement chunk writing
             for (i in files.indices) {
                 val file = files[i]
                 val fileDataSize = file.data?.size ?: 0
@@ -137,10 +142,10 @@ open class Archive(val id: Int, var hashName: Int = 0) {
     }
 
     @JvmOverloads
-    fun add(id: Int, data: ByteArray, hashName: Int = 0, overwrite: Boolean = true): File {
+    fun add(id: Int, data: ByteArray, hashName: Int = -1, overwrite: Boolean = true): File {
         var file = files[id]
         if (file == null) {
-            file = File(id, data, hashName)
+            file = File(id, data, if (hashName == -1) 0 else hashName)
             files[id] = file
             flag()
         } else if (overwrite) {
@@ -149,7 +154,7 @@ open class Archive(val id: Int, var hashName: Int = 0) {
                 file.data = data
                 flag = true
             }
-            if (file.hashName != hashName) {
+            if (hashName != -1 && file.hashName != hashName) {
                 file.hashName = hashName
                 flag = true
             }
@@ -172,8 +177,16 @@ open class Archive(val id: Int, var hashName: Int = 0) {
         return files.filterValues { it.hashName == toHash(name) }.values.firstOrNull()
     }
 
+    fun contains(id: Int): Boolean {
+        return files.containsKey(id)
+    }
+
+    fun contains(name: String): Boolean {
+        return fileId(name) != -1
+    }
+
     fun remove(id: Int): File? {
-        val file = files.remove(id)
+        val file = files.remove(id) ?: return null
         flag()
         return file
     }
@@ -203,7 +216,7 @@ open class Archive(val id: Int, var hashName: Int = 0) {
                 return it.id
             }
         }
-        return 0
+        return -1
     }
 
     fun nextId(): Int {
@@ -253,6 +266,17 @@ open class Archive(val id: Int, var hashName: Int = 0) {
 
     fun files(): Array<File> {
         return files.values.toTypedArray()
+    }
+
+    fun xtea(xtea: IntArray?) {
+        this.xtea = xtea
+        if (read) {
+            flag()
+        }
+    }
+
+    fun xtea(): IntArray? {
+        return xtea
     }
 
     open fun toHash(name: String): Int {
