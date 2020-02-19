@@ -9,9 +9,8 @@ import com.displee.compress.compress
 import com.displee.compress.decompress
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
-import com.displee.util.CRCHash
-import com.displee.util.Whirlpool
 import com.displee.util.generateCrc
+import com.displee.util.generateWhirlpool
 import java.io.RandomAccessFile
 
 open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : ReferenceTable(origin, id) {
@@ -35,12 +34,11 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         val archiveSector = origin.index255?.readArchiveSector(id) ?: return
         val archiveSectorData = archiveSector.data
         crc = archiveSectorData.generateCrc()
-        whirlpool = Whirlpool.generate(archiveSectorData, 0, archiveSectorData.size)
+        whirlpool = archiveSectorData.generateWhirlpool()
         read(InputBuffer(archiveSector.decompress()))
         compressionType = archiveSector.compressionType
     }
 
-    @JvmOverloads
     fun cache() {
         check(!closed) { "Index is closed." }
         if (cached) {
@@ -74,8 +72,8 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
             it.unFlag()
             listener?.notify(i / flaggedArchives.size * 80.0, "Repacking archive ${it.id}...")
             val compressed = it.write().compress(it.compressionType ?: CompressionType.GZIP, it.xtea, it.revision)
-            it.crc = CRCHash.generate(compressed, 0, compressed.size - 2)
-            it.whirlpool = Whirlpool.generate(compressed, 0, compressed.size - 2)
+            it.crc = compressed.generateCrc(length = compressed.size - 2)
+            it.whirlpool = compressed.generateWhirlpool(length = compressed.size - 2)
             val written = writeArchiveSector(it.id, compressed)
             check(written) { "Unable to write data to archive sector. Your cache may be corrupt." }
             if (origin.clearDataAfterUpdate) {
@@ -87,9 +85,10 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
             flag()
         }
         if (flagged()) {
+            revision++
             val indexData = write().compress(compressionType)
             crc = indexData.generateCrc()
-            whirlpool = Whirlpool.generate(indexData, 0, indexData.size)
+            whirlpool = indexData.generateWhirlpool()
             val written = origin.index255?.writeArchiveSector(this.id, indexData) ?: false
             check(written) { "Unable to write data to checksum table. Your cache may be corrupt." }
         }
@@ -159,7 +158,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
                 if (this.id != 255) {
                     archive = archive(id, null, true)
                 }
-                var overWrite = (this.id == 255 && archiveSector != null) || !(archive?.new ?: false)
+                var overWrite = this.id == 255 && archiveSector != null || archive?.new == false
                 val sectorData = ByteArray(SECTOR_SIZE)
                 val bigSector = id > 65535
                 if (overWrite) {
@@ -248,7 +247,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         var flag = false
         for (i in archiveIds) {
             val sector = readArchiveSector(i) ?: continue
-            val correctCRC = CRCHash.generate(sector.data, 0, sector.data.size - 2)
+            val correctCRC = sector.data.generateCrc(length = sector.data.size - 2)
             val archive = archive(i) ?: continue
             val currentCRC = archive.crc
             if (currentCRC == correctCRC) {

@@ -8,17 +8,16 @@ import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
 
 fun ByteArray.compress(compressionType: CompressionType, xteas: IntArray? = null, revision: Int = -1): ByteArray {
-    val uncompressed = this
     val compressed: ByteArray = when (compressionType) {
-        CompressionType.NONE -> uncompressed
-        CompressionType.BZIP2 -> BZIP2Compressor.compress(uncompressed)
-        CompressionType.GZIP -> GZIPCompressor.deflate(uncompressed)
-        CompressionType.LZMA -> LZMACompressor.compress(uncompressed)
+        CompressionType.NONE -> this
+        CompressionType.BZIP2 -> BZIP2Compressor.compress(this)
+        CompressionType.GZIP -> GZIPCompressor.deflate(this)
+        CompressionType.LZMA -> LZMACompressor.compress(this)
     }
     val buffer = OutputBuffer(5 + compressed.size + if (revision == -1) 0 else 2)
     buffer.writeByte(compressionType.ordinal).writeInt(compressed.size)
     if (compressionType != CompressionType.NONE) {
-        buffer.writeInt(uncompressed.size)
+        buffer.writeInt(size)
     }
     buffer.writeBytes(compressed)
     if (xteas != null && (xteas[0] != 0 || xteas[1] != 0 || xteas[2] != 0 || 0 != xteas[3])) {

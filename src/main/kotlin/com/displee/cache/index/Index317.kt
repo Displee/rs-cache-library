@@ -6,8 +6,9 @@ import com.displee.cache.index.archive.Archive
 import com.displee.cache.index.archive.Archive317
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
-import com.displee.util.CRCHash
 import com.displee.util.Whirlpool
+import com.displee.util.generateCrc
+import com.displee.util.generateWhirlpool
 import com.displee.util.hashCode317
 import java.io.IOException
 import java.io.RandomAccessFile
@@ -26,8 +27,8 @@ class Index317(origin: CacheLibrary, id: Int, randomAccessFile: RandomAccessFile
             it.unFlag()
             listener?.notify(i / flaggedArchives.size * 80.0, "Repacking archive ${it.id}...")
             val compressed = it.write()
-            it.crc = CRCHash.generate(compressed)
-            it.whirlpool = Whirlpool.generate(compressed)
+            it.crc = compressed.generateCrc()
+            it.whirlpool = compressed.generateWhirlpool()
             val written = writeArchiveSector(it.id, compressed)
             check(written) { "Unable to write data to archive sector. Your cache may be corrupt." }
             if (origin.clearDataAfterUpdate) {

@@ -3,10 +3,7 @@ package com.displee.compress.type;
 import com.displee.io.impl.InputBuffer;
 import org.apache.tools.bzip2.CBZip2OutputStream;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 
 /**
  * A class representing the BZIP2 (de)compressor.

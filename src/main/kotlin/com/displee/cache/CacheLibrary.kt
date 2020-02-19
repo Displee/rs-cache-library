@@ -11,6 +11,7 @@ import com.displee.compress.CompressionType
 import com.displee.io.Buffer
 import com.displee.io.impl.OutputBuffer
 import com.displee.util.Whirlpool
+import com.displee.util.generateWhirlpool
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -28,12 +29,24 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     var closed = false
 
     init {
+        init()
+    }
+
+    private fun init() {
         val file = File(path, "main_file_cache.dat")
         if (file.exists() && file.length() != 0L) {
             load317()
         } else {
             load()
         }
+    }
+
+    /**
+     * Re-create indices and re-read reference tables.
+     */
+    fun reload() {
+        indices.clear()
+        init()
     }
 
     @Throws(IOException::class)
@@ -43,12 +56,12 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
             RandomAccessFile(main, "rw")
         } else {
             listener?.notify(-1.0, "Error, main file could not be found")
-            throw FileNotFoundException("File[path=" + main.absolutePath + "] could not be found.")
+            throw FileNotFoundException("File[path=${main.absolutePath}] could not be found.")
         }
         val index255File = File(path, "main_file_cache.idx255")
         if (!index255File.exists()) {
             listener?.notify(-1.0, "Error, checksum file could not be found.")
-            throw FileNotFoundException("File[path=" + index255File.absolutePath + "] could not be found.")
+            throw FileNotFoundException("File[path=${index255File.absolutePath}] could not be found.")
         }
         val index255 = Index255(this, RandomAccessFile(index255File, "rw"))
         this.index255 = index255
@@ -78,7 +91,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
             RandomAccessFile(main, "rw")
         } else {
             listener?.notify(-1.0, "Error, main file could not be found")
-            throw FileNotFoundException("File[path=" + main.absolutePath + "] could not be found.")
+            throw FileNotFoundException("File[path=${main.absolutePath}] could not be found.")
         }
         val indexFiles = File(path).listFiles { _: File, name: String ->
             return@listFiles name.startsWith("main_file_cache.idx")
@@ -105,12 +118,13 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     @JvmOverloads
     @Throws(RuntimeException::class)
-    fun createIndex(named: Boolean = false, whirlpool: Boolean = false, compressionType: CompressionType = CompressionType.GZIP): Index? {
+    fun createIndex(named: Boolean = false, whirlpool: Boolean = false, compressionType: CompressionType = CompressionType.GZIP): Index {
         if (is317()) {
             throw UnsupportedOperationException("317 not supported to add new indices yet.")
         }
         val id = indices.size
         val index = Index(this, id, RandomAccessFile(File(path, "main_file_cache.idx$id"), "rw"))
+        index.version = 6
         index.compressionType = compressionType
         if (named) {
             index.flagMask(FLAG_NAME)
@@ -227,7 +241,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         index.close()
         val file = File(path, "main_file_cache.idx$id")
         if (!file.exists() || !file.delete()) {
-            throw RuntimeException("Failed to remove the random access file of the argued index[id=" + id + ", file exists=" + file.exists() + "]")
+            throw RuntimeException("Failed to remove the random access file of the argued index[id=$id, file exists=${file.exists()}]")
         }
         index255?.raf?.setLength(id * INDEX_SIZE.toLong())
         indices.remove(id)
@@ -243,19 +257,15 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     }
 
     fun generateNewUkeys(exponent: BigInteger, modulus: BigInteger): ByteArray {
-        val buffer = OutputBuffer(indices.size * 72 + 6)
+        val buffer = OutputBuffer(6 + indices.size * 72)
         buffer.offset = 5
         buffer.writeByte(indices.size)
         val emptyWhirlpool = ByteArray(64)
         for (index in indices()) {
-            buffer.writeInt(index.crc)
-            buffer.writeInt(index.revision)
-            buffer.writeBytes(index.whirlpool ?: emptyWhirlpool)
+            buffer.writeInt(index.crc).writeInt(index.revision).writeBytes(index.whirlpool ?: emptyWhirlpool)
         }
         val indexArray = buffer.array()
-        val whirlpoolBuffer = OutputBuffer(65)
-        whirlpoolBuffer.writeByte(0)//whirlpool = 64 bytes, add 1 byte because Jagex
-        whirlpoolBuffer.writeBytes(Whirlpool.generate(indexArray))
+        val whirlpoolBuffer = OutputBuffer(65).writeByte(0).writeBytes(indexArray.generateWhirlpool())
         buffer.writeBytes(Buffer.cryptRSA(whirlpoolBuffer.array(), exponent, modulus))
         return buffer.array()
     }

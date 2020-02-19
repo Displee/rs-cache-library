@@ -271,6 +271,8 @@ open class Archive(val id: Int, var hashName: Int = 0, internal var xtea: IntArr
     fun xtea(xtea: IntArray?) {
         this.xtea = xtea
         if (read) {
+            //bzip2 compression fails when xteas are set for some reason, cheap fix
+            compressionType = CompressionType.GZIP
             flag()
         }
     }

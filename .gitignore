@@ -26,3 +26,4 @@ classes
 src/test/java/Test.java
 src/test/kotlin/TestOsrs.kt
 src/test/kotlin/TestCache.kt
+src/test/kotlin/TestLibrary.kt

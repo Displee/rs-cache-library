@@ -151,10 +151,7 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
                 archives.forEach { buffer.writeBytes(it.whirlpool ?: empty) }
             }
             if (hasFlag4()) {
-                archives.forEach {
-                    buffer.writeInt(it.flag4Value1)
-                    buffer.writeInt(it.flag4Value2)
-                }
+                archives.forEach { buffer.writeInt(it.flag4Value1).writeInt(it.flag4Value2) }
             }
         } else {
             if (hasWhirlpool()) {
@@ -164,9 +161,7 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
             archives.forEach { buffer.writeInt(it.crc) }
         }
         archives.forEach { buffer.writeInt(it.revision) }
-        archives.forEach {
-            writeFun(it.files.size)
-        }
+        archives.forEach { writeFun(it.files.size) }
         archives.forEach {
             val fileIds = it.fileIds()
             for (fileIndex in fileIds.indices) {
@@ -265,6 +260,10 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
     @JvmOverloads
     fun archive(name: String, xtea: IntArray? = null, direct: Boolean = false): Archive? {
         return archive(archiveId(name), xtea, direct)
+    }
+
+    fun archive(id: Int, direct: Boolean = false): Archive? {
+        return archive(id, null, direct)
     }
 
     @JvmOverloads
@@ -366,7 +365,6 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
     }
 
     fun flag() {
-        revision++
         needUpdate = true
     }
 

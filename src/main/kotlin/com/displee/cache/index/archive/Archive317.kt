@@ -56,8 +56,7 @@ class Archive317(id: Int, name: Int) : Archive(id, name) {
         val filesBuffer = OutputBuffer(2048)
         for (file in files.values) {
             val fileData = file.data ?: continue
-            metaBuffer.writeInt(file.hashName)
-            metaBuffer.write24BitInt(fileData.size)
+            metaBuffer.writeInt(file.hashName).write24BitInt(fileData.size)
             val toWrite = if (extracted) fileData else BZIP2Compressor.compress(file.data)
             metaBuffer.write24BitInt(toWrite.size)
             filesBuffer.writeBytes(toWrite)
@@ -66,9 +65,7 @@ class Archive317(id: Int, name: Int) : Archive(id, name) {
         val decompressed = metaBuffer.array()
         val compressed = if (extracted) BZIP2Compressor.compress(decompressed) else decompressed
         val buffer = OutputBuffer(compressed.size + 6)
-        buffer.write24BitInt(decompressed.size)
-        buffer.write24BitInt(compressed.size)
-        buffer.writeBytes(compressed)
+        buffer.write24BitInt(decompressed.size).write24BitInt(compressed.size).writeBytes(compressed)
         return buffer.array()
     }
 
