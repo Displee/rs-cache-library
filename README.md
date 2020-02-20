@@ -39,21 +39,25 @@ val ags = 11694 //armadyl godsword
 val agsData = library.data(19, ags shr 8, ags and 0xFF)
 ```
 ```kotlin
-val regionId = 12850
+val regionId = 12853
 val x = (regionId shr 8) and 0xFF
 val y = regionId and 0xFF
-val landscape = library.data(5, "l$x'_'$y")
+val xtea = intArrayOf(...) //optional
+val landscape = library.data(5, "l$x'_'$y", xtea)
 ```
+For our 317 users :)
 ```kotlin
 val objData = library.data(0, 2, "obj.dat")
 val objMeta = library.data(0, 2, "obj.idx")
 ```
 #### Put file data
 ```kotlin
-library.put(18, 10, 2, byteArrayOf(...))
+val xtea = intArrayOf(...) //optional
+library.put(18, 10, 2, byteArrayOf(...), xtea)
 ```
 ```kotlin
-library.put(5, "l60_62", byteArrayOf(...))
+val xtea = intArrayOf(...) //optional
+library.put(5, "l60_62", byteArrayOf(...), xtea)
 ```
 #### Remove archive/file
 ```kotlin
@@ -65,13 +69,7 @@ library.remove(18, 10, 2)
 #### Write your changes (important)
 Update a specific index
 ```kotlin
-val xteas = mapOf(0 to intArrayOf(...)) //optional
-library.index(7).update(xteas) //returns true if changes have been written with success, else false
-```
-or just update all changed indices with one line
-```kotlin
-val xteas = mapOf("l50_50" to intArrayOf(...)) //required when updating maps index (5), otherwise optional
-library.update(xteas)
+library.index(7).update() //returns true if changes have been written with success, else false
 ```
 ## Advanced usage
 #### Add an archive to an index
@@ -135,16 +133,17 @@ val file = library.index(7).archive(10)?.remove(10)
 #### Cache an index
 Sometimes it's handy to read all data of an entire index and prepare this data for certain operations.
 ```kotlin
-val xteaMap = mutableMapOf<Int, IntArray>()
-xteaMap[28392] = intArrayOf(2, 3, 4, 5) //set xteas for archive 28392
-library.index(7).cache(xteaMap) //xteaMap is optional
+library.index(7).cache()
 ```
+If you want to cache an index containing xteas, set the xteas first for the archives:
 ```kotlin
-val xteaMap = mutableMapOf<String, IntArray>()
 for(regionId in 0 until 255 * 255) {
-    xteaMap[i] = RegionManager.getXTEA(regionId)
+    val x = (regionId shr 8) and 0xFF
+    val y = regionId and 0xFF
+    val xtea = RegionManager.getXTEA(regionId)
+    library.index(5).archive("l$x'_'$y", true)?.xtea(xtea)
 }
-library.index(5).cacheByName(xteaMap) //xteaMap is optional
+library.index(5).cache()
 ```
 #### Cross cache copying
 This is actually done in the above examples. You can copy archives and files from one cache to another.

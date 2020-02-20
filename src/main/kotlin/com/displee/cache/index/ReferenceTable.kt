@@ -257,6 +257,10 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         return existing
     }
 
+    fun archive(name: String, direct: Boolean = false): Archive? {
+        return archive(archiveId(name), direct)
+    }
+
     @JvmOverloads
     fun archive(name: String, xtea: IntArray? = null, direct: Boolean = false): Archive? {
         return archive(archiveId(name), xtea, direct)
