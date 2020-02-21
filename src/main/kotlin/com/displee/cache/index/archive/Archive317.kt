@@ -2,7 +2,7 @@ package com.displee.cache.index.archive
 
 import com.displee.cache.index.archive.file.File
 import com.displee.compress.CompressionType
-import com.displee.compress.type.BZIP2Compressor
+import com.displee.cache.compress.type.BZIP2Compressor
 import com.displee.compress.type.GZIPCompressor
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer

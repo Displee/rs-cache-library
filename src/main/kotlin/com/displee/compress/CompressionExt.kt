@@ -1,7 +1,7 @@
 package com.displee.compress
 
 import com.displee.cache.index.archive.ArchiveSector
-import com.displee.compress.type.BZIP2Compressor
+import com.displee.cache.compress.type.BZIP2Compressor
 import com.displee.compress.type.GZIPCompressor
 import com.displee.compress.type.LZMACompressor
 import com.displee.io.impl.InputBuffer

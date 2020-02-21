@@ -1,4 +1,4 @@
-package com.displee.compress.type;
+package com.displee.cache.compress.type;
 
 import com.displee.io.impl.InputBuffer;
 import org.apache.tools.bzip2.CBZip2OutputStream;
