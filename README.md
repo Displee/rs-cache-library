@@ -158,6 +158,19 @@ Generate old ukeys for < 600 caches
 ```kotlin
 val oldUkeys = library.generateOldUkeys()
 ```
+#### Cache rebuilding
+When you remove an archive from an index, only the reference is being removed.
+The actual data is still accessible (hence why the function is called 'remove' and not 'delete').
+So why is the data not being removed? This has basically to do with how binary files are built.
+
+If you want to delete something in the middle of a binary file, all data after it has to be shifted to the left.
+With other words, whole cache has to be rebuilt in order to delete archive data.
+
+To do this, you can use the following function:
+```kotlin
+//I only recommend this if you deleted a lot of archives and really want to shrink your cache
+library.rebuild(File("location/of/new/cache"))
+```
 ---
 #### Example (replace musics in a cache with the ones from another cache)
 ```kotlin
