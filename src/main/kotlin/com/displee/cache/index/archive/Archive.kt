@@ -83,16 +83,13 @@ open class Archive(val id: Int, var hashName: Int = 0, internal var xtea: IntArr
     open fun write(): ByteArray {
         val files = files()
         var size = 0
-        for (file in files) {
-            size += file.data?.size ?: 0
-        }
-        val buffer = OutputBuffer(size)
+        files.forEach { size += it.data?.size ?: 0 }
+        val buffer = OutputBuffer(size + files.size * 4)
+        val emptyByteArray =  byteArrayOf()
         if (files.size == 1) {
-            return first()?.data ?: byteArrayOf()
+            return first()?.data ?: emptyByteArray
         } else {
-            for (file in files) {
-                buffer.writeBytes(file.data ?: byteArrayOf())
-            }
+            files.forEach { buffer.writeBytes(it.data ?: emptyByteArray) }
             val chunks = 1 //TODO Implement chunk writing
             for (i in files.indices) {
                 val file = files[i]

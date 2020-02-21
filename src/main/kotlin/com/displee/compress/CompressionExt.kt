@@ -14,7 +14,7 @@ fun ByteArray.compress(compressionType: CompressionType, xteas: IntArray? = null
         CompressionType.GZIP -> GZIPCompressor.deflate(this)
         CompressionType.LZMA -> LZMACompressor.compress(this)
     }
-    val buffer = OutputBuffer(5 + compressed.size + if (revision == -1) 0 else 2)
+    val buffer = OutputBuffer(9 + compressed.size + if (revision == -1) 0 else 2)
     buffer.writeByte(compressionType.ordinal).writeInt(compressed.size)
     if (compressionType != CompressionType.NONE) {
         buffer.writeInt(size)
