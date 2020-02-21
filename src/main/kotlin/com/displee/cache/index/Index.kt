@@ -85,6 +85,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
             flag()
         }
         if (flagged()) {
+            unFlag()
             revision++
             val indexData = write().compress(compressionType)
             crc = indexData.generateCrc()

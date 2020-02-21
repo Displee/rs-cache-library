@@ -115,7 +115,7 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
     }
 
     open fun write(): ByteArray {
-        val buffer = OutputBuffer(1000)
+        val buffer = OutputBuffer(10_000_000) //10mb
         buffer.writeByte(version)
         if (version >= 6) {
             buffer.writeInt(revision)
@@ -377,10 +377,11 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
     }
 
     fun unFlag() {
-        if (!flagged()) {
-            return
-        }
         needUpdate = false
+    }
+
+    fun mask(referenceTable: ReferenceTable) {
+        this.mask = referenceTable.mask
     }
 
     fun flagMask(flag: Int) {

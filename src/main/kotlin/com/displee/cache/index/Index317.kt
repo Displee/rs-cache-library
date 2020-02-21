@@ -6,7 +6,6 @@ import com.displee.cache.index.archive.Archive
 import com.displee.cache.index.archive.Archive317
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
-import com.displee.util.Whirlpool
 import com.displee.util.generateCrc
 import com.displee.util.generateWhirlpool
 import com.displee.util.hashCode317
@@ -14,39 +13,7 @@ import java.io.IOException
 import java.io.RandomAccessFile
 import java.util.*
 
-class Index317(origin: CacheLibrary, id: Int, randomAccessFile: RandomAccessFile) : Index(origin, id, randomAccessFile) {
-
-    override fun update(listener: ProgressListener?): Boolean {
-        check(!closed) { "Index is closed." }
-        val flaggedArchives = flaggedArchives()
-        val archives = archives()
-        var i = 0.0
-        flaggedArchives.forEach {
-            i++
-            it.revision++
-            it.unFlag()
-            listener?.notify(i / flaggedArchives.size * 80.0, "Repacking archive ${it.id}...")
-            val compressed = it.write()
-            it.crc = compressed.generateCrc()
-            it.whirlpool = compressed.generateWhirlpool()
-            val written = writeArchiveSector(it.id, compressed)
-            check(written) { "Unable to write data to archive sector. Your cache may be corrupt." }
-            if (origin.clearDataAfterUpdate) {
-                it.restore()
-            }
-        }
-        listener?.notify(85.0, "Updating version archive for index $id...")
-        if (flaggedArchives.isNotEmpty() && !flagged()) {
-            flag()
-        }
-        if (id != CONFIG_INDEX && id < VERSION_NAMES.size && flagged()) {
-            writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::revision).toArray(), VERSION_NAMES[id - 1], BufferType.SHORT)
-            writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::crc).toArray(), CRC_NAMES[id - 1], BufferType.INT)
-            writeArchiveProperties(Arrays.stream(archives).mapToInt { e: Archive -> (e as Archive317).priority }.toArray(), INDEX_NAMES[id - 1], nameBufferType())
-        }
-        listener?.notify(100.0, "Successfully updated index $id.")
-        return true
-    }
+class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(origin, id, raf) {
 
     override fun init() {
         val archiveLength = try {
@@ -85,13 +52,44 @@ class Index317(origin: CacheLibrary, id: Int, randomAccessFile: RandomAccessFile
         return byteArrayOf()
     }
 
+    override fun update(listener: ProgressListener?): Boolean {
+        check(!closed) { "Index is closed." }
+        val flaggedArchives = flaggedArchives()
+        val archives = archives()
+        var i = 0.0
+        flaggedArchives.forEach {
+            i++
+            it.revision++
+            it.unFlag()
+            listener?.notify(i / flaggedArchives.size * 80.0, "Repacking archive ${it.id}...")
+            val compressed = it.write()
+            it.crc = compressed.generateCrc()
+            it.whirlpool = compressed.generateWhirlpool()
+            val written = writeArchiveSector(it.id, compressed)
+            check(written) { "Unable to write data to archive sector. Your cache may be corrupt." }
+            if (origin.clearDataAfterUpdate) {
+                it.restore()
+            }
+        }
+        listener?.notify(85.0, "Updating version archive for index $id...")
+        if (flaggedArchives.isNotEmpty() && !flagged()) {
+            flag()
+        }
+        if (id != CONFIG_INDEX && id < VERSION_NAMES.size && flagged()) {
+            writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::revision).toArray(), VERSION_NAMES[id - 1], BufferType.SHORT)
+            writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::crc).toArray(), CRC_NAMES[id - 1], BufferType.INT)
+            writeArchiveProperties(Arrays.stream(archives).mapToInt { e: Archive -> (e as Archive317).priority }.toArray(), INDEX_NAMES[id - 1], nameBufferType())
+        }
+        listener?.notify(100.0, "Successfully updated index $id.")
+        return true
+    }
+
     private fun readArchiveProperties(fileId: String, type: BufferType): IntArray? {
         if (id == CONFIG_INDEX || id == MAPS_INDEX || id > VERSION_NAMES.size) {
             return null
         }
         val data = origin.index(CONFIG_INDEX).archive(VERSION_ARCHIVE)?.file(fileId)?.data
         if (data == null) {
-            System.err.println("Missing file data for $fileId, type=$type.")
             return null
         }
         val buffer = InputBuffer(data)
