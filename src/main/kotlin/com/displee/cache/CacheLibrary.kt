@@ -2,6 +2,7 @@ package com.displee.cache
 
 import com.displee.cache.index.Index
 import com.displee.cache.index.Index.Companion.INDEX_SIZE
+import com.displee.cache.index.Index.Companion.WHIRLPOOL_SIZE
 import com.displee.cache.index.Index255
 import com.displee.cache.index.Index317
 import com.displee.cache.index.ReferenceTable.Companion.FLAG_4
@@ -274,12 +275,12 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         val buffer = OutputBuffer(6 + indices.size * 72)
         buffer.offset = 5
         buffer.writeByte(indices.size)
-        val emptyWhirlpool = ByteArray(64)
+        val emptyWhirlpool = ByteArray(WHIRLPOOL_SIZE)
         for (index in indices()) {
             buffer.writeInt(index.crc).writeInt(index.revision).writeBytes(index.whirlpool ?: emptyWhirlpool)
         }
         val indexArray = buffer.array()
-        val whirlpoolBuffer = OutputBuffer(65).writeByte(0).writeBytes(indexArray.generateWhirlpool())
+        val whirlpoolBuffer = OutputBuffer(WHIRLPOOL_SIZE + 1).writeByte(0).writeBytes(indexArray.generateWhirlpool())
         buffer.writeBytes(Buffer.cryptRSA(whirlpoolBuffer.array(), exponent, modulus))
         return buffer.array()
     }

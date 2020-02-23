@@ -272,6 +272,12 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         unCache()
     }
 
+    fun clear() {
+        archives.clear()
+        crc = 0
+        whirlpool = ByteArray(WHIRLPOOL_SIZE)
+    }
+
     fun close() {
         if (closed) {
             return

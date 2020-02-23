@@ -185,14 +185,11 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         return archive
     }
 
-    fun add(vararg archives: Archive?, replace: Boolean = true): Array<Archive> {
+    fun add(vararg archives: Archive?, overwrite: Boolean = true): Array<Archive> {
         val newArchives = ArrayList<Archive>(archives.size)
-        if (replace) {
-            this.archives.clear()
-        }
         archives.forEach {
             it ?: return@forEach
-            newArchives.add(add(it, overwrite = replace))
+            newArchives.add(add(it, overwrite = overwrite))
         }
         return newArchives.toTypedArray()
     }

@@ -159,7 +159,7 @@ Generate old ukeys for < 600 caches
 val oldUkeys = library.generateOldUkeys()
 ```
 #### Cache rebuilding
-When you remove an archive from an index, only the reference is being removed.
+When you remove an archive from an index, only the reference is being deleted.
 The actual data is still accessible (hence why the function is called 'remove' and not 'delete').
 So why is the data not being removed? This has basically to do with how binary files are built.
 
@@ -177,6 +177,7 @@ library.rebuild(File("location/of/new/cache"))
 val cacheFrom = CacheLibrary.create("...")
 val cacheTo = CacheLibrary.create("...")
 val index = cacheTo.index(6)
+index.clear()
 index.add(*cacheFrom.index(6).archives())
 index.update()
 ```

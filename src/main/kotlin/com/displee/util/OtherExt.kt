@@ -1,5 +1,6 @@
 package com.displee.util
 
+import com.displee.cache.index.Index.Companion.WHIRLPOOL_SIZE
 import java.io.InputStream
 import java.io.OutputStream
 
@@ -35,7 +36,7 @@ fun ByteArray.generateWhirlpool(offset: Int = 0, length: Int = size): ByteArray 
     val whirlpool = Whirlpool()
     whirlpool.NESSIEinit()
     whirlpool.NESSIEadd(source, (length * 8).toLong())
-    val digest = ByteArray(64)
+    val digest = ByteArray(WHIRLPOOL_SIZE)
     whirlpool.NESSIEfinalize(digest, 0)
     return digest
 }
