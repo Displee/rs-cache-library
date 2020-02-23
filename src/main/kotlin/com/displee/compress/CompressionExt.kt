@@ -21,6 +21,7 @@ fun ByteArray.compress(compressionType: CompressionType, xteas: IntArray? = null
     }
     buffer.writeBytes(compressed)
     if (xteas != null && (xteas[0] != 0 || xteas[1] != 0 || xteas[2] != 0 || 0 != xteas[3])) {
+        check(compressionType != CompressionType.BZIP2) { "BZIP2 compression doesn't work with xtea encryption." }
         buffer.encryptXTEA(xteas, 5, buffer.offset)
     }
     if (revision != -1) {

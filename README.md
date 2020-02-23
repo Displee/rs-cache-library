@@ -39,11 +39,11 @@ val ags = 11694 //armadyl godsword
 val agsData = library.data(19, ags shr 8, ags and 0xFF)
 ```
 ```kotlin
-val regionId = 12853
+val regionId = 12850
 val x = (regionId shr 8) and 0xFF
 val y = regionId and 0xFF
-val xtea = intArrayOf(...) //optional
-val landscape = library.data(5, "l$x'_'$y", xtea)
+val xtea = intArrayOf(0, 0, 0, 0) //optional
+val landscape = library.data(5, "l${x}_${y}", xtea)
 ```
 For our 317 users :)
 ```kotlin
@@ -114,7 +114,7 @@ val regionId = 12341 //barbarian village
 val x = (regionId shr 8) and 0xFF
 val y = regionId and 0xFF
 val replace = true //optional
-val file = library.idnex(5).archive("l$x'_'$y", xtea)?.add(0, byteArrayOf(...), replace)
+val file = library.idnex(5).archive("l${x}_${y}", xtea)?.add(0, byteArrayOf(...), replace)
 ```
 ```kotlin
 val replace = true //optional
@@ -141,7 +141,7 @@ for(regionId in 0 until 255 * 255) {
     val x = (regionId shr 8) and 0xFF
     val y = regionId and 0xFF
     val xtea = RegionManager.getXTEA(regionId)
-    library.index(5).archive("l$x'_'$y", true)?.xtea(xtea)
+    library.index(5).archive("l${x}_${y}", true)?.xtea(xtea)
 }
 library.index(5).cache()
 ```

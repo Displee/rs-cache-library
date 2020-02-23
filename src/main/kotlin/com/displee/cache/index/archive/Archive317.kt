@@ -18,7 +18,7 @@ class Archive317(id: Int, name: Int) : Archive(id, name) {
     override fun read(buffer: InputBuffer) {
         read = true
         if (compressionType == CompressionType.GZIP) {
-            first()?.data = GZIPCompressor.deflate317(buffer.raw())
+            files[0] = File(0, GZIPCompressor.deflate317(buffer.raw()))
             return
         }
         val decompressed: ByteArray
