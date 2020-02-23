@@ -12,14 +12,15 @@ A file contains useful data like the properties of a certain game item, object, 
 This library is able to read this data, and write manipulated data back to the cache.
 
 ### Features:
-- easy to use
-- very fast
+- Easy to use
+- Very fast (including OSRS)
 - CRUD operations for indices, archives and files
-- cross cache copying
+- Cross cache copying
 - XTEA cryption
 - BZIP2, GZIP and LZMA (de)compression
-- whirlpool and CRC generation
-- ukeys generation
+- Whirlpool and CRC generation
+- Ukeys generation
+- Cache rebuilding (also known as cache defragmentation)
 
 ## Gradle
 ```
