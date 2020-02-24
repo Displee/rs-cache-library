@@ -19,7 +19,7 @@ buildscript {
 group = 'com.displee'
 version = '6.0'
 
-description = "A library written in Kotlin used to read and write to all cache types of RuneScape."
+description = "A library written in Kotlin used to read and write to all cache formats of RuneScape."
 
 sourceCompatibility = 8
 targetCompatibility = 8

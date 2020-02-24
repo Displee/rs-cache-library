@@ -272,6 +272,9 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         unCache()
     }
 
+    /**
+     * Clear the archives.
+     */
     fun clear() {
         archives.clear()
         crc = 0

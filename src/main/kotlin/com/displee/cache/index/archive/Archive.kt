@@ -253,6 +253,9 @@ open class Archive(val id: Int, var hashName: Int = 0, internal var xtea: IntArr
         new = false
     }
 
+    /**
+     * Clear the files.
+     */
     fun clear() {
         files.clear()
     }
