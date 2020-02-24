@@ -1,6 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'kotlin'
 apply plugin: 'maven'
+apply plugin: 'signing'
 
 buildscript {
     ext.kotlin_version = '1.3.61'
@@ -15,10 +16,10 @@ buildscript {
     }
 }
 
-group = 'RS2-Cache-Library'
-version = '1.0-SNAPSHOT'
+group = 'com.displee'
+version = '6.0'
 
-description = ""
+description = "A library written in Kotlin used to read and write to all cache formats of RuneScape."
 
 sourceCompatibility = 8
 targetCompatibility = 8
@@ -40,7 +41,65 @@ compileTestKotlin {
 }
 
 dependencies {
-    implementation group: 'com.github.jponge', name: 'lzma-java', version:'1.3'
+    implementation 'com.github.jponge:lzma-java:1.3'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-    testCompile group: 'junit', name: 'junit', version:'4.12'
+    implementation 'org.apache.ant:ant:1.10.7'
+    implementation 'com.displee:disio:1.6'
+    testCompile 'junit:junit:4.12'
+}
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
+}
+
+signing {
+    sign configurations.archives
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+            pom.project {
+                name rootProject.getName()
+                packaging 'jar'
+                description description
+                url 'https://github.com/Displee/rs-cache-library'
+                scm {
+                    connection 'scm:git:git://github.com/Displee/rs-cache-library.git'
+                    developerConnection 'scm:git:ssh://git@github.com/Displee/rs-cache-library.git'
+                    url 'https://github.com/Displee/rs-cache-library'
+                }
+                licenses {
+                    license {
+                        name 'MIT License'
+                        url 'https://github.com/Displee/rs-cache-library/blob/master/LICENSE'
+                    }
+                }
+                developers {
+                    developer {
+                        id 'Displee'
+                        name 'Yassin Amhagi'
+                        email 'displee@hotmail.com'
+                    }
+                }
+            }
+        }
+    }
 }
