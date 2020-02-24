@@ -11,7 +11,7 @@ import java.util.zip.Inflater
 object GZIPCompressor {
 
     private var inflater: Inflater? = null
-    private val gzipBuffer = ByteArray(1000000) //because in 317 Jagex stores a lot of data in one file
+    private val gzipBuffer = ByteArray(1000_000) //because in 317 Jagex stores a lot of data in one file
 
     fun inflate(buffer: InputBuffer, data: ByteArray): Boolean {
         val bytes = buffer.raw()

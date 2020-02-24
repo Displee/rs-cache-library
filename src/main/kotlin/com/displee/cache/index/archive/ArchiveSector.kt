@@ -32,8 +32,7 @@ class ArchiveSector(private val bigSector: Boolean, val size: Int, var position:
         } else {
             buffer.writeShort(id)
         }
-        buffer.writeShort(chunk).write24BitInt(position).writeByte(index)
-        return buffer.array()
+        return buffer.writeShort(chunk).write24BitInt(position).writeByte(index).array()
     }
 
 }
