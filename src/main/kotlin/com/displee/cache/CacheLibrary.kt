@@ -101,6 +101,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         val indexFiles = File(path).listFiles { _: File, name: String ->
             return@listFiles name.startsWith("$CACHE_FILE_NAME.idx")
         }
+        check(indexFiles != null) { "Files are null. Check your cache path." }
         listener?.notify(0.0, "Reading indices...")
         for (i in indexFiles.indices) {
             val file = File(path, "$CACHE_FILE_NAME.idx$i")
