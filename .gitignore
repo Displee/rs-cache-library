@@ -12,9 +12,18 @@
 .settings
 bin
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# IntellIJ
+build
 hs_err_pid*
 /.idea/
-
 target
 classes
+
+# Gradle
+.gradle
+
+# Test files
+src/test/java/Test.java
+src/test/kotlin/TestOsrs.kt
+src/test/kotlin/TestCache.kt
+src/test/kotlin/TestLibrary.kt
