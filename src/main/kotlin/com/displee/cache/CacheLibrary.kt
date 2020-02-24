@@ -27,6 +27,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     private val indices: SortedMap<Int, Index> = TreeMap<Int, Index>()
     var index255: Index255? = null
+    private var rs3 = false
 
     var closed = false
 
@@ -70,19 +71,20 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         this.index255 = index255
         listener?.notify(0.0, "Reading indices...")
         val indicesLength = index255.raf.length().toInt() / INDEX_SIZE
+        rs3 = indicesLength > 39
         for (i in 0 until indicesLength) {
             val file = File(path, "$CACHE_FILE_NAME.idx$i")
             val progress = i / (indices.size - 1.0) * 100
             if (!file.exists()) {
-                listener?.notify(progress, "Could not load index $i, missing idx file...")
+                listener?.notify(progress, "Could not load index $i, missing idx file.")
                 continue
             }
             try {
                 indices[i] = Index(this, i, RandomAccessFile(file, "rw"))
-                listener?.notify(progress, "Loaded index $i ...")
+                listener?.notify(progress, "Loaded index $i .")
             } catch (e: Exception) {
                 e.printStackTrace()
-                listener?.notify(progress, "Failed to load index $i...")
+                listener?.notify(progress, "Failed to load index $i.")
             }
         }
     }
@@ -108,10 +110,10 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
             }
             try {
                 indices[i] = Index317(this, i, RandomAccessFile(file, "rw"))
-                listener?.notify(progress, "Loaded index $i ...")
+                listener?.notify(progress, "Loaded index $i .")
             } catch (e: Exception) {
                 e.printStackTrace()
-                listener?.notify(progress, "Failed to load index $i...")
+                listener?.notify(progress, "Failed to load index $i.")
             }
         }
     }
@@ -359,7 +361,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     }
 
     fun isRS3(): Boolean {
-        return indices.size > 39
+        return rs3
     }
 
     fun indices(): Array<Index> {
