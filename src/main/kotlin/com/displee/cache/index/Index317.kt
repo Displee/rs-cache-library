@@ -24,9 +24,9 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
         }
         var versions: IntArray? = null
         var crcs: IntArray? = null
-        if (id != CONFIG_INDEX && id < VERSION_NAMES.size) {
-            versions = readArchiveProperties(VERSION_NAMES[id - 1], BufferType.SHORT)
-            crcs = readArchiveProperties(CRC_NAMES[id - 1], BufferType.INT)
+        if (id != CONFIG_INDEX && id < VERSION_FILES.size) {
+            versions = readArchiveProperties(VERSION_FILES[id - 1], BufferType.SHORT)
+            crcs = readArchiveProperties(CRC_FILES[id - 1], BufferType.INT)
         }
         for (i in 0 until archiveLength) {
             val archive = Archive317(i)
@@ -71,15 +71,15 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
             flag()
         }
         if (flagged()) {
-            writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::revision).toArray(), VERSION_NAMES[id - 1], BufferType.SHORT)
-            writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::crc).toArray(), CRC_NAMES[id - 1], BufferType.INT)
+            writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::revision).toArray(), VERSION_FILES[id - 1], BufferType.SHORT)
+            writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::crc).toArray(), CRC_FILES[id - 1], BufferType.INT)
         }
         listener?.notify(100.0, "Successfully updated index $id.")
         return true
     }
 
     private fun readArchiveProperties(fileId: String, type: BufferType): IntArray? {
-        if (id == CONFIG_INDEX || id > VERSION_NAMES.size) {
+        if (id == CONFIG_INDEX || id > VERSION_FILES.size) {
             return null
         }
         val data = origin.index(CONFIG_INDEX).archive(VERSION_ARCHIVE)?.file(fileId)?.data ?: return null
@@ -103,7 +103,7 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
     }
 
     private fun writeArchiveProperties(properties: IntArray, fileId: String, type: BufferType): Boolean {
-        if (id == CONFIG_INDEX || id > VERSION_NAMES.size) {
+        if (id == CONFIG_INDEX || id > VERSION_FILES.size) {
             return false
         }
         val buffer = OutputBuffer(properties.size)
@@ -141,13 +141,13 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
 
         private const val VERSION_ARCHIVE = 5
 
-        private val VERSION_NAMES = mutableListOf("model_version", "anim_version", "midi_version", "map_version")
-        private val CRC_NAMES = mutableListOf("model_crc", "anim_crc", "midi_crc", "map_crc")
+        private val VERSION_FILES = mutableListOf("model_version", "anim_version", "midi_version", "map_version")
+        private val CRC_FILES = mutableListOf("model_crc", "anim_crc", "midi_crc", "map_crc")
 
         @JvmStatic
         fun addMetaFiles(versionFile: String, crcFile: String) {
-            VERSION_NAMES.add(versionFile)
-            CRC_NAMES.add(crcFile)
+            VERSION_FILES.add(versionFile)
+            CRC_FILES.add(crcFile)
         }
     }
 
