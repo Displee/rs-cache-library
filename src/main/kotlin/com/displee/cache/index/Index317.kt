@@ -145,7 +145,7 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
         private val CRC_NAMES = mutableListOf("model_crc", "anim_crc", "midi_crc", "map_crc")
 
         @JvmStatic
-        fun addMetaArchive(versionFile: String, crcFile: String) {
+        fun addMetaFiles(versionFile: String, crcFile: String) {
             VERSION_NAMES.add(versionFile)
             CRC_NAMES.add(crcFile)
         }
