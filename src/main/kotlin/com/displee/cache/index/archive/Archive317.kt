@@ -11,7 +11,6 @@ import com.displee.util.hashCode317
 class Archive317(id: Int, name: Int) : Archive(id, name) {
 
     private var extracted = false
-    var priority = 0
 
     constructor(id: Int) : this(id, 0)
 

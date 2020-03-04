@@ -24,11 +24,9 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
         }
         var versions: IntArray? = null
         var crcs: IntArray? = null
-        var priorities: IntArray? = null
         if (id != CONFIG_INDEX && id < VERSION_NAMES.size) {
             versions = readArchiveProperties(VERSION_NAMES[id - 1], BufferType.SHORT)
             crcs = readArchiveProperties(CRC_NAMES[id - 1], BufferType.INT)
-            priorities = readArchiveProperties(INDEX_NAMES[id - 1], nameBufferType())
         }
         for (i in 0 until archiveLength) {
             val archive = Archive317(i)
@@ -38,9 +36,6 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
             }
             archive.revision = versions[i]
             archive.crc = crcs[i]
-            if (priorities != null) {
-                archive.priority = if (i < priorities.size) priorities[i] else 0
-            }
         }
     }
 
@@ -75,23 +70,19 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
         if (flaggedArchives.isNotEmpty() && !flagged()) {
             flag()
         }
-        if (id != CONFIG_INDEX && id < VERSION_NAMES.size && flagged()) {
+        if (flagged()) {
             writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::revision).toArray(), VERSION_NAMES[id - 1], BufferType.SHORT)
             writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::crc).toArray(), CRC_NAMES[id - 1], BufferType.INT)
-            writeArchiveProperties(Arrays.stream(archives).mapToInt { e: Archive -> (e as Archive317).priority }.toArray(), INDEX_NAMES[id - 1], nameBufferType())
         }
         listener?.notify(100.0, "Successfully updated index $id.")
         return true
     }
 
     private fun readArchiveProperties(fileId: String, type: BufferType): IntArray? {
-        if (id == CONFIG_INDEX || id == MAPS_INDEX || id > VERSION_NAMES.size) {
+        if (id == CONFIG_INDEX || id > VERSION_NAMES.size) {
             return null
         }
-        val data = origin.index(CONFIG_INDEX).archive(VERSION_ARCHIVE)?.file(fileId)?.data
-        if (data == null) {
-            return null
-        }
+        val data = origin.index(CONFIG_INDEX).archive(VERSION_ARCHIVE)?.file(fileId)?.data ?: return null
         val buffer = InputBuffer(data)
         val properties = IntArray(data.size / (1 shl type.ordinal))
         val bufferFun: () -> Int = when (type) {
@@ -112,7 +103,7 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
     }
 
     private fun writeArchiveProperties(properties: IntArray, fileId: String, type: BufferType): Boolean {
-        if (id == CONFIG_INDEX || id == MAPS_INDEX || id > VERSION_NAMES.size) {
+        if (id == CONFIG_INDEX || id > VERSION_NAMES.size) {
             return false
         }
         val buffer = OutputBuffer(properties.size)
@@ -133,10 +124,6 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
         return index.update()
     }
 
-    private fun nameBufferType(): BufferType {
-        return if (id == ANIMATION_INDEX) BufferType.SHORT else BufferType.BYTE
-    }
-
     override fun toHash(name: String): Int {
         return name.hashCode317()
     }
@@ -151,14 +138,17 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
 
     companion object {
         private const val CONFIG_INDEX = 0
-        private const val ANIMATION_INDEX = 2
-        private const val MAPS_INDEX = 4
 
         private const val VERSION_ARCHIVE = 5
 
-        private val VERSION_NAMES = arrayOf("model_version", "anim_version", "midi_version", "map_version")
-        private val CRC_NAMES = arrayOf("model_crc", "anim_crc", "midi_crc", "map_crc")
-        private val INDEX_NAMES = arrayOf("model_index", "anim_index", "midi_index", "map_index")
+        private val VERSION_NAMES = mutableListOf("model_version", "anim_version", "midi_version", "map_version")
+        private val CRC_NAMES = mutableListOf("model_crc", "anim_crc", "midi_crc", "map_crc")
+
+        @JvmStatic
+        fun addMetaArchive(versionFile: String, crcFile: String) {
+            VERSION_NAMES.add(versionFile)
+            CRC_NAMES.add(crcFile)
+        }
     }
 
     private enum class BufferType {
