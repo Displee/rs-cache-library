@@ -283,8 +283,13 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
             buffer.writeInt(index.crc).writeInt(index.revision).writeBytes(index.whirlpool ?: emptyWhirlpool)
         }
         val indexArray = buffer.array()
-        val whirlpoolBuffer = OutputBuffer(WHIRLPOOL_SIZE + 1).writeByte(0).writeBytes(indexArray.generateWhirlpool())
+        val whirlpoolBuffer = OutputBuffer(WHIRLPOOL_SIZE + 1).writeByte(1).writeBytes(indexArray.generateWhirlpool(5, indexArray.size - 5))
         buffer.writeBytes(Buffer.cryptRSA(whirlpoolBuffer.array(), exponent, modulus))
+        val end = buffer.offset
+        buffer.offset = 0
+        buffer.writeByte(0)
+        buffer.writeInt(end - 5)
+        buffer.offset = end
         return buffer.array()
     }
 
