@@ -70,7 +70,7 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
         if (flaggedArchives.isNotEmpty() && !flagged()) {
             flag()
         }
-        if (flagged()) {
+        if (id != CONFIG_INDEX && flagged()) {
             writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::revision).toArray(), VERSION_FILES[id - 1], BufferType.SHORT)
             writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::crc).toArray(), CRC_FILES[id - 1], BufferType.INT)
         }
