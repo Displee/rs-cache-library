@@ -70,7 +70,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
             i++
             it.revision++
             it.unFlag()
-            listener?.notify(i / flaggedArchives.size * 80.0, "Repacking archive ${it.id}...")
+            listener?.notify((i / flaggedArchives.size) * 0.80, "Repacking archive ${it.id}...")
             val compressed = it.write().compress(it.compressionType ?: CompressionType.GZIP, it.xtea, it.revision)
             it.crc = compressed.generateCrc(length = compressed.size - 2)
             it.whirlpool = compressed.generateWhirlpool(length = compressed.size - 2)
@@ -80,7 +80,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
                 it.restore()
             }
         }
-        listener?.notify(85.0, "Updating checksum table for index $id...")
+        listener?.notify(0.85, "Updating checksum table for index $id...")
         if (flaggedArchives.isNotEmpty() && !flagged()) {
             flag()
         }
@@ -93,7 +93,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
             val written = origin.index255?.writeArchiveSector(this.id, indexData) ?: false
             check(written) { "Unable to write data to checksum table. Your cache may be corrupt." }
         }
-        listener?.notify(100.0, "Successfully updated index $id.")
+        listener?.notify(1.0, "Successfully updated index $id.")
         return true
     }
 
