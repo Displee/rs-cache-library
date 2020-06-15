@@ -24,7 +24,7 @@ This library is able to read this data, and write manipulated data back to the c
 
 ## Gradle
 ```
-implementation 'com.displee:rs-cache-library:6.4'
+implementation 'com.displee:rs-cache-library:6.5'
 ```
 ## Initialize your cache
 ```kotlin
