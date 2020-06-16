@@ -74,14 +74,14 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         rs3 = indicesLength > 39
         for (i in 0 until indicesLength) {
             val file = File(path, "$CACHE_FILE_NAME.idx$i")
-            val progress = i / (indices.size - 1.0) * 100
+            val progress = i / (indicesLength - 1.0)
             if (!file.exists()) {
                 listener?.notify(progress, "Could not load index $i, missing idx file.")
                 continue
             }
             try {
                 indices[i] = Index(this, i, RandomAccessFile(file, "rw"))
-                listener?.notify(progress, "Loaded index $i .")
+                listener?.notify(progress, "Loaded index $i.")
             } catch (e: Exception) {
                 e.printStackTrace()
                 listener?.notify(progress, "Failed to load index $i.")
@@ -105,7 +105,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         listener?.notify(0.0, "Reading indices...")
         for (i in indexFiles.indices) {
             val file = File(path, "$CACHE_FILE_NAME.idx$i")
-            val progress = i / (indices.size - 1.0) * 100
+            val progress = i / (indexFiles.size - 1.0)
             if (!file.exists()) {
                 continue
             }

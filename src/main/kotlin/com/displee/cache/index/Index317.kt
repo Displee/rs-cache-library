@@ -56,7 +56,7 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
             i++
             it.revision++
             it.unFlag()
-            listener?.notify(i / flaggedArchives.size * 80.0, "Repacking archive ${it.id}...")
+            listener?.notify((i / flaggedArchives.size) * 0.80, "Repacking archive ${it.id}...")
             val compressed = it.write()
             it.crc = compressed.generateCrc()
             it.whirlpool = compressed.generateWhirlpool()
@@ -66,7 +66,7 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
                 it.restore()
             }
         }
-        listener?.notify(85.0, "Updating version archive for index $id...")
+        listener?.notify(0.85, "Updating version archives for index $id...")
         if (flaggedArchives.isNotEmpty() && !flagged()) {
             flag()
         }
@@ -74,7 +74,7 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
             writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::revision).toArray(), VERSION_FILES[id - 1], BufferType.SHORT)
             writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::crc).toArray(), CRC_FILES[id - 1], BufferType.INT)
         }
-        listener?.notify(100.0, "Successfully updated index $id.")
+        listener?.notify(1.0, "Successfully updated index $id.")
         return true
     }
 
