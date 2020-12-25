@@ -130,9 +130,9 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
                     buffer.offset = 0
                     archiveSector.read(buffer)
                     if (!isIndexValid(archiveSector.index) || id != archiveSector.id || chunk != archiveSector.chunk) {
-                        throw RuntimeException("Error, the read data is incorrect. Data[currentIndex=" + this.id + ", index=" + archiveSector.index + ", currentId=" + id + ", id=" + archiveSector.id + ", currentChunk=" + chunk + ", chunk=" + archiveSector.chunk + "]")
+                        return null
                     } else if (archiveSector.nextPosition < 0 || archiveSector.nextPosition > origin.mainFile.length() / SECTOR_SIZE) {
-                        throw RuntimeException("Error, the next position is invalid.")
+                        return null
                     }
                     val bufferData = buffer.raw()
                     for (i in 0 until requiredToRead) {
