@@ -265,31 +265,28 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         indices.remove(id)
     }
 
-    fun generateOldUkeys(): ByteArray {
-        val buffer = OutputBuffer(indices.size * 8)
-        for (index in indices()) {
-            buffer.writeInt(index.crc)
-            buffer.writeInt(index.revision)
-        }
-        return buffer.array()
-    }
-
-    fun generateNewUkeys(exponent: BigInteger, modulus: BigInteger): ByteArray {
+    @JvmOverloads
+    fun generateUkeys(writeWhirlpool: Boolean = true, exponent: BigInteger? = null, modulus: BigInteger? = null): ByteArray {
         val buffer = OutputBuffer(6 + indices.size * 72)
-        buffer.offset = 5
-        buffer.writeByte(indices.size)
+        if (writeWhirlpool) {
+            buffer.writeByte(indices.size)
+        }
         val emptyWhirlpool = ByteArray(WHIRLPOOL_SIZE)
         for (index in indices()) {
-            buffer.writeInt(index.crc).writeInt(index.revision).writeBytes(index.whirlpool ?: emptyWhirlpool)
+            buffer.writeInt(index.crc).writeInt(index.revision)
+            if (writeWhirlpool) {
+                buffer.writeBytes(index.whirlpool ?: emptyWhirlpool)
+            }
         }
-        val indexArray = buffer.array()
-        val whirlpoolBuffer = OutputBuffer(WHIRLPOOL_SIZE + 1).writeByte(1).writeBytes(indexArray.generateWhirlpool(5, indexArray.size - 5))
-        buffer.writeBytes(Buffer.cryptRSA(whirlpoolBuffer.array(), exponent, modulus))
-        val end = buffer.offset
-        buffer.offset = 0
-        buffer.writeByte(0)
-        buffer.writeInt(end - 5)
-        buffer.offset = end
+        if (writeWhirlpool) {
+            val indexData = buffer.array()
+            val whirlpoolBuffer = OutputBuffer(WHIRLPOOL_SIZE + 1)
+                .writeByte(0)
+                .writeBytes(indexData.generateWhirlpool(5, indexData.size - 5))
+            if (exponent != null && modulus != null) {
+                buffer.writeBytes(Buffer.cryptRSA(whirlpoolBuffer.array(), exponent, modulus))
+            }
+        }
         return buffer.array()
     }
 
@@ -376,7 +373,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     companion object {
         const val CACHE_FILE_NAME = "main_file_cache"
-        
+
         @JvmStatic
         @JvmOverloads
         fun create(path: String, clearDataAfterUpdate: Boolean = false, listener: ProgressListener? = null): CacheLibrary {
