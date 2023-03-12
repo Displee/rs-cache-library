@@ -18,6 +18,7 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
     private var mask = 0x0
     private var needUpdate = false
     protected var archives: SortedMap<Int, Archive> = TreeMap()
+    private var archiveNames = mutableListOf<Int>()
 
     var version = 0
 
@@ -53,8 +54,14 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
             archiveIds[i] = archiveId.also { archives[it] = Archive(it) }
         }
         val archives = archives()
+        archiveNames = ArrayList(archives.size)
         if (named) {
-            archives.forEach { it.hashName = buffer.readInt() }
+            archives.forEach {
+                it.hashName = buffer.readInt()
+                if (it.hashName != 0) {
+                    archiveNames.add(it.hashName)
+                }
+            }
         }
         if (origin.isRS3()) {
             archives.forEach { it.crc = buffer.readInt() }
@@ -230,6 +237,9 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
                 existing = Archive(id, if (hashName == -1) 0 else hashName, xtea)
                 existing.compressionType = CompressionType.GZIP
             }
+            if (hashName != -1) {
+                archiveNames.add(existing.hashName)
+            }
             archives[id] = existing
             existing.new = true
             existing.flag()
@@ -243,7 +253,9 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
                 flag = true
             }
             if (hashName != -1 && existing.hashName != hashName) {
+                archiveNames.remove(existing.hashName)
                 existing.hashName = hashName
+                archiveNames.add(existing.hashName)
                 flag = true
             }
             if (flag) {
@@ -314,11 +326,12 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
     }
 
     fun contains(name: String): Boolean {
-        return archiveId(name) != -1
+        return archiveNames.contains(toHash(name))
     }
 
     fun remove(id: Int): Archive? {
         val archive = archives.remove(id) ?: return null
+        archiveNames.remove(archive.hashName)
         flag()
         return archive
     }
