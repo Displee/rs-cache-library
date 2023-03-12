@@ -7,7 +7,7 @@ I have named the level 0 container "Index" and the level 1 container "Archive". 
 	- Archive (level 1 container)
 		- File (data)
 
-The containers can contain multiple containers which makes you able to group and store a great amount of data.
+A cache contains multiple indices and an index can contain thousands of archives which gives RuneScape the ability to group and store a great amount of data.
 A file contains useful data like the properties of a certain game item, object, image or even 3D model.
 This library is able to read this data, and write manipulated data back to the cache.
 
@@ -44,7 +44,7 @@ val regionId = 12850
 val x = (regionId shr 8) and 0xFF
 val y = regionId and 0xFF
 val xtea = intArrayOf(0, 0, 0, 0) //optional
-val landscape = library.data(5, "l${x}_${y}", xtea)
+val locsData = library.data(5, "l${x}_${y}", xtea)
 ```
 For our 317 users :)
 ```kotlin
