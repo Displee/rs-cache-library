@@ -8,10 +8,18 @@ import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import java.util.zip.Inflater
 
-object GZIPCompressor {
+object GZIPCompressor : Compressor {
 
     private var inflater: Inflater? = null
     private val gzipBuffer = ByteArray(1000_000) //because in 317 Jagex stores a lot of data in one file
+
+    override fun decompress(buffer: InputBuffer, compressedData: ByteArray, compressedSize: Int, decompressedSize: Int, offset: Int): ByteArray {
+        val decompressed = ByteArray(decompressedSize)
+        if (!inflate(buffer, decompressed)) {
+            return byteArrayOf()
+        }
+        return decompressed
+    }
 
     fun inflate(buffer: InputBuffer, data: ByteArray): Boolean {
         val bytes = buffer.raw()
@@ -31,30 +39,17 @@ object GZIPCompressor {
         return true
     }
 
-    fun deflate(data: ByteArray): ByteArray {
+    override fun compress(bytes: ByteArray): ByteArray {
         val compressed = ByteArrayOutputStream()
         try {
             val gzipOutputStream = GZIPOutputStream(compressed)
-            gzipOutputStream.write(data)
+            gzipOutputStream.write(bytes)
             gzipOutputStream.finish()
             gzipOutputStream.close()
         } catch (e: Exception) {
             e.printStackTrace()
         }
         return compressed.toByteArray()
-    }
-
-    fun inflate317(uncompressed: ByteArray): ByteArray {
-        val bout = ByteArrayOutputStream()
-        try {
-            GZIPOutputStream(bout).use { os ->
-                os.write(uncompressed)
-                os.finish()
-            }
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-        return bout.toByteArray()
     }
 
     fun deflate317(data: ByteArray?): ByteArray {

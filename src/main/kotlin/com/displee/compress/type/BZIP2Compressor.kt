@@ -10,7 +10,7 @@ import java.io.ByteArrayOutputStream
  * @author Jagex
  * @author Displee
  */
-object BZIP2Compressor {
+object BZIP2Compressor : Compressor {
     /**
      * The current bzip2 block entry.
      */
@@ -26,8 +26,8 @@ object BZIP2Compressor {
      * @param bytes The uncompressed BZIP2 file.
      * @return The compressed BZIP2 file.
      */
-    fun compress(bytes: ByteArray?): ByteArray? {
-        var bytes = bytes ?: return null
+    override fun compress(bytes: ByteArray): ByteArray {
+        var bytes = bytes
         try {
             ByteArrayInputStream(bytes).use { `is` ->
                 val bout = ByteArrayOutputStream()
@@ -45,14 +45,13 @@ object BZIP2Compressor {
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            return null
+            return byteArrayOf()
         }
     }
 
-    fun decompress317(decompressedLength: Int, compressedLength: Int, inputBuffer: InputBuffer): ByteArray {
-        val decompressed = ByteArray(decompressedLength)
-        val compressed = inputBuffer.readBytes(compressedLength)
-        decompress(decompressed, decompressed.size, compressed, compressed.size, 0)
+    override fun decompress(buffer: InputBuffer, compressedData: ByteArray, compressedSize: Int, decompressedSize: Int, offset: Int): ByteArray {
+        val decompressed = ByteArray(decompressedSize)
+        decompress(decompressed, decompressed.size, compressedData, compressedSize, offset)
         return decompressed
     }
 
