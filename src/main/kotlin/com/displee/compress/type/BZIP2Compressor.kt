@@ -584,11 +584,11 @@ object BZIP2Compressor {
     class BZIP2BlockEntry {
         var anInt3070 = 0
         var anInt3071 = 0
-        var aBooleanArray3072: BooleanArray
+        var aBooleanArray3072: BooleanArray = BooleanArray(16)
         var anInt3073 = 0
         var startOffset = 0
-        var anIntArray3075: IntArray
-        var aByteArray3076: ByteArray
+        var anIntArray3075: IntArray = IntArray(256)
+        var aByteArray3076: ByteArray = ByteArray(18002)
         var anInt3077 = 0
         var anInt3078 = 0
         var decompressed: ByteArray? = null
@@ -602,39 +602,24 @@ object BZIP2Compressor {
         var anInt3087 = 0
         var anInt3088 = 0
         var anInt3089 = 0
-        var anIntArray3090: IntArray
-        var anIntArray3091: IntArray
-        var anIntArray3092: IntArray
+        var anIntArray3090: IntArray = IntArray(6)
+        var anIntArray3091: IntArray = IntArray(257)
+        var anIntArray3092: IntArray = IntArray(16)
         var decompressedLength = 0
         var aByteArray3094 = ByteArray(18002)
-        var anIntArrayArray3095: Array<IntArray>
+        var anIntArrayArray3095: Array<IntArray> = Array(6) { IntArray(258) }
         var anInt3096 = 0
         var anInt3097 = 0
-        var aByteArrayArray3098: Array<ByteArray>
-        var anIntArrayArray3099: Array<IntArray>
+        var aByteArrayArray3098: Array<ByteArray> = Array(6) { ByteArray(258) }
+        var anIntArrayArray3099: Array<IntArray> = Array(6) { IntArray(258) }
         var anInt3100 = 0
-        var aByteArray3101: ByteArray
+        var aByteArray3101: ByteArray = ByteArray(4096)
         var anInt3102 = 0
-        var aBooleanArray3103: BooleanArray
+        var aBooleanArray3103: BooleanArray = BooleanArray(256)
         var anInt3105 = 0
         var anInt3106 = 0
-        var aByteArray3107: ByteArray
+        var aByteArray3107: ByteArray = ByteArray(256)
         var aByte3108: Byte = 0
         var compressed: ByteArray? = null
-
-        init {
-            aBooleanArray3072 = BooleanArray(16)
-            anIntArray3090 = IntArray(6)
-            aByteArray3101 = ByteArray(4096)
-            anIntArray3091 = IntArray(257)
-            aBooleanArray3103 = BooleanArray(256)
-            anIntArray3075 = IntArray(256)
-            anIntArray3092 = IntArray(16)
-            anIntArrayArray3099 = Array(6) { IntArray(258) }
-            aByteArray3076 = ByteArray(18002)
-            anIntArrayArray3095 = Array(6) { IntArray(258) }
-            aByteArrayArray3098 = Array(6) { ByteArray(258) }
-            aByteArray3107 = ByteArray(256)
-        }
     }
 }
