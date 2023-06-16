@@ -11,6 +11,7 @@ import com.displee.cache.index.ReferenceTable.Companion.FLAG_NAME
 import com.displee.cache.index.ReferenceTable.Companion.FLAG_WHIRLPOOL
 import com.displee.cache.index.archive.Archive
 import com.displee.compress.CompressionType
+import com.displee.compress.type.Compressors
 import com.displee.io.Buffer
 import com.displee.io.impl.OutputBuffer
 import com.displee.util.generateWhirlpool
@@ -26,6 +27,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     lateinit var mainFile: RandomAccessFile
 
     private val indices: SortedMap<Int, Index> = TreeMap<Int, Index>()
+    internal val compressors = Compressors()
     var index255: Index255? = null
     private var rs3 = false
 

@@ -13,7 +13,7 @@ import java.io.*
  * A class handling LZMA compression.
  * @author Displee (credits to Techdaan)
  */
-object LZMACompressor : Compressor {
+class LZMACompressor : Compressor {
 
     private val DECODER = Decoder()
     private val ENCODER = Encoder()

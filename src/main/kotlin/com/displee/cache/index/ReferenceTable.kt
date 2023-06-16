@@ -229,13 +229,15 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         }
         if (existing == null) {
             if (this is Index317) {
-                existing = Archive317(id, if (hashName == -1) 0 else hashName)
+                existing = Archive317(origin.compressors.bzip2, id, if (hashName == -1) 0 else hashName)
                 if (this.id != 0) {
-                    existing.setCompression(CompressionType.GZIP)
+                    existing.compressionType = CompressionType.GZIP
+                    existing.compressor = origin.compressors.gzip
                 }
             } else {
                 existing = Archive(id, if (hashName == -1) 0 else hashName, xtea)
-                existing.setCompression(CompressionType.GZIP)
+                existing.compressionType = CompressionType.GZIP
+                existing.compressor = origin.compressors.gzip
             }
             if (hashName != -1) {
                 archiveNames.add(existing.hashName)
@@ -294,11 +296,13 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         } else {
             val is317 = is317()
             if (is317) {
-                archive.setCompression(if (this.id == 0) CompressionType.BZIP2 else CompressionType.GZIP)
+                archive.compressionType = if (this.id == 0) CompressionType.BZIP2 else CompressionType.GZIP
+                archive.compressor = origin.compressors.get(archive.compressionType)
                 archive.read(InputBuffer(sector.data))
             } else {
-                val decompressed = sector.decompress(xtea)
-                archive.setCompression(sector.compressionType, sector.compressor)
+                val decompressed = sector.decompress(origin.compressors, xtea)
+                archive.compressionType = sector.compressionType
+                archive.compressor = sector.compressor
                 if (decompressed.isNotEmpty()) {
                     archive.read(InputBuffer(decompressed))
                     archive.xtea = xtea

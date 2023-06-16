@@ -38,7 +38,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         val archiveSectorData = archiveSector.data
         crc = archiveSectorData.generateCrc()
         whirlpool = archiveSectorData.generateWhirlpool()
-        read(InputBuffer(archiveSector.decompress()))
+        read(InputBuffer(archiveSector.decompress(origin.compressors)))
         compressionType = archiveSector.compressionType
         compressor = archiveSector.compressor
     }

@@ -24,7 +24,7 @@ fun ByteArray.compress(compressionType: CompressionType, compressor: Compressor,
     return buffer.array()
 }
 
-fun ArchiveSector.decompress(keys: IntArray? = null): ByteArray {
+fun ArchiveSector.decompress(compressors: Compressors, keys: IntArray? = null): ByteArray {
     val compressedData = data
     val buffer = InputBuffer(compressedData)
     if (keys != null && (keys[0] != 0 || keys[1] != 0 || keys[2] != 0 || 0 != keys[3])) {
@@ -32,7 +32,7 @@ fun ArchiveSector.decompress(keys: IntArray? = null): ByteArray {
     }
     val type = buffer.readUnsignedByte()
     compressionType = CompressionType.compressionTypes[type]
-    compressor = Compressor.get(compressionType)
+    compressor = compressors.get(compressionType)
     val compressedSize = buffer.readInt() and 0xFFFFFF
     var decompressedSize = 0
     if (compressionType != CompressionType.NONE) {

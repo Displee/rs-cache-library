@@ -8,7 +8,7 @@ import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import java.util.zip.Inflater
 
-object GZIPCompressor : Compressor {
+class GZIPCompressor : Compressor {
 
     private var inflater: Inflater? = null
     private val gzipBuffer = ByteArray(1000_000) //because in 317 Jagex stores a lot of data in one file

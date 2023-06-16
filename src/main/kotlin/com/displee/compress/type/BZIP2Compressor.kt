@@ -10,7 +10,7 @@ import java.io.ByteArrayOutputStream
  * @author Jagex
  * @author Displee
  */
-object BZIP2Compressor : Compressor {
+class BZIP2Compressor : Compressor {
     /**
      * The current bzip2 block entry.
      */
