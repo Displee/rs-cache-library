@@ -2,13 +2,23 @@ package com.displee.cache.index.archive
 
 import com.displee.cache.index.archive.file.File
 import com.displee.compress.CompressionType
+import com.displee.compress.type.Compressor
+import com.displee.compress.type.GZIPCompressor
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
 import java.util.*
 
 open class Archive(val id: Int, var hashName: Int = 0, internal var xtea: IntArray? = null) : Comparable<Archive> {
 
-    var compressionType: CompressionType? = null
+    var compressionType: CompressionType = CompressionType.GZIP
+        private set
+    var compressor: Compressor = GZIPCompressor
+        private set
+
+    fun setCompression(type: CompressionType, compressor: Compressor? = null) {
+        compressionType = type
+        this.compressor = compressor ?: Compressor.get(type)
+    }
 
     var revision = 0
     private var needUpdate = false
@@ -85,7 +95,7 @@ open class Archive(val id: Int, var hashName: Int = 0, internal var xtea: IntArr
         var size = 0
         files.forEach { size += it.data?.size ?: 0 }
         val buffer = OutputBuffer(size + files.size * 4)
-        val emptyByteArray =  byteArrayOf()
+        val emptyByteArray = byteArrayOf()
         if (files.size == 1) {
             return first()?.data ?: emptyByteArray
         } else {
@@ -272,7 +282,7 @@ open class Archive(val id: Int, var hashName: Int = 0, internal var xtea: IntArr
         this.xtea = xtea
         if (read) {
             //bzip2 compression fails when xteas are set for some reason, cheap fix
-            compressionType = CompressionType.GZIP
+            setCompression(CompressionType.GZIP)
             flag()
         }
     }

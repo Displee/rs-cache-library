@@ -7,6 +7,8 @@ import com.displee.cache.index.archive.ArchiveSector
 import com.displee.compress.CompressionType
 import com.displee.compress.compress
 import com.displee.compress.decompress
+import com.displee.compress.type.Compressor
+import com.displee.compress.type.EmptyCompressor
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
 import com.displee.util.generateCrc
@@ -18,6 +20,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
     var crc = 0
     var whirlpool: ByteArray? = null
     var compressionType: CompressionType = CompressionType.NONE
+    var compressor: Compressor = EmptyCompressor
     private var cached = false
     protected var closed = false
 
@@ -37,6 +40,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         whirlpool = archiveSectorData.generateWhirlpool()
         read(InputBuffer(archiveSector.decompress()))
         compressionType = archiveSector.compressionType
+        compressor = archiveSector.compressor
     }
 
     fun cache() {
@@ -71,7 +75,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
             it.revision++
             it.unFlag()
             listener?.notify((i / flaggedArchives.size) * 0.80, "Repacking archive ${it.id}...")
-            val compressed = it.write().compress(it.compressionType ?: CompressionType.GZIP, it.xtea, it.revision)
+            val compressed = it.write().compress(it.compressionType, it.compressor, it.xtea, it.revision)
             it.crc = compressed.generateCrc(length = compressed.size - 2)
             it.whirlpool = compressed.generateWhirlpool(length = compressed.size - 2)
             val written = writeArchiveSector(it.id, compressed)
@@ -87,7 +91,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         if (flagged()) {
             unFlag()
             revision++
-            val indexData = write().compress(compressionType)
+            val indexData = write().compress(compressionType, compressor)
             crc = indexData.generateCrc()
             whirlpool = indexData.generateWhirlpool()
             val written = origin.index255?.writeArchiveSector(this.id, indexData) ?: false

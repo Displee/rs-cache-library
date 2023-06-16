@@ -231,11 +231,11 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
             if (this is Index317) {
                 existing = Archive317(id, if (hashName == -1) 0 else hashName)
                 if (this.id != 0) {
-                    existing.compressionType = CompressionType.GZIP
+                    existing.setCompression(CompressionType.GZIP)
                 }
             } else {
                 existing = Archive(id, if (hashName == -1) 0 else hashName, xtea)
-                existing.compressionType = CompressionType.GZIP
+                existing.setCompression(CompressionType.GZIP)
             }
             if (hashName != -1) {
                 archiveNames.add(existing.hashName)
@@ -294,11 +294,11 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         } else {
             val is317 = is317()
             if (is317) {
-                (archive as Archive317).compressionType = if (this.id == 0) CompressionType.BZIP2 else CompressionType.GZIP
+                archive.setCompression(if (this.id == 0) CompressionType.BZIP2 else CompressionType.GZIP)
                 archive.read(InputBuffer(sector.data))
             } else {
                 val decompressed = sector.decompress(xtea)
-                archive.compressionType = sector.compressionType
+                archive.setCompression(sector.compressionType, sector.compressor)
                 if (decompressed.isNotEmpty()) {
                     archive.read(InputBuffer(decompressed))
                     archive.xtea = xtea

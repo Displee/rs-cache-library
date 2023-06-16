@@ -5,8 +5,7 @@ import com.displee.compress.type.*
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
 
-fun ByteArray.compress(compressionType: CompressionType, xteas: IntArray? = null, revision: Int = -1): ByteArray {
-    val compressor: Compressor = Compressor.get(compressionType)
+fun ByteArray.compress(compressionType: CompressionType, compressor: Compressor, xteas: IntArray? = null, revision: Int = -1): ByteArray {
     val compressed: ByteArray = compressor.compress(this)
     val compressedSize = compressed.size
     val buffer = OutputBuffer(9 + compressedSize + if (revision == -1) 0 else 2)
@@ -32,12 +31,12 @@ fun ArchiveSector.decompress(keys: IntArray? = null): ByteArray {
         buffer.decryptXTEA(keys, 5, compressedData.size)
     }
     val type = buffer.readUnsignedByte()
-    val compressionType = CompressionType.compressionTypes[type].also { compressionType = it }
+    compressionType = CompressionType.compressionTypes[type]
+    compressor = Compressor.get(compressionType)
     val compressedSize = buffer.readInt() and 0xFFFFFF
     var decompressedSize = 0
     if (compressionType != CompressionType.NONE) {
         decompressedSize = buffer.readInt() and 0xFFFFFF
     }
-    val decompressor: Compressor = Compressor.get(compressionType)
-    return decompressor.decompress(buffer, compressedData, compressedSize, decompressedSize)
+    return compressor.decompress(buffer, compressedData, compressedSize, decompressedSize)
 }

@@ -13,13 +13,15 @@ class Archive317(id: Int, name: Int) : Archive(id, name) {
 
     private var extracted = false
 
+    private val bzip2 = BZIP2Compressor
+    private val none = EmptyCompressor
+
     constructor(id: Int) : this(id, 0)
 
     override fun read(buffer: InputBuffer) {
         read = true
         if (compressionType == CompressionType.GZIP) {
-            val compressor = GZIPCompressor
-            files[0] = File(0, compressor.deflate317(buffer.raw()))
+            files[0] = File(0, (compressor as GZIPCompressor).deflate317(buffer.raw()))
             return
         }
         var decompressedLength = buffer.read24BitInt()
@@ -27,13 +29,13 @@ class Archive317(id: Int, name: Int) : Archive(id, name) {
         if (decompressedLength != compressedLength) {
             extracted = true
         }
-        var compressor = if (extracted) BZIP2Compressor else EmptyCompressor
+        var compressor = if (extracted) bzip2 else none
         val decompressed = compressor.decompress(buffer, byteArrayOf(), compressedLength, decompressedLength, 0)
         val metaBuffer = InputBuffer(decompressed)
         val filesLength = metaBuffer.readUnsignedShort()
         val filesBuffer = InputBuffer(decompressed)
         filesBuffer.offset = metaBuffer.offset + filesLength * 10
-        compressor = if (extracted) EmptyCompressor else BZIP2Compressor
+        compressor = if (extracted) none else bzip2
         for (i in 0 until filesLength) {
             val fileName = metaBuffer.readInt()
             decompressedLength = metaBuffer.read24BitInt()
@@ -45,13 +47,12 @@ class Archive317(id: Int, name: Int) : Archive(id, name) {
 
     override fun write(): ByteArray {
         if (compressionType == CompressionType.GZIP) {
-            val compressor = GZIPCompressor
             return compressor.compress(first()?.data ?: byteArrayOf())
         }
         val metaBuffer = OutputBuffer(2 + files.size * 10)
         metaBuffer.writeShort(files.size)
         val filesBuffer = OutputBuffer(2048)
-        var compressor = if (extracted) EmptyCompressor else BZIP2Compressor
+        var compressor = if (extracted) none else bzip2
         for (file in files.values) {
             val fileData = file.data ?: continue
             metaBuffer.writeInt(file.hashName).write24BitInt(fileData.size)
@@ -61,7 +62,7 @@ class Archive317(id: Int, name: Int) : Archive(id, name) {
         }
         metaBuffer.writeBytes(filesBuffer.array())
         val decompressed = metaBuffer.array()
-        compressor = if (extracted) BZIP2Compressor else EmptyCompressor
+        compressor = if (extracted) bzip2 else none
         val compressed = compressor.compress(decompressed)
         val buffer = OutputBuffer(compressed.size + 6)
         buffer.write24BitInt(decompressed.size).write24BitInt(compressed.size).writeBytes(compressed)
