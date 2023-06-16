@@ -37,7 +37,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         val archiveSector = origin.index255?.readArchiveSector(id) ?: return
         val archiveSectorData = archiveSector.data
         crc = archiveSectorData.generateCrc()
-        whirlpool = archiveSectorData.generateWhirlpool()
+        whirlpool = archiveSectorData.generateWhirlpool(origin.whirlpool)
         read(InputBuffer(archiveSector.decompress(origin.compressors)))
         compressionType = archiveSector.compressionType
         compressor = archiveSector.compressor
@@ -77,7 +77,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
             listener?.notify((i / flaggedArchives.size) * 0.80, "Repacking archive ${it.id}...")
             val compressed = it.write().compress(it.compressionType, it.compressor, it.xtea, it.revision)
             it.crc = compressed.generateCrc(length = compressed.size - 2)
-            it.whirlpool = compressed.generateWhirlpool(length = compressed.size - 2)
+            it.whirlpool = compressed.generateWhirlpool(origin.whirlpool, length = compressed.size - 2)
             val written = writeArchiveSector(it.id, compressed)
             check(written) { "Unable to write data to archive sector. Your cache may be corrupt." }
             if (origin.clearDataAfterUpdate) {
@@ -93,7 +93,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
             revision++
             val indexData = write().compress(compressionType, compressor)
             crc = indexData.generateCrc()
-            whirlpool = indexData.generateWhirlpool()
+            whirlpool = indexData.generateWhirlpool(origin.whirlpool)
             val written = origin.index255?.writeArchiveSector(this.id, indexData) ?: false
             check(written) { "Unable to write data to checksum table. Your cache may be corrupt." }
         }

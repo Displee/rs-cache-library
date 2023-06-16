@@ -25,7 +25,7 @@ fun ByteArray.generateCrc(offset: Int = 0, length: Int = size): Int {
     return crc
 }
 
-fun ByteArray.generateWhirlpool(offset: Int = 0, length: Int = size): ByteArray {
+fun ByteArray.generateWhirlpool(whirlpool: Whirlpool, offset: Int = 0, length: Int = size): ByteArray {
     val source: ByteArray
     if (offset > 0) {
         source = ByteArray(length)
@@ -33,7 +33,6 @@ fun ByteArray.generateWhirlpool(offset: Int = 0, length: Int = size): ByteArray 
     } else {
         source = this
     }
-    val whirlpool = Whirlpool()
     whirlpool.NESSIEinit()
     whirlpool.NESSIEadd(source, (length * 8).toLong())
     val digest = ByteArray(WHIRLPOOL_SIZE)

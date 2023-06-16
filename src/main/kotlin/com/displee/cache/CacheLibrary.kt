@@ -14,6 +14,7 @@ import com.displee.compress.CompressionType
 import com.displee.compress.type.Compressors
 import com.displee.io.Buffer
 import com.displee.io.impl.OutputBuffer
+import com.displee.util.Whirlpool
 import com.displee.util.generateWhirlpool
 import java.io.File
 import java.io.FileNotFoundException
@@ -28,6 +29,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     private val indices: SortedMap<Int, Index> = TreeMap<Int, Index>()
     internal val compressors = Compressors()
+    internal val whirlpool = Whirlpool()
     var index255: Index255? = null
     private var rs3 = false
 
@@ -284,7 +286,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
             val indexData = buffer.array()
             val whirlpoolBuffer = OutputBuffer(WHIRLPOOL_SIZE + 1)
                 .writeByte(0)
-                .writeBytes(indexData.generateWhirlpool(5, indexData.size - 5))
+                .writeBytes(indexData.generateWhirlpool(whirlpool, 5, indexData.size - 5))
             if (exponent != null && modulus != null) {
                 buffer.writeBytes(Buffer.cryptRSA(whirlpoolBuffer.array(), exponent, modulus))
             }
