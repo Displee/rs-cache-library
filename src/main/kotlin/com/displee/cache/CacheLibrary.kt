@@ -363,7 +363,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         return index.revision >= 300 && indexCount() <= 23
     }
 
-    private fun indexCount() = indices.maxBy { it.key }?.key ?: 0
+    private fun indexCount() = indices.keys.max() ?: 0
 
     fun isRS3(): Boolean {
         return rs3
