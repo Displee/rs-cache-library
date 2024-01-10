@@ -14,12 +14,12 @@ class BZIP2Compressor : Compressor {
     /**
      * The current bzip2 block entry.
      */
-    var bzip2BlockEntry: BZIP2BlockEntry? = BZIP2BlockEntry()
+    var bzip2BlockEntry: BZIP2BlockEntry = BZIP2BlockEntry()
 
     /**
      * An unkown integer array.
      */
-    private var anIntArray5786: IntArray? = null
+    private var anIntArray5786: IntArray = IntArray(100000)
 
     /**
      * Compress a decompressed BZIP2 file.
@@ -29,12 +29,12 @@ class BZIP2Compressor : Compressor {
     override fun compress(bytes: ByteArray): ByteArray {
         var bytes = bytes
         try {
-            ByteArrayInputStream(bytes).use { `is` ->
+            ByteArrayInputStream(bytes).use { stream ->
                 val bout = ByteArrayOutputStream()
                 CBZip2OutputStream(bout, 1).use { os ->
                     val buf = ByteArray(4096)
                     var len: Int
-                    while (`is`.read(buf, 0, buf.size).also { len = it } != -1) {
+                    while (stream.read(buf, 0, buf.size).also { len = it } != -1) {
                         os.write(buf, 0, len)
                     }
                 }
@@ -64,23 +64,21 @@ class BZIP2Compressor : Compressor {
      * @param startOffset        The start offset.
      * @return The decompressed length.
      */
-    fun decompress(decompressed: ByteArray?, decompressedLength: Int, archiveData: ByteArray?, compressedSize: Int, startOffset: Int): Int {
-        var decompressedLength = decompressedLength
-        synchronized(bzip2BlockEntry!!) {
-            bzip2BlockEntry!!.compressed = archiveData
-            bzip2BlockEntry!!.startOffset = startOffset
-            bzip2BlockEntry!!.decompressed = decompressed
-            bzip2BlockEntry!!.anInt3100 = 0
-            bzip2BlockEntry!!.decompressedLength = decompressedLength
-            bzip2BlockEntry!!.anInt3088 = 0
-            bzip2BlockEntry!!.anInt3078 = 0
-            bzip2BlockEntry!!.anInt3085 = 0
-            bzip2BlockEntry!!.anInt3097 = 0
+    fun decompress(decompressed: ByteArray, decompressedLength: Int, archiveData: ByteArray, compressedSize: Int, startOffset: Int): Int {
+        synchronized(bzip2BlockEntry) {
+            bzip2BlockEntry.compressed = archiveData
+            bzip2BlockEntry.startOffset = startOffset
+            bzip2BlockEntry.decompressed = decompressed
+            bzip2BlockEntry.anInt3100 = 0
+            bzip2BlockEntry.decompressedLength = decompressedLength
+            bzip2BlockEntry.anInt3088 = 0
+            bzip2BlockEntry.anInt3078 = 0
+            bzip2BlockEntry.anInt3085 = 0
+            bzip2BlockEntry.anInt3097 = 0
             decompress(bzip2BlockEntry)
-            decompressedLength -= bzip2BlockEntry!!.decompressedLength
-            bzip2BlockEntry!!.compressed = null
-            bzip2BlockEntry!!.decompressed = null
-            return decompressedLength
+            bzip2BlockEntry.compressed = ByteArray(0)
+            bzip2BlockEntry.decompressed = ByteArray(0)
+            return decompressedLength - bzip2BlockEntry.decompressedLength
         }
     }
 
@@ -88,49 +86,27 @@ class BZIP2Compressor : Compressor {
      * Decompress a BZIP2 block entry.
      * @param bzip2BlockEntry [BZIP2BlockEntry]
      */
-    fun decompress(bzip2BlockEntry: BZIP2BlockEntry?) {
-        val bool = false
-        val bool_9_ = false
-        val bool_10_ = false
-        val bool_11_ = false
-        val bool_12_ = false
-        val bool_13_ = false
-        val bool_14_ = false
-        val bool_15_ = false
-        val bool_16_ = false
-        val bool_17_ = false
-        val bool_18_ = false
-        val bool_19_ = false
-        val bool_20_ = false
-        val bool_21_ = false
-        val bool_22_ = false
-        val bool_23_ = false
-        val bool_24_ = false
-        val bool_25_ = false
-        var i = 0
-        var `is`: IntArray? = null
-        var is_26_: IntArray? = null
-        var is_27_: IntArray? = null
-        bzip2BlockEntry!!.anInt3096 = 1
-        if (anIntArray5786 == null) {
-            anIntArray5786 = IntArray(bzip2BlockEntry.anInt3096 * 100000)
-        }
+    fun decompress(bzip2BlockEntry: BZIP2BlockEntry) {
+        var i: Int
+        var is_25_: IntArray
+        var is_26_: IntArray
+        var is_27_: IntArray
         var bool_28_ = true
         while (bool_28_) {
             var i_29_ = method147(bzip2BlockEntry)
             if (i_29_.toInt() == 23) {
                 break
             }
-            i_29_ = method147(bzip2BlockEntry)
-            i_29_ = method147(bzip2BlockEntry)
-            i_29_ = method147(bzip2BlockEntry)
-            i_29_ = method147(bzip2BlockEntry)
-            i_29_ = method147(bzip2BlockEntry)
-            i_29_ = method147(bzip2BlockEntry)
-            i_29_ = method147(bzip2BlockEntry)
-            i_29_ = method147(bzip2BlockEntry)
-            i_29_ = method147(bzip2BlockEntry)
-            i_29_ = method153(bzip2BlockEntry)
+            method147(bzip2BlockEntry)
+            method147(bzip2BlockEntry)
+            method147(bzip2BlockEntry)
+            method147(bzip2BlockEntry)
+            method147(bzip2BlockEntry)
+            method147(bzip2BlockEntry)
+            method147(bzip2BlockEntry)
+            method147(bzip2BlockEntry)
+            method147(bzip2BlockEntry)
+            method153(bzip2BlockEntry)
             bzip2BlockEntry.anInt3083 = 0
             var i_30_ = method147(bzip2BlockEntry).toInt()
             bzip2BlockEntry.anInt3083 = bzip2BlockEntry.anInt3083 shl 8 or (i_30_ and 0xff)
@@ -228,7 +204,6 @@ class BZIP2Compressor : Compressor {
             }
             val i_52_ = bzip2BlockEntry.anInt3073 + 1
             var i_53_ = -1
-            var i_54_ = 0
             for (i_55_ in 0..255) {
                 bzip2BlockEntry.anIntArray3075[i_55_] = 0
             }
@@ -241,26 +216,24 @@ class BZIP2Compressor : Compressor {
                 bzip2BlockEntry.anIntArray3092[i_57_] = i_56_ + 1
             }
             var i_59_ = 0
-            if (i_54_ == 0) {
-                i_53_++
-                i_54_ = 50
-                val i_60_ = bzip2BlockEntry.aByteArray3076[i_53_]
-                i = bzip2BlockEntry.anIntArray3090[i_60_.toInt()]
-                `is` = bzip2BlockEntry.anIntArrayArray3095[i_60_.toInt()]
-                is_27_ = bzip2BlockEntry.anIntArrayArray3099[i_60_.toInt()]
-                is_26_ = bzip2BlockEntry.anIntArrayArray3082[i_60_.toInt()]
-            }
+            i_53_++
+            var i_54_ = 50
+            val i_60_ = bzip2BlockEntry.aByteArray3076[i_53_]
+            i = bzip2BlockEntry.anIntArray3090[i_60_.toInt()]
+            is_25_ = bzip2BlockEntry.anIntArrayArray3095[i_60_.toInt()]
+            is_27_ = bzip2BlockEntry.anIntArrayArray3099[i_60_.toInt()]
+            is_26_ = bzip2BlockEntry.anIntArrayArray3082[i_60_.toInt()]
             i_54_--
             var i_61_ = i
             var i_62_: Int
             var i_63_: Int
             i_63_ = method152(i_61_, bzip2BlockEntry)
-            while (i_63_ > `is`!![i_61_]) {
+            while (i_63_ > is_25_[i_61_]) {
                 i_61_++
                 i_62_ = method153(bzip2BlockEntry).toInt()
                 i_63_ = i_63_ shl 1 or i_62_
             }
-            var i_64_ = is_27_!![i_63_ - is_26_!![i_61_]]
+            var i_64_ = is_27_[i_63_ - is_26_[i_61_]]
             while (i_64_ != i_52_) {
                 if (i_64_ == 0 || i_64_ == 1) {
                     var i_65_ = -1
@@ -277,25 +250,25 @@ class BZIP2Compressor : Compressor {
                             i_54_ = 50
                             val i_67_ = bzip2BlockEntry.aByteArray3076[i_53_]
                             i = bzip2BlockEntry.anIntArray3090[i_67_.toInt()]
-                            `is` = bzip2BlockEntry.anIntArrayArray3095[i_67_.toInt()]
+                            is_25_ = bzip2BlockEntry.anIntArrayArray3095[i_67_.toInt()]
                             is_27_ = bzip2BlockEntry.anIntArrayArray3099[i_67_.toInt()]
                             is_26_ = bzip2BlockEntry.anIntArrayArray3082[i_67_.toInt()]
                         }
                         i_54_--
                         i_61_ = i
                         i_63_ = method152(i_61_, bzip2BlockEntry)
-                        while (i_63_ > `is`!![i_61_]) {
+                        while (i_63_ > is_25_[i_61_]) {
                             i_61_++
                             i_62_ = method153(bzip2BlockEntry).toInt()
                             i_63_ = i_63_ shl 1 or i_62_
                         }
-                        i_64_ = is_27_!![i_63_ - is_26_!![i_61_]]
+                        i_64_ = is_27_[i_63_ - is_26_[i_61_]]
                     } while (i_64_ == 0 || i_64_ == 1)
                     i_65_++
                     i_30_ = bzip2BlockEntry.aByteArray3107[bzip2BlockEntry.aByteArray3101[bzip2BlockEntry.anIntArray3092[0]].toInt() and 0xff].toInt()
                     bzip2BlockEntry.anIntArray3075[i_30_ and 0xff] += i_65_
                     while ( /**/i_65_ > 0) {
-                        anIntArray5786!![i_59_] = i_30_ and 0xff
+                        anIntArray5786[i_59_] = i_30_ and 0xff
                         i_59_++
                         i_65_--
                     }
@@ -346,26 +319,26 @@ class BZIP2Compressor : Compressor {
                         }
                     }
                     bzip2BlockEntry.anIntArray3075[bzip2BlockEntry.aByteArray3107[i_29_.toInt() and 0xff].toInt() and 0xff]++
-                    anIntArray5786!![i_59_] = bzip2BlockEntry.aByteArray3107[i_29_.toInt() and 0xff].toInt() and 0xff
+                    anIntArray5786[i_59_] = bzip2BlockEntry.aByteArray3107[i_29_.toInt() and 0xff].toInt() and 0xff
                     i_59_++
                     if (i_54_ == 0) {
                         i_53_++
                         i_54_ = 50
                         val i_77_ = bzip2BlockEntry.aByteArray3076[i_53_]
                         i = bzip2BlockEntry.anIntArray3090[i_77_.toInt()]
-                        `is` = bzip2BlockEntry.anIntArrayArray3095[i_77_.toInt()]
+                        is_25_ = bzip2BlockEntry.anIntArrayArray3095[i_77_.toInt()]
                         is_27_ = bzip2BlockEntry.anIntArrayArray3099[i_77_.toInt()]
                         is_26_ = bzip2BlockEntry.anIntArrayArray3082[i_77_.toInt()]
                     }
                     i_54_--
                     i_61_ = i
                     i_63_ = method152(i_61_, bzip2BlockEntry)
-                    while (i_63_ > `is`!![i_61_]) {
+                    while (i_63_ > is_25_[i_61_]) {
                         i_61_++
                         i_62_ = method153(bzip2BlockEntry).toInt()
                         i_63_ = i_63_ shl 1 or i_62_
                     }
-                    i_64_ = is_27_!![i_63_ - is_26_!![i_61_]]
+                    i_64_ = is_27_[i_63_ - is_26_[i_61_]]
                 }
             }
             bzip2BlockEntry.anInt3080 = 0
@@ -378,36 +351,32 @@ class BZIP2Compressor : Compressor {
                 bzip2BlockEntry.anIntArray3091[i_79_] += bzip2BlockEntry.anIntArray3091[i_79_ - 1]
             }
             for (i_80_ in 0 until i_59_) {
-                i_30_ = (anIntArray5786!![i_80_] and 0xff).toByte().toInt()
-                anIntArray5786!![bzip2BlockEntry.anIntArray3091[i_30_ and 0xff]] = anIntArray5786!![bzip2BlockEntry.anIntArray3091[i_30_ and 0xff]] or (i_80_ shl 8)
+                i_30_ = (anIntArray5786[i_80_] and 0xff).toByte().toInt()
+                anIntArray5786[bzip2BlockEntry.anIntArray3091[i_30_ and 0xff]] = anIntArray5786[bzip2BlockEntry.anIntArray3091[i_30_ and 0xff]] or (i_80_ shl 8)
                 bzip2BlockEntry.anIntArray3091[i_30_ and 0xff]++
             }
-            bzip2BlockEntry.anInt3106 = anIntArray5786!![bzip2BlockEntry.anInt3083] shr 8
+            bzip2BlockEntry.anInt3106 = anIntArray5786[bzip2BlockEntry.anInt3083] shr 8
             bzip2BlockEntry.anInt3071 = 0
-            bzip2BlockEntry.anInt3106 = anIntArray5786!![bzip2BlockEntry.anInt3106]
+            bzip2BlockEntry.anInt3106 = anIntArray5786[bzip2BlockEntry.anInt3106]
             bzip2BlockEntry.anInt3070 = (bzip2BlockEntry.anInt3106 and 0xff).toByte().toInt()
             bzip2BlockEntry.anInt3106 = bzip2BlockEntry.anInt3106 shr 8
             bzip2BlockEntry.anInt3071++
             bzip2BlockEntry.anInt3077 = i_59_
             method151(bzip2BlockEntry)
-            bool_28_ = if (bzip2BlockEntry.anInt3071 == bzip2BlockEntry.anInt3077 + 1 && bzip2BlockEntry.anInt3080 == 0) {
-                true
-            } else {
-                false
-            }
+            bool_28_ = bzip2BlockEntry.anInt3071 == bzip2BlockEntry.anInt3077 + 1 && bzip2BlockEntry.anInt3080 == 0
         }
     }
 
-    fun method152(arg0: Int, arg1: BZIP2BlockEntry?): Int {
+    fun method152(arg0: Int, arg1: BZIP2BlockEntry): Int {
         val i: Int
         while (true) {
-            if (arg1!!.anInt3088 >= arg0) {
+            if (arg1.anInt3088 >= arg0) {
                 val i_93_ = arg1.anInt3078 shr arg1.anInt3088 - arg0 and (1 shl arg0) - 1
                 arg1.anInt3088 -= arg0
                 i = i_93_
                 break
             }
-            arg1.anInt3078 = arg1.anInt3078 shl 8 or (arg1.compressed!![arg1.startOffset].toInt() and 0xff)
+            arg1.anInt3078 = arg1.anInt3078 shl 8 or (arg1.compressed[arg1.startOffset].toInt() and 0xff)
             arg1.anInt3088 += 8
             arg1.startOffset++
             arg1.anInt3085++
@@ -415,12 +384,12 @@ class BZIP2Compressor : Compressor {
         return i
     }
 
-    fun method151(arg0: BZIP2BlockEntry?) {
-        var i = arg0!!.aByte3108
+    fun method151(arg0: BZIP2BlockEntry) {
+        var i = arg0.aByte3108
         var i_81_ = arg0.anInt3080
         var i_82_ = arg0.anInt3071
         var i_83_ = arg0.anInt3070
-        val `is` = anIntArray5786
+        val i_90_ = anIntArray5786
         var i_84_ = arg0.anInt3106
         val is_85_ = arg0.decompressed
         var i_86_ = arg0.anInt3100
@@ -436,7 +405,7 @@ class BZIP2Compressor : Compressor {
                     if (i_81_ == 1) {
                         break
                     }
-                    is_85_!![i_86_] = i
+                    is_85_[i_86_] = i
                     i_81_--
                     i_86_++
                     i_87_--
@@ -445,7 +414,7 @@ class BZIP2Compressor : Compressor {
                     i_81_ = 1
                     break
                 }
-                is_85_!![i_86_] = i
+                is_85_[i_86_] = i
                 i_86_++
                 i_87_--
             }
@@ -457,7 +426,7 @@ class BZIP2Compressor : Compressor {
                     break@while_68_
                 }
                 i = i_83_.toByte()
-                i_84_ = `is`!![i_84_]
+                i_84_ = i_90_[i_84_]
                 val i_90_ = (i_84_ and 0xff).toByte().toInt()
                 i_84_ = i_84_ shr 8
                 i_82_++
@@ -467,7 +436,7 @@ class BZIP2Compressor : Compressor {
                         i_81_ = 1
                         break@while_68_
                     }
-                    is_85_!![i_86_] = i
+                    is_85_[i_86_] = i
                     i_86_++
                     i_87_--
                     bool = true
@@ -476,14 +445,14 @@ class BZIP2Compressor : Compressor {
                         i_81_ = 1
                         break@while_68_
                     }
-                    is_85_!![i_86_] = i
+                    is_85_[i_86_] = i
                     i_86_++
                     i_87_--
                     bool = true
                 }
             }
             i_81_ = 2
-            i_84_ = `is`!![i_84_]
+            i_84_ = i_90_[i_84_]
             var i_91_ = (i_84_ and 0xff).toByte().toInt()
             i_84_ = i_84_ shr 8
             if (++i_82_ != i_89_) {
@@ -491,19 +460,19 @@ class BZIP2Compressor : Compressor {
                     i_83_ = i_91_
                 } else {
                     i_81_ = 3
-                    i_84_ = `is`[i_84_]
+                    i_84_ = i_90_[i_84_]
                     i_91_ = (i_84_ and 0xff).toByte().toInt()
                     i_84_ = i_84_ shr 8
                     if (++i_82_ != i_89_) {
                         if (i_91_ != i_83_) {
                             i_83_ = i_91_
                         } else {
-                            i_84_ = `is`[i_84_]
+                            i_84_ = i_90_[i_84_]
                             i_91_ = (i_84_ and 0xff).toByte().toInt()
                             i_84_ = i_84_ shr 8
                             i_82_++
                             i_81_ = (i_91_ and 0xff) + 4
-                            i_84_ = `is`[i_84_]
+                            i_84_ = i_90_[i_84_]
                             i_83_ = (i_84_ and 0xff).toByte().toInt()
                             i_84_ = i_84_ shr 8
                             i_82_++
@@ -512,13 +481,13 @@ class BZIP2Compressor : Compressor {
                 }
             }
         }
-        val i_92_ = arg0.anInt3097
+        arg0.anInt3097
         arg0.anInt3097 += i_88_ - i_87_
         arg0.aByte3108 = i
         arg0.anInt3080 = i_81_
         arg0.anInt3071 = i_82_
         arg0.anInt3070 = i_83_
-        anIntArray5786 = `is`
+        anIntArray5786 = i_90_
         arg0.anInt3106 = i_84_
         arg0.decompressed = is_85_
         arg0.anInt3100 = i_86_
@@ -558,16 +527,12 @@ class BZIP2Compressor : Compressor {
         }
     }
 
-    fun method147(arg0: BZIP2BlockEntry?): Byte {
+    fun method147(arg0: BZIP2BlockEntry): Byte {
         return method152(8, arg0).toByte()
     }
 
-    fun method148() {
-        bzip2BlockEntry = null
-    }
-
-    fun method149(arg0: BZIP2BlockEntry?) {
-        arg0!!.anInt3073 = 0
+    fun method149(arg0: BZIP2BlockEntry) {
+        arg0.anInt3073 = 0
         for (i in 0..255) {
             if (arg0.aBooleanArray3103[i]) {
                 arg0.aByteArray3107[arg0.anInt3073] = i.toByte()
@@ -576,7 +541,7 @@ class BZIP2Compressor : Compressor {
         }
     }
 
-    fun method153(arg0: BZIP2BlockEntry?): Byte {
+    fun method153(arg0: BZIP2BlockEntry): Byte {
         return method152(1, arg0).toByte()
     }
 
@@ -590,35 +555,27 @@ class BZIP2Compressor : Compressor {
         var aByteArray3076: ByteArray = ByteArray(18002)
         var anInt3077 = 0
         var anInt3078 = 0
-        var decompressed: ByteArray? = null
+        var decompressed: ByteArray = ByteArray(0)
         var anInt3080 = 0
-        var anInt3081 = 0
         var anIntArrayArray3082 = Array(6) { IntArray(258) }
         var anInt3083 = 0
-        var anIntArray3084: IntArray = intArrayOf()
         var anInt3085 = 0
-        var anIntArray3086 = intArrayOf(2, 1, 1, 1, 2, 2, 2, 1, 3, 3, 3, 2, 0, 4, 0)
-        var anInt3087 = 0
         var anInt3088 = 0
-        var anInt3089 = 0
         var anIntArray3090: IntArray = IntArray(6)
         var anIntArray3091: IntArray = IntArray(257)
         var anIntArray3092: IntArray = IntArray(16)
         var decompressedLength = 0
         var aByteArray3094 = ByteArray(18002)
         var anIntArrayArray3095: Array<IntArray> = Array(6) { IntArray(258) }
-        var anInt3096 = 0
         var anInt3097 = 0
         var aByteArrayArray3098: Array<ByteArray> = Array(6) { ByteArray(258) }
         var anIntArrayArray3099: Array<IntArray> = Array(6) { IntArray(258) }
         var anInt3100 = 0
         var aByteArray3101: ByteArray = ByteArray(4096)
-        var anInt3102 = 0
         var aBooleanArray3103: BooleanArray = BooleanArray(256)
-        var anInt3105 = 0
         var anInt3106 = 0
         var aByteArray3107: ByteArray = ByteArray(256)
         var aByte3108: Byte = 0
-        var compressed: ByteArray? = null
+        var compressed: ByteArray = ByteArray(0)
     }
 }
