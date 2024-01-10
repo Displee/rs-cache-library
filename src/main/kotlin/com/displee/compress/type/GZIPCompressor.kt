@@ -11,32 +11,29 @@ import java.util.zip.Inflater
 class GZIPCompressor : Compressor {
 
     private var inflater: Inflater? = null
-    private val gzipBuffer = ByteArray(1000_000) //because in 317 Jagex stores a lot of data in one file
+    private var gzipBuffer: ByteArray? = null
 
     override fun decompress(buffer: InputBuffer, compressedData: ByteArray, compressedSize: Int, decompressedSize: Int, offset: Int): ByteArray {
-        val decompressed = ByteArray(decompressedSize)
-        if (!inflate(buffer, decompressed)) {
-            return byteArrayOf()
-        }
-        return decompressed
+        return inflate(buffer, decompressedSize)
     }
 
-    fun inflate(buffer: InputBuffer, data: ByteArray): Boolean {
+    private fun inflate(buffer: InputBuffer, decompressedSize: Int): ByteArray {
         val bytes = buffer.raw()
         val offset = buffer.offset
         if (bytes[offset].toInt() != 31 || bytes[offset + 1].toInt() != -117) {
-            return false
+            return byteArrayOf()
         }
         val inflater = this.inflater ?: Inflater(true).also { inflater = it }
-        try {
+        return try {
             inflater.setInput(bytes, offset + 10, bytes.size - (10 + offset + 8))
-            inflater.inflate(data)
+            val decompressed = ByteArray(decompressedSize)
+            inflater.inflate(decompressed)
+            decompressed
         } catch (exception: Exception) {
+            byteArrayOf()
+        } finally {
             inflater.reset()
-            return false
         }
-        inflater.reset()
-        return true
     }
 
     override fun compress(bytes: ByteArray): ByteArray {
@@ -56,6 +53,11 @@ class GZIPCompressor : Compressor {
         var read = 0
         try {
             val gis = GZIPInputStream(ByteArrayInputStream(data))
+            var gzipBuffer = gzipBuffer
+            if (gzipBuffer == null) {
+                gzipBuffer = ByteArray(1_000_000) //because in 317 Jagex stores a lot of data in one file
+                this.gzipBuffer = gzipBuffer
+            }
             while (true) {
                 if (read == gzipBuffer.size) {
                     throw RuntimeException("buffer overflow!")
