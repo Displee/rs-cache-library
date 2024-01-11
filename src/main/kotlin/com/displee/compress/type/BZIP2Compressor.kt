@@ -49,9 +49,10 @@ class BZIP2Compressor : Compressor {
         }
     }
 
-    override fun decompress(buffer: InputBuffer, compressedData: ByteArray, compressedSize: Int, decompressedSize: Int, offset: Int): ByteArray {
+    override fun decompress(buffer: InputBuffer, compressedSize: Int, decompressedSize: Int, offset: Int): ByteArray {
         val decompressed = ByteArray(decompressedSize)
-        decompress(decompressed, decompressed.size, compressedData, compressedSize, offset)
+        val compressed = buffer.readBytes(compressedSize)
+        decompress(decompressed, decompressed.size, compressed, compressedSize, offset)
         return decompressed
     }
 

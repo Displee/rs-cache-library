@@ -7,7 +7,7 @@ object EmptyCompressor : Compressor {
         return bytes
     }
 
-    override fun decompress(buffer: InputBuffer, compressedData: ByteArray, compressedSize: Int, decompressedSize: Int, offset: Int): ByteArray {
+    override fun decompress(buffer: InputBuffer, compressedSize: Int, decompressedSize: Int, offset: Int): ByteArray {
         return buffer.readBytes(compressedSize)
     }
 }

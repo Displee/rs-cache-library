@@ -6,6 +6,6 @@ interface Compressor {
 
     fun compress(bytes: ByteArray): ByteArray
 
-    fun decompress(buffer: InputBuffer, compressedData: ByteArray, compressedSize: Int, decompressedSize: Int, offset: Int = 9): ByteArray
+    fun decompress(buffer: InputBuffer, compressedSize: Int, decompressedSize: Int, offset: Int = 0): ByteArray
 
 }

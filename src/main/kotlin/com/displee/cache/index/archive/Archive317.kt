@@ -27,7 +27,7 @@ class Archive317(private val bzip2: BZIP2Compressor, id: Int, name: Int) : Archi
             extracted = true
         }
         var compressor = if (extracted) bzip2 else EmptyCompressor
-        val decompressed = compressor.decompress(buffer, byteArrayOf(), compressedLength, decompressedLength, 0)
+        val decompressed = compressor.decompress(buffer, compressedLength, decompressedLength)
         val metaBuffer = InputBuffer(decompressed)
         val filesLength = metaBuffer.readUnsignedShort()
         val filesBuffer = InputBuffer(decompressed)
@@ -37,7 +37,7 @@ class Archive317(private val bzip2: BZIP2Compressor, id: Int, name: Int) : Archi
             val fileName = metaBuffer.readInt()
             decompressedLength = metaBuffer.read24BitInt()
             compressedLength = metaBuffer.read24BitInt()
-            val data: ByteArray = compressor.decompress(buffer, byteArrayOf(), compressedLength, decompressedLength, 0)
+            val data: ByteArray = compressor.decompress(filesBuffer, compressedLength, decompressedLength)
             files[i] = File(i, data, fileName)
         }
     }
