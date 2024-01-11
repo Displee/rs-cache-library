@@ -29,7 +29,7 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
             crcs = readArchiveProperties(CRC_FILES[id - 1], BufferType.INT)
         }
         for (i in 0 until archiveLength) {
-            val archive = Archive317(i)
+            val archive = Archive317(origin.compressors.bzip2, i)
             archives[i] = archive
             if (versions == null || crcs == null || i >= versions.size) {
                 continue
@@ -59,7 +59,7 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
             listener?.notify((i / flaggedArchives.size) * 0.80, "Repacking archive ${it.id}...")
             val compressed = it.write()
             it.crc = compressed.generateCrc()
-            it.whirlpool = compressed.generateWhirlpool()
+            it.whirlpool = compressed.generateWhirlpool(origin.whirlpool)
             val written = writeArchiveSector(it.id, compressed)
             check(written) { "Unable to write data to archive sector. Your cache may be corrupt." }
             if (origin.clearDataAfterUpdate) {

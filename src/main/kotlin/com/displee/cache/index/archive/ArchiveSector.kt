@@ -3,6 +3,7 @@ package com.displee.cache.index.archive
 import com.displee.cache.index.Index.Companion.SECTOR_HEADER_SIZE_BIG
 import com.displee.cache.index.Index.Companion.SECTOR_HEADER_SIZE_SMALL
 import com.displee.compress.CompressionType
+import com.displee.compress.type.Compressor
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
 
@@ -13,6 +14,7 @@ class ArchiveSector(private val bigSector: Boolean, val size: Int, var position:
     var data = ByteArray(size)
 
     lateinit var compressionType: CompressionType
+    lateinit var compressor: Compressor
 
     fun read(buffer: InputBuffer) {
         id = if (bigSector) {
