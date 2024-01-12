@@ -1,5 +1,3 @@
-import org.gradle.internal.impldep.org.jsoup.safety.Safelist.basic
-
 plugins {
     kotlin("jvm") version "1.9.21"
     `maven-publish`
@@ -17,7 +15,6 @@ repositories {
 
 dependencies {
     implementation("com.github.jponge:lzma-java:1.3")
-    //implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version")
     implementation("org.apache.ant:ant:1.10.11")
     implementation("com.displee:disio:2.2")
     testImplementation("junit:junit:4.13.1")
