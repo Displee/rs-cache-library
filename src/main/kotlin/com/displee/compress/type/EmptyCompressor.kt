@@ -8,6 +8,6 @@ object EmptyCompressor : Compressor {
     }
 
     override fun decompress(buffer: InputBuffer, compressedSize: Int, decompressedSize: Int): ByteArray {
-        return buffer.readBytes(compressedSize)
+        return buffer.readBytes(decompressedSize)
     }
 }
