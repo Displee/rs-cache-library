@@ -34,9 +34,9 @@ fun ArchiveSector.decompress(compressors: Compressors, keys: IntArray? = null): 
     compressionType = CompressionType.compressionTypes[type]
     compressor = compressors.get(compressionType)
     val compressedSize = buffer.readInt() and 0xFFFFFF
-    var decompressedSize = 0
+    var decompressedSize = compressedSize
     if (compressionType != CompressionType.NONE) {
         decompressedSize = buffer.readInt() and 0xFFFFFF
     }
-    return compressor.decompress(buffer, compressedSize, decompressedSize, 0)
+    return compressor.decompress(buffer, compressedSize, decompressedSize)
 }
