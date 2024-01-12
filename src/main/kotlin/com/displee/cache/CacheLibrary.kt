@@ -11,8 +11,10 @@ import com.displee.cache.index.ReferenceTable.Companion.FLAG_NAME
 import com.displee.cache.index.ReferenceTable.Companion.FLAG_WHIRLPOOL
 import com.displee.cache.index.archive.Archive
 import com.displee.compress.CompressionType
+import com.displee.compress.type.Compressors
 import com.displee.io.Buffer
 import com.displee.io.impl.OutputBuffer
+import com.displee.util.Whirlpool
 import com.displee.util.generateWhirlpool
 import java.io.File
 import java.io.FileNotFoundException
@@ -26,10 +28,15 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     lateinit var mainFile: RandomAccessFile
 
     private val indices: SortedMap<Int, Index> = TreeMap<Int, Index>()
+    internal val compressors = Compressors()
+    internal val whirlpool = Whirlpool()
     var index255: Index255? = null
     private var rs3 = false
 
     var closed = false
+
+    private val indexCount: Int
+        get() = indices.keys.max() ?: 0
 
     init {
         init()
@@ -122,8 +129,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     @JvmOverloads
     fun createIndex(compressionType: CompressionType = CompressionType.GZIP, version: Int = 6, revision: Int = 0,
                     named: Boolean = false, whirlpool: Boolean = false, flag4: Boolean = false, flag8: Boolean = false,
-                    writeReferenceTable: Boolean = true): Index {
-        val id = indices.size
+                    writeReferenceTable: Boolean = true, id: Int = if (indices.isEmpty()) 0 else indexCount + 1): Index {
         val raf = RandomAccessFile(File(path, "$CACHE_FILE_NAME.idx$id"), "rw")
         val index = (if (is317()) Index317(this, id, raf) else Index(this, id, raf)).also { indices[id] = it }
         if (!writeReferenceTable) {
@@ -153,7 +159,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     fun createIndex(index: Index, writeReferenceTable: Boolean = true): Index {
         return createIndex(index.compressionType, index.version, index.revision,
-                index.isNamed(), index.hasWhirlpool(), index.hasFlag4(), index.hasFlag8(), writeReferenceTable)
+                index.isNamed(), index.hasWhirlpool(), index.hasFlag4(), index.hasFlag8(), writeReferenceTable, index.id)
     }
 
     fun exists(id: Int): Boolean {
@@ -254,7 +260,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         if (is317()) {
             throw UnsupportedOperationException("317 not supported to remove indices yet.")
         }
-        val id = indices.size - 1
+        val id = indexCount - 1
         val index = indices[id] ?: return
         index.close()
         val file = File(path, "$CACHE_FILE_NAME.idx$id")
@@ -267,9 +273,9 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     @JvmOverloads
     fun generateUkeys(writeWhirlpool: Boolean = true, exponent: BigInteger? = null, modulus: BigInteger? = null): ByteArray {
-        val buffer = OutputBuffer(6 + indices.size * 72)
+        val buffer = OutputBuffer(6 + indexCount * 72)
         if (writeWhirlpool) {
-            buffer.writeByte(indices.size)
+            buffer.writeByte(indexCount)
         }
         val emptyWhirlpool = ByteArray(WHIRLPOOL_SIZE)
         for (index in indices()) {
@@ -282,7 +288,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
             val indexData = buffer.array()
             val whirlpoolBuffer = OutputBuffer(WHIRLPOOL_SIZE + 1)
                 .writeByte(0)
-                .writeBytes(indexData.generateWhirlpool(5, indexData.size - 5))
+                .writeBytes(indexData.generateWhirlpool(whirlpool, 5, indexData.size - 5))
             if (exponent != null && modulus != null) {
                 buffer.writeBytes(Buffer.cryptRSA(whirlpoolBuffer.array(), exponent, modulus))
             }
@@ -360,7 +366,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     fun isOSRS(): Boolean {
         val index = index(2)
-        return index.revision >= 300 && indices.size <= 23
+        return index.revision >= 300 && indexCount <= 23
     }
 
     fun isRS3(): Boolean {
