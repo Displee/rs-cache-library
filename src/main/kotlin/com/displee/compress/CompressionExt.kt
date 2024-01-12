@@ -38,5 +38,5 @@ fun ArchiveSector.decompress(compressors: Compressors, keys: IntArray? = null): 
     if (compressionType != CompressionType.NONE) {
         decompressedSize = buffer.readInt() and 0xFFFFFF
     }
-    return compressor.decompress(buffer, compressedData, compressedSize, decompressedSize)
+    return compressor.decompress(buffer, compressedSize, decompressedSize, 9)
 }

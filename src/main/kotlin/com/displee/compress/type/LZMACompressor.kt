@@ -48,7 +48,7 @@ class LZMACompressor : Compressor {
         return baos.toByteArray()
     }
 
-    override fun decompress(buffer: InputBuffer, compressedData: ByteArray, compressedSize: Int, decompressedSize: Int, offset: Int): ByteArray {
+    override fun decompress(buffer: InputBuffer, compressedSize: Int, decompressedSize: Int, offset: Int): ByteArray {
         val output = OutputBuffer(buffer.remaining())
         output.writeBytes(buffer.raw(), buffer.offset, buffer.remaining())
         return try {

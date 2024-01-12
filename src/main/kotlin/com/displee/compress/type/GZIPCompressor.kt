@@ -13,7 +13,7 @@ class GZIPCompressor : Compressor {
     private var inflater: Inflater? = null
     private var gzipBuffer: ByteArray? = null
 
-    override fun decompress(buffer: InputBuffer, compressedData: ByteArray, compressedSize: Int, decompressedSize: Int, offset: Int): ByteArray {
+    override fun decompress(buffer: InputBuffer, compressedSize: Int, decompressedSize: Int, offset: Int): ByteArray {
         return inflate(buffer, decompressedSize)
     }
 
