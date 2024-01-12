@@ -42,6 +42,8 @@ publishing {
     }
     publications {
         create<MavenPublication>("mavenJava") {
+            from(components["java"])
+
             pom {
                 name = rootProject.name
                 description = rootProject.description
