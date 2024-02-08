@@ -3,14 +3,13 @@ package com.displee.cache.index.archive
 import com.displee.cache.index.archive.file.File
 import com.displee.compress.CompressionType
 import com.displee.compress.type.Compressor
-import com.displee.compress.type.Compressors
 import com.displee.compress.type.EmptyCompressor
 import com.displee.compress.type.GZIPCompressor
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
 import java.util.*
 
-open class Archive(val id: Int, var hashName: Int = 0, var xtea: IntArray? = null) : Comparable<Archive> {
+open class Archive(val id: Int, var hashName: Int = 0, xtea: IntArray? = null) : Comparable<Archive> {
 
     var compressionType: CompressionType = CompressionType.GZIP
     var compressor: Compressor = EmptyCompressor
@@ -24,6 +23,19 @@ open class Archive(val id: Int, var hashName: Int = 0, var xtea: IntArray? = nul
     var flag8Value = 0
     var flag4Value1 = 0
     var flag4Value2 = 0
+
+    private var _xtea: IntArray? = xtea
+    var xtea: IntArray?
+        get() = _xtea
+        set(value) {
+            _xtea = value
+            if (read) {
+                //bzip2 compression fails when xteas are set for some reason, cheap fix
+                compressionType = CompressionType.GZIP
+                compressor = GZIPCompressor()
+                flag()
+            }
+        }
 
     var read = false
     var new = false
@@ -273,16 +285,12 @@ open class Archive(val id: Int, var hashName: Int = 0, var xtea: IntArray? = nul
         return files.values.toTypedArray()
     }
 
+    @Deprecated("Use property syntax", ReplaceWith("xtea"))
     fun xtea(xtea: IntArray?) {
         this.xtea = xtea
-        if (read) {
-            //bzip2 compression fails when xteas are set for some reason, cheap fix
-            compressionType = CompressionType.GZIP
-            compressor = GZIPCompressor()
-            flag()
-        }
     }
 
+    @Deprecated("Use property syntax", ReplaceWith("xtea"))
     fun xtea(): IntArray? {
         return xtea
     }
