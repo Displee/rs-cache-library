@@ -31,7 +31,7 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
         for (i in 0 until archiveLength) {
             val archive = Archive317(origin.compressors.bzip2, i)
             archives[i] = archive
-            if (versions == null || crcs == null || i >= versions.size) {
+            if (versions == null || crcs == null || i >= versions.size || i >= crcs.size) {
                 continue
             }
             archive.revision = versions[i]
