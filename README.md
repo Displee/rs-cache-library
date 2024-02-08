@@ -24,7 +24,7 @@ This library is able to read this data, and write manipulated data back to the c
 
 ## Gradle
 ```
-implementation 'com.displee:rs-cache-library:7.0'
+implementation 'com.displee:rs-cache-library:7.1'
 ```
 ## Initialize your cache
 ```kotlin
@@ -115,7 +115,7 @@ val regionId = 12341 //barbarian village
 val x = (regionId shr 8) and 0xFF
 val y = regionId and 0xFF
 val replace = true //optional
-val file = library.idnex(5).archive("l${x}_${y}", xtea)?.add(0, byteArrayOf(...), replace)
+val file = library.index(5).archive("l${x}_${y}", xtea)?.add(0, byteArrayOf(...), replace)
 ```
 ```kotlin
 val replace = true //optional

@@ -27,9 +27,9 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     lateinit var mainFile: RandomAccessFile
 
-    private val indices: SortedMap<Int, Index> = TreeMap<Int, Index>()
-    internal val compressors = Compressors()
-    internal val whirlpool = Whirlpool()
+    private val indices: SortedMap<Int, Index> = TreeMap()
+    val compressors = Compressors()
+    val whirlpool = Whirlpool()
     var index255: Index255? = null
     private var rs3 = false
 
