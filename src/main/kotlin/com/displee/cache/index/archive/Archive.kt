@@ -10,7 +10,7 @@ import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
 import java.util.*
 
-open class Archive(val id: Int, var hashName: Int = 0, internal var xtea: IntArray? = null) : Comparable<Archive> {
+open class Archive(val id: Int, var hashName: Int = 0, var xtea: IntArray? = null) : Comparable<Archive> {
 
     var compressionType: CompressionType = CompressionType.GZIP
     var compressor: Compressor = EmptyCompressor
