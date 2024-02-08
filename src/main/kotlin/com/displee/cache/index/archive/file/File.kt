@@ -6,7 +6,7 @@ class File : Comparable<File> {
     var data: ByteArray?
     var hashName: Int
 
-    internal constructor(id: Int, data: ByteArray? = null, hashName: Int = 0, @Suppress("UNUSED_PARAMETER") checkData: Boolean = false) {
+    constructor(id: Int, data: ByteArray? = null, hashName: Int = 0, @Suppress("UNUSED_PARAMETER") checkData: Boolean = false) {
         this.id = id
         this.data = data
         this.hashName = hashName
