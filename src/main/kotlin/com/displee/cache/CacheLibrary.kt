@@ -15,15 +15,36 @@ import com.displee.compress.type.Compressors
 import com.displee.io.Buffer
 import com.displee.io.impl.OutputBuffer
 import com.displee.util.Whirlpool
+import com.displee.util.createFileIfNotExists
 import com.displee.util.generateWhirlpool
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.RandomAccessFile
 import java.math.BigInteger
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.*
+import kotlin.io.path.*
 
-open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = false, private val listener: ProgressListener? = null) {
+open class CacheLibrary(
+    val path: Path,
+    val clearDataAfterUpdate: Boolean = false,
+    private val listener: ProgressListener? = null
+) : AutoCloseable {
+
+    constructor(
+        path: String,
+        clearDataAfterUpdate: Boolean = false,
+        listener: ProgressListener? = null
+    ) : this(Paths.get(path), clearDataAfterUpdate, listener)
+
+    val mainFilePath: Path by lazy(LazyThreadSafetyMode.NONE) { path.resolve(MAIN_FILE_FILE_NAME) }
+    val mainFile317Path: Path by lazy(LazyThreadSafetyMode.NONE) { path.resolve(MAIN_FILE_317_FILE_NAME) }
+
+    val index255Path: Path by lazy(LazyThreadSafetyMode.NONE) { path.resolve(INDEX_255_FILE_NAME) }
+
+    fun indexPath(indexId: Int): Path = path.resolve("$INDEX_FILE_NAME_PREFIX$indexId")
 
     lateinit var mainFile: RandomAccessFile
 
@@ -43,9 +64,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     }
 
     private fun init() {
-        val mainFile317 = File(path, "$CACHE_FILE_NAME.dat")
-        val index255 = File(path, "$CACHE_FILE_NAME.idx255")
-        if (mainFile317.exists() && !index255.exists()) {
+        if (mainFile317Path.exists() && index255Path.notExists()) {
             load317()
         } else {
             load()
@@ -62,32 +81,37 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     @Throws(IOException::class)
     private fun load() {
-        val main = File(path, "$CACHE_FILE_NAME.dat2")
-        mainFile = if (main.exists()) {
-            RandomAccessFile(main, "rw")
+        mainFile = if (mainFilePath.exists()) {
+            RandomAccessFile(mainFilePath.toFile(), "rw")
         } else {
             listener?.notify(-1.0, "Error, main file could not be found")
-            throw FileNotFoundException("File[path=${main.absolutePath}] could not be found.")
+            throw FileNotFoundException("File[path=${mainFilePath.absolutePathString()}] could not be found.")
         }
-        val index255File = File(path, "$CACHE_FILE_NAME.idx255")
-        if (!index255File.exists()) {
+
+        if (index255Path.notExists()) {
             listener?.notify(-1.0, "Error, checksum file could not be found.")
-            throw FileNotFoundException("File[path=${index255File.absolutePath}] could not be found.")
+            throw FileNotFoundException("File[path=${index255Path.absolutePathString()}] could not be found.")
         }
-        val index255 = Index255(this, RandomAccessFile(index255File, "rw"))
+
+        val index255 = Index255(this, RandomAccessFile(index255Path.toFile(), "rw"))
         this.index255 = index255
+
         listener?.notify(0.0, "Reading indices...")
+
         val indicesLength = index255.raf.length().toInt() / INDEX_SIZE
         rs3 = indicesLength > 39
+
         for (i in 0 until indicesLength) {
-            val file = File(path, "$CACHE_FILE_NAME.idx$i")
+            val indexPath = indexPath(i)
             val progress = i / (indicesLength - 1.0)
-            if (!file.exists()) {
+
+            if (indexPath.notExists()) {
                 listener?.notify(progress, "Could not load index $i, missing idx file.")
                 continue
             }
+
             try {
-                indices[i] = Index(this, i, RandomAccessFile(file, "rw"))
+                indices[i] = Index(this, i, RandomAccessFile(indexPath.toFile(), "rw"))
                 listener?.notify(progress, "Loaded index $i.")
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -98,26 +122,27 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     @Throws(IOException::class)
     private fun load317() {
-        val main = File(path, "$CACHE_FILE_NAME.dat")
-        mainFile = if (main.exists()) {
-            RandomAccessFile(main, "rw")
+        mainFile = if (mainFile317Path.exists()) {
+            RandomAccessFile(mainFile317Path.toFile(), "rw")
         } else {
             listener?.notify(-1.0, "Error, main file could not be found")
-            throw FileNotFoundException("File[path=${main.absolutePath}] could not be found.")
+            throw FileNotFoundException("File[path=${mainFile317Path.absolutePathString()}] could not be found.")
         }
-        val indexFiles = File(path).listFiles { _: File, name: String ->
-            return@listFiles name.startsWith("$CACHE_FILE_NAME.idx")
+
+        val indexFiles = path.toFile().listFiles { _: File, name: String ->
+            return@listFiles name.startsWith(INDEX_FILE_NAME_PREFIX)
         }
         check(indexFiles != null) { "Files are null. Check your cache path." }
+
         listener?.notify(0.0, "Reading indices...")
+
         for (i in indexFiles.indices) {
-            val file = File(path, "$CACHE_FILE_NAME.idx$i")
+            val indexPath = indexPath(i)
+            if (indexPath.notExists()) continue
+
             val progress = i / (indexFiles.size - 1.0)
-            if (!file.exists()) {
-                continue
-            }
             try {
-                indices[i] = Index317(this, i, RandomAccessFile(file, "rw"))
+                indices[i] = Index317(this, i, RandomAccessFile(indexPath.toFile(), "rw"))
                 listener?.notify(progress, "Loaded index $i .")
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -127,17 +152,24 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     }
 
     @JvmOverloads
-    fun createIndex(compressionType: CompressionType = CompressionType.GZIP, version: Int = 6, revision: Int = 0,
-                    named: Boolean = false, whirlpool: Boolean = false, flag4: Boolean = false, flag8: Boolean = false,
-                    writeReferenceTable: Boolean = true, id: Int = if (indices.isEmpty()) 0 else indexCount + 1): Index {
-        val raf = RandomAccessFile(File(path, "$CACHE_FILE_NAME.idx$id"), "rw")
-        val index = (if (is317()) Index317(this, id, raf) else Index(this, id, raf)).also { indices[id] = it }
+    fun createIndex(
+        compressionType: CompressionType = CompressionType.GZIP, version: Int = 6, revision: Int = 0,
+        named: Boolean = false, whirlpool: Boolean = false, flag4: Boolean = false, flag8: Boolean = false,
+        writeReferenceTable: Boolean = true, id: Int = if (indices.isEmpty()) 0 else indexCount + 1
+    ): Index {
+        val raf = RandomAccessFile(indexPath(id).toFile(), "rw")
+        val index = (if (is317())
+            Index317(this, id, raf)
+        else Index(this, id, raf))
+            .also { indices[id] = it }
         if (!writeReferenceTable) {
             return index
         }
+
         index.version = version
         index.revision = revision
         index.compressionType = compressionType
+
         if (named) {
             index.flagMask(FLAG_NAME)
         }
@@ -152,14 +184,19 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
                 index.flagMask(FLAG_8)
             }
         }
+
         index.flag()
+
         check(index.update())
+
         return index
     }
 
     fun createIndex(index: Index, writeReferenceTable: Boolean = true): Index {
-        return createIndex(index.compressionType, index.version, index.revision,
-                index.isNamed(), index.hasWhirlpool(), index.hasFlag4(), index.hasFlag8(), writeReferenceTable, index.id)
+        return createIndex(
+            index.compressionType, index.version, index.revision,
+            index.isNamed(), index.hasWhirlpool(), index.hasFlag4(), index.hasFlag8(), writeReferenceTable, index.id
+        )
     }
 
     fun exists(id: Int): Boolean {
@@ -173,7 +210,13 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     }
 
     @JvmOverloads
-    fun put(index: Int, archive: Int, file: Int, data: ByteArray, xtea: IntArray? = null): com.displee.cache.index.archive.file.File {
+    fun put(
+        index: Int,
+        archive: Int,
+        file: Int,
+        data: ByteArray,
+        xtea: IntArray? = null
+    ): com.displee.cache.index.archive.file.File {
         return index(index).add(archive, xtea = xtea).add(file, data)
     }
 
@@ -185,7 +228,13 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     }
 
     @JvmOverloads
-    fun put(index: Int, archive: Int, file: String, data: ByteArray, xtea: IntArray? = null): com.displee.cache.index.archive.file.File {
+    fun put(
+        index: Int,
+        archive: Int,
+        file: String,
+        data: ByteArray,
+        xtea: IntArray? = null
+    ): com.displee.cache.index.archive.file.File {
         return index(index).add(archive, xtea = xtea).add(file, data)
     }
 
@@ -197,7 +246,13 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     }
 
     @JvmOverloads
-    fun put(index: Int, archive: String, file: String, data: ByteArray, xtea: IntArray? = null): com.displee.cache.index.archive.file.File {
+    fun put(
+        index: Int,
+        archive: String,
+        file: String,
+        data: ByteArray,
+        xtea: IntArray? = null
+    ): com.displee.cache.index.archive.file.File {
         return index(index).add(archive, xtea = xtea).add(file, data)
     }
 
@@ -260,19 +315,27 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         if (is317()) {
             throw UnsupportedOperationException("317 not supported to remove indices yet.")
         }
+
         val id = indexCount - 1
         val index = indices[id] ?: return
         index.close()
-        val file = File(path, "$CACHE_FILE_NAME.idx$id")
-        if (!file.exists() || !file.delete()) {
-            throw RuntimeException("Failed to remove the random access file of the argued index[id=$id, file exists=${file.exists()}]")
+
+        val indexPath = indexPath(id)
+        val indexPathExists = indexPath.exists()
+        if (!indexPathExists || !indexPath.deleteIfExists()) {
+            throw RuntimeException("Failed to remove the random access file of the argued index[id=$id, file exists=$indexPathExists]")
         }
+
         index255?.raf?.setLength(id * INDEX_SIZE.toLong())
         indices.remove(id)
     }
 
     @JvmOverloads
-    fun generateUkeys(writeWhirlpool: Boolean = true, exponent: BigInteger? = null, modulus: BigInteger? = null): ByteArray {
+    fun generateUkeys(
+        writeWhirlpool: Boolean = true,
+        exponent: BigInteger? = null,
+        modulus: BigInteger? = null
+    ): ByteArray {
         val buffer = OutputBuffer(6 + indexCount * 72)
         if (writeWhirlpool) {
             buffer.writeByte(indexCount)
@@ -296,36 +359,47 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         return buffer.array()
     }
 
-    fun rebuild(directory: File) {
-        File(directory.path).mkdirs()
+    fun rebuild(directory: Path) {
+        directory.createDirectories()
         if (is317()) {
-            File(directory.path, "$CACHE_FILE_NAME.dat").createNewFile()
+            mainFile317Path.createFileIfNotExists()
         } else {
-            File(directory.path, "$CACHE_FILE_NAME.idx255").createNewFile()
-            File(directory.path, "$CACHE_FILE_NAME.dat2").createNewFile()
+            index255Path.createFileIfNotExists()
+            mainFilePath.createFileIfNotExists()
         }
+
+        val newLibrary = CacheLibrary(directory)
+
         val indicesSize = indices.values.size
-        val newLibrary = CacheLibrary(directory.path)
+
         for (index in indices.values) {
             val id = index.id
             print("\rBuilding index $id/$indicesSize...")
+
             val archiveSector = index255?.readArchiveSector(id)
+
             var writeReferenceTable = true
             if (!is317() && archiveSector == null) { //some empty indices don't even have a reference table
                 writeReferenceTable = false //in that case, don't write it
             }
+
             val newIndex = newLibrary.createIndex(index, writeReferenceTable)
             for (i in index.archiveIds()) { //only write referenced archives
                 val data = index.readArchiveSector(i)?.data ?: continue
                 newIndex.writeArchiveSector(i, data)
             }
+
             if (archiveSector != null) {
                 newLibrary.index255?.writeArchiveSector(id, archiveSector.data)
             }
         }
+
         newLibrary.close()
+
         println("\rFinished building $indicesSize indices.")
     }
+
+    fun rebuild(directory: File) = rebuild(directory.toPath())
 
     fun fixCrcs(update: Boolean) {
         indices.values.forEach {
@@ -336,7 +410,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         }
     }
 
-    fun close() {
+    override fun close() {
         if (closed) {
             return
         }
@@ -378,13 +452,32 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     }
 
     companion object {
+
         const val CACHE_FILE_NAME = "main_file_cache"
+
+        const val MAIN_FILE_FILE_NAME = "$CACHE_FILE_NAME.dat2"
+        const val MAIN_FILE_317_FILE_NAME = "$CACHE_FILE_NAME.dat"
+
+        const val INDEX_FILE_NAME_PREFIX = "$CACHE_FILE_NAME.idx"
+
+        const val INDEX_255_FILE_NAME = "${INDEX_FILE_NAME_PREFIX}255"
 
         @JvmStatic
         @JvmOverloads
-        fun create(path: String, clearDataAfterUpdate: Boolean = false, listener: ProgressListener? = null): CacheLibrary {
-            return CacheLibrary(path, clearDataAfterUpdate, listener)
-        }
+        fun create(
+            path: Path,
+            clearDataAfterUpdate: Boolean = false,
+            listener: ProgressListener? = null
+        ): CacheLibrary = CacheLibrary(path, clearDataAfterUpdate, listener)
+
+        @JvmStatic
+        @JvmOverloads
+        fun create(
+            path: String,
+            clearDataAfterUpdate: Boolean = false,
+            listener: ProgressListener? = null
+        ): CacheLibrary = CacheLibrary(path, clearDataAfterUpdate, listener)
+
     }
 
 }

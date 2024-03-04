@@ -4,10 +4,11 @@ plugins {
 
     `maven-publish`
     signing
+    id("io.github.gradle-nexus.publish-plugin")
 }
 
 group = "com.displee"
-version = "7.1.0"
+version = "7.2.0"
 
 description = "A library written in Kotlin used to read and write to all cache formats of RuneScape."
 
@@ -30,17 +31,6 @@ val ossrhUsername: String? by project
 val ossrhPassword: String? by project
 
 publishing {
-    repositories {
-        maven {
-            val releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-            val snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
-            url = uri(if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl)
-            credentials {
-                username = ossrhUsername
-                password = ossrhPassword
-            }
-        }
-    }
     publications {
         create<MavenPublication>("mavenJava") {
             from(components["java"])
@@ -80,4 +70,20 @@ publishing {
 
 signing {
     sign(publishing.publications["mavenJava"])
+}
+
+nexusPublishing {
+    repositories {
+        sonatype {
+            if (false) { // only for users registered in Sonatype after 24 Feb 2021
+                nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+                snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+            }
+
+            if (ossrhUsername != null && ossrhPassword != null) {
+                username.set(ossrhUsername)
+                password.set(ossrhPassword)
+            }
+        }
+    }
 }
