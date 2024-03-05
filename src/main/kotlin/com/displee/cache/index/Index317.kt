@@ -29,6 +29,7 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
             crcs = readArchiveProperties(CRC_FILES[id - 1], BufferType.INT)
         }
         for (i in 0 until archiveLength) {
+            readArchiveSector(i) ?: continue
             val archive = Archive317(origin.compressors.bzip2, i)
             archives[i] = archive
             if (versions == null || crcs == null || i >= versions.size || i >= crcs.size) {
