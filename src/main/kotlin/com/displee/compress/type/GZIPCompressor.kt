@@ -4,6 +4,7 @@ import com.displee.io.impl.InputBuffer
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.util.zip.Deflater
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import java.util.zip.Inflater
@@ -39,7 +40,11 @@ class GZIPCompressor : Compressor {
     override fun compress(bytes: ByteArray): ByteArray {
         val compressed = ByteArrayOutputStream()
         try {
-            val gzipOutputStream = GZIPOutputStream(compressed)
+            val gzipOutputStream = object : GZIPOutputStream(compressed) {
+                init {
+                    def.setLevel(Deflater.BEST_COMPRESSION)
+                }
+            }
             gzipOutputStream.write(bytes)
             gzipOutputStream.finish()
             gzipOutputStream.close()

@@ -31,7 +31,7 @@ class BZIP2Compressor : Compressor {
         try {
             ByteArrayInputStream(bytes).use { stream ->
                 val bout = ByteArrayOutputStream()
-                CBZip2OutputStream(bout, 1).use { os ->
+                CBZip2OutputStream(bout, 9).use { os ->
                     val buf = ByteArray(4096)
                     var len: Int
                     while (stream.read(buf, 0, buf.size).also { len = it } != -1) {
