@@ -49,15 +49,9 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         }
 
         val archiveIds = IntArray(readFun())
-        var hasDuplicateArchiveIds = false
         for (i in archiveIds.indices) {
             val archiveId = readFun() + if (i == 0) 0 else archiveIds[i - 1]
-            archiveIds[i] = archiveId.also {
-                if (archives[it] != null) {
-                    hasDuplicateArchiveIds = true
-                }
-                archives[i] = Archive(it)
-            }
+            archiveIds[i] = archiveId.also { archives[i] = Archive(it) }
         }
         val archives = archives()
         archiveNames = ArrayList(archives.size)
@@ -124,14 +118,9 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
                 }
             }
         }
-        // some caches contain duplicate archive ids, only caches people have done services for and somehow messed up
-        if (hasDuplicateArchiveIds) {
-            // accept the first valid archive, skip the duplicates
-            this.archives.clear()
-            archives.forEach {
-                this.archives.putIfAbsent(it.id, it)
-            }
-        }
+
+        this.archives.clear()
+        archives.forEach { this.archives.putIfAbsent(it.id, it) }
     }
 
     open fun write(): ByteArray {
