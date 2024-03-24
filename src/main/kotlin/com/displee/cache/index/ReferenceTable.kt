@@ -49,9 +49,15 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         }
 
         val archiveIds = IntArray(readFun())
+        var hasDuplicateArchiveIds = false
         for (i in archiveIds.indices) {
             val archiveId = readFun() + if (i == 0) 0 else archiveIds[i - 1]
-            archiveIds[i] = archiveId.also { archives[it] = Archive(it) }
+            archiveIds[i] = archiveId.also {
+                if (archives[it] != null) {
+                    hasDuplicateArchiveIds = true
+                }
+                archives[i] = Archive(it)
+            }
         }
         val archives = archives()
         archiveNames = ArrayList(archives.size)
@@ -63,8 +69,8 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
                 }
             }
         }
+        archives.forEach { it.crc = buffer.readInt() }
         if (origin.isRS3()) {
-            archives.forEach { it.crc = buffer.readInt() }
             if (flag8) {
                 archives.forEach { it.flag8Value = buffer.readInt() }
             }
@@ -95,7 +101,6 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
                     buffer.readBytes(archiveWhirlpool2)
                 }
             }
-            archives.forEach { it.crc = buffer.readInt() }
         }
         archives.forEach { it.revision = buffer.readInt() }
         val archiveFileSizes = IntArray(archives.size)
@@ -117,6 +122,14 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
                 for (fileIndex in 0 until archiveFileSizes[i]) {
                     archive.file(fileIds[fileIndex])?.hashName = buffer.readInt()
                 }
+            }
+        }
+        // some caches contain duplicate archive ids, only caches people have done services for and somehow messed up
+        if (hasDuplicateArchiveIds) {
+            // accept the first valid archive, skip the duplicates
+            this.archives.clear()
+            archives.forEach {
+                this.archives.putIfAbsent(it.id, it)
             }
         }
     }
