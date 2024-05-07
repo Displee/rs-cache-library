@@ -138,6 +138,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         index.version = version
         index.revision = revision
         index.compressionType = compressionType
+        index.compressor = compressors.get(compressionType)
         if (named) {
             index.flagMask(FLAG_NAME)
         }
