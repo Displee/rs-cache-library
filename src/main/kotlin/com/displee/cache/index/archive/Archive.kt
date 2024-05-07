@@ -28,13 +28,14 @@ open class Archive(val id: Int, var hashName: Int = 0, xtea: IntArray? = null) :
     var xtea: IntArray?
         get() = _xtea
         set(value) {
-            _xtea = value
-            if (read) {
+            // only flag the archive for update when it was read and the xtea got changed
+            if (read && !(_xtea contentEquals value)) {
                 //bzip2 compression fails when xteas are set for some reason, cheap fix
                 compressionType = CompressionType.GZIP
                 compressor = GZIPCompressor()
                 flag()
             }
+            _xtea = value
         }
 
     var read = false
