@@ -173,7 +173,6 @@ open class Archive(val id: Int, var hashName: Int = 0, xtea: IntArray? = null) :
                 flag = true
             }
             if (flag) {
-                println("Flagged")
                 flag()
             }
         }
