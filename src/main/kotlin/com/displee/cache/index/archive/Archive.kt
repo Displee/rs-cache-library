@@ -29,11 +29,11 @@ open class Archive(val id: Int, var hashName: Int = 0, xtea: IntArray? = null) :
         get() = _xtea
         set(value) {
             _xtea = value
-            if (read) {
+            if (read && _xtea != null) {
                 //bzip2 compression fails when xteas are set for some reason, cheap fix
                 compressionType = CompressionType.GZIP
                 compressor = GZIPCompressor()
-                flag()
+                //flag()
             }
         }
 
@@ -173,6 +173,7 @@ open class Archive(val id: Int, var hashName: Int = 0, xtea: IntArray? = null) :
                 flag = true
             }
             if (flag) {
+                println("Flagged")
                 flag()
             }
         }
