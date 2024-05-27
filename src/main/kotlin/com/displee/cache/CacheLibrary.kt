@@ -192,8 +192,13 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     @JvmOverloads
     fun put(index: Int, archive: String, data: ByteArray, xtea: IntArray? = null): Archive {
+        return put(index, archive, 0, data, xtea)
+    }
+
+    @JvmOverloads
+    fun put(index: Int, archive: String, file: Int, data: ByteArray, xtea: IntArray? = null): Archive {
         val currentArchive = index(index).add(archive, xtea = xtea)
-        currentArchive.add(0, data)
+        currentArchive.add(file, data)
         return currentArchive
     }
 
@@ -236,6 +241,10 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     }
 
     fun remove(index: Int, archive: String, file: String): com.displee.cache.index.archive.file.File? {
+        return index(index).archive(archive)?.remove(file)
+    }
+
+    fun remove(index: Int, archive: String, file: Int): com.displee.cache.index.archive.file.File? {
         return index(index).archive(archive)?.remove(file)
     }
 
