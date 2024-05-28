@@ -40,6 +40,7 @@ open class Archive(val id: Int, var hashName: Int = 0, xtea: IntArray? = null) :
 
     var read = false
     var new = false
+    var autoUpdateRevision = true
 
     constructor(id: Int) : this(id, 0)
 

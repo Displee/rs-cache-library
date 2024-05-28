@@ -55,7 +55,9 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
         var i = 0.0
         flaggedArchives.forEach {
             i++
-            it.revision++
+            if (it.autoUpdateRevision) {
+                it.revision++
+            }
             it.unFlag()
             listener?.notify((i / flaggedArchives.size) * 0.80, "Repacking archive ${it.id}...")
             val compressed = it.write()
