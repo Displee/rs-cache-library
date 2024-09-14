@@ -152,10 +152,9 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
                 }
                 return archiveSector
             } catch (exception: Exception) {
-                exception.printStackTrace()
+                return null
             }
         }
-        return null
     }
 
     fun writeArchiveSector(id: Int, data: ByteArray): Boolean {

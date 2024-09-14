@@ -139,9 +139,7 @@ open class Archive(val id: Int, var hashName: Int = 0, xtea: IntArray? = null) :
 
     @JvmOverloads
     fun add(file: File, overwrite: Boolean = true): File {
-        val fileData = file.data
-        checkNotNull(fileData) { "File data is null." }
-        return add(file.id, fileData, file.hashName, overwrite)
+        return add(file.id, checkNotNull(file.data) { "File data is null." }, file.hashName, overwrite)
     }
 
     fun add(data: ByteArray): File {
