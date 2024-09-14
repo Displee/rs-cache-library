@@ -23,6 +23,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
     var compressor: Compressor = EmptyCompressor
     private var cached = false
     protected var closed = false
+    protected var autoUpdateRevision = true
 
     val info get() = "Index[id=" + id + ", archives=" + archives.size + ", compression=" + compressionType + "]"
 
@@ -72,7 +73,9 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         var i = 0.0
         flaggedArchives.forEach {
             i++
-            it.revision++
+            if (it.autoUpdateRevision) {
+                it.revision++
+            }
             it.unFlag()
             listener?.notify((i / flaggedArchives.size) * 0.80, "Repacking archive ${it.id}...")
             val compressed = it.write().compress(it.compressionType, it.compressor, it.xtea, it.revision)
@@ -90,7 +93,9 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         }
         if (flagged()) {
             unFlag()
-            revision++
+            if (autoUpdateRevision) {
+                revision++
+            }
             val indexData = write().compress(compressionType, compressor)
             crc = indexData.generateCrc()
             whirlpool = indexData.generateWhirlpool(origin.whirlpool)
@@ -147,10 +152,9 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
                 }
                 return archiveSector
             } catch (exception: Exception) {
-                exception.printStackTrace()
+                return null
             }
         }
-        return null
     }
 
     fun writeArchiveSector(id: Int, data: ByteArray): Boolean {
