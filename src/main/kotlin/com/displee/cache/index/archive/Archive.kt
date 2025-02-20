@@ -20,9 +20,9 @@ open class Archive(val id: Int, var hashName: Int = 0, xtea: IntArray? = null) :
 
     var crc: Int = 0
     var whirlpool: ByteArray? = null
-    var flag8Value = 0
-    var flag4Value1 = 0
-    var flag4Value2 = 0
+    var checksum = 0
+    var length = 0
+    var uncompressedLength = 0
 
     private var _xtea: IntArray? = xtea
     var xtea: IntArray?
