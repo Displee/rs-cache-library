@@ -36,7 +36,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     var closed = false
 
     private val indexCount: Int
-        get() = indices.lastOrNull { it != null }?.id ?: 0
+        get() = indices.indexOf(null) - 1
 
     init {
         init()
@@ -133,7 +133,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     @JvmOverloads
     fun createIndex(compressionType: CompressionType = CompressionType.GZIP, version: Int = 6, revision: Int = 0,
                     named: Boolean = false, whirlpool: Boolean = false, flag4: Boolean = false, flag8: Boolean = false,
-                    writeReferenceTable: Boolean = true, id: Int = if (indices.all { it == null }) 0 else indexCount + 1): Index {
+                    writeReferenceTable: Boolean = true, id: Int = indexCount + 1): Index {
         val raf = RandomAccessFile(File(path, "$CACHE_FILE_NAME.idx$id"), "rw")
         val index = (if (is317()) Index317(this, id, raf) else Index(this, id, raf)).also { indices[id] = it }
         if (!writeReferenceTable) {
