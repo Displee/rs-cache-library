@@ -137,24 +137,16 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         if (isNamed()) {
             archives.forEach { buffer.writeInt(it.hashName) }
         }
-        if (origin.isRS3()) {
-            archives.forEach { buffer.writeInt(it.crc) }
-            if (hasChecksums()) {
-                archives.forEach { buffer.writeInt(it.checksum) }
-            }
-            if (hasWhirlpool()) {
-                val empty = ByteArray(WHIRLPOOL_SIZE)
-                archives.forEach { buffer.writeBytes(it.whirlpool ?: empty) }
-            }
-            if (hasLengths()) {
-                archives.forEach { buffer.writeInt(it.length).writeInt(it.uncompressedLength) }
-            }
-        } else {
-            if (hasWhirlpool()) {
-                val empty = ByteArray(WHIRLPOOL_SIZE)
-                archives.forEach { buffer.writeBytes(it.whirlpool ?: empty) }
-            }
-            archives.forEach { buffer.writeInt(it.crc) }
+        archives.forEach { buffer.writeInt(it.crc) }
+        if (hasChecksums()) {
+            archives.forEach { buffer.writeInt(it.checksum) }
+        }
+        if (hasWhirlpool()) {
+            val empty = ByteArray(WHIRLPOOL_SIZE)
+            archives.forEach { buffer.writeBytes(it.whirlpool ?: empty) }
+        }
+        if (hasLengths()) {
+            archives.forEach { buffer.writeInt(it.length).writeInt(it.uncompressedLength) }
         }
         archives.forEach { buffer.writeInt(it.revision) }
         archives.forEach { writeFun(it.files.size) }
