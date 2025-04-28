@@ -35,8 +35,8 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         mask = buffer.readByte().toInt()
         val named = mask and FLAG_NAME != 0
         val whirlpool = mask and FLAG_WHIRLPOOL != 0
-        val flag4 = mask and FLAG_4 != 0
-        val flag8 = mask and FLAG_8 != 0
+        val lengths = mask and FLAG_LENGTHS != 0
+        val checksums = mask and FLAG_CHECKSUMS != 0
 
         val readFun: () -> (Int) = if (version >= 7) {
             {
@@ -64,36 +64,23 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
             }
         }
         archives.forEach { it.crc = buffer.readInt() }
-        if (origin.isRS3()) {
-            if (flag8) {
-                archives.forEach { it.flag8Value = buffer.readInt() }
-            }
-            if (whirlpool) {
-                archives.forEach {
-                    var archiveWhirlpool = it.whirlpool
-                    if (archiveWhirlpool == null) {
-                        archiveWhirlpool = ByteArray(WHIRLPOOL_SIZE)
-                        it.whirlpool = archiveWhirlpool
-                    }
-                    buffer.readBytes(archiveWhirlpool)
+        if (checksums) {
+            archives.forEach { it.checksum = buffer.readInt() }
+        }
+        if (whirlpool) {
+            archives.forEach {
+                var archiveWhirlpool = it.whirlpool
+                if (archiveWhirlpool == null) {
+                    archiveWhirlpool = ByteArray(WHIRLPOOL_SIZE)
+                    it.whirlpool = archiveWhirlpool
                 }
+                buffer.readBytes(archiveWhirlpool)
             }
-            if (flag4) {
-                archives.forEach {
-                    it.flag4Value1 = buffer.readInt()
-                    it.flag4Value2 = buffer.readInt()
-                }
-            }
-        } else {
-            if (whirlpool) {
-                archives.forEach {
-                    var archiveWhirlpool2 = it.whirlpool
-                    if (archiveWhirlpool2 == null) {
-                        archiveWhirlpool2 = ByteArray(WHIRLPOOL_SIZE)
-                        it.whirlpool = archiveWhirlpool2
-                    }
-                    buffer.readBytes(archiveWhirlpool2)
-                }
+        }
+        if (lengths) {
+            archives.forEach {
+                it.length = buffer.readInt()
+                it.uncompressedLength = buffer.readInt()
             }
         }
         archives.forEach { it.revision = buffer.readInt() }
@@ -152,15 +139,15 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         }
         if (origin.isRS3()) {
             archives.forEach { buffer.writeInt(it.crc) }
-            if (hasFlag8()) {
-                archives.forEach { buffer.writeInt(it.flag8Value) }
+            if (hasChecksums()) {
+                archives.forEach { buffer.writeInt(it.checksum) }
             }
             if (hasWhirlpool()) {
                 val empty = ByteArray(WHIRLPOOL_SIZE)
                 archives.forEach { buffer.writeBytes(it.whirlpool ?: empty) }
             }
-            if (hasFlag4()) {
-                archives.forEach { buffer.writeInt(it.flag4Value1).writeInt(it.flag4Value2) }
+            if (hasLengths()) {
+                archives.forEach { buffer.writeInt(it.length).writeInt(it.uncompressedLength) }
             }
         } else {
             if (hasWhirlpool()) {
@@ -416,12 +403,12 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         return mask and FLAG_WHIRLPOOL != 0
     }
 
-    fun hasFlag4(): Boolean {
-        return mask and FLAG_4 != 0
+    fun hasLengths(): Boolean {
+        return mask and FLAG_LENGTHS != 0
     }
 
-    fun hasFlag8(): Boolean {
-        return mask and FLAG_8 != 0
+    fun hasChecksums(): Boolean {
+        return mask and FLAG_CHECKSUMS != 0
     }
 
     fun archiveIds(): IntArray {
@@ -443,8 +430,8 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
     companion object {
         const val FLAG_NAME = 0x1
         const val FLAG_WHIRLPOOL = 0x2
-        const val FLAG_4 = 0x4
-        const val FLAG_8 = 0x8
+        const val FLAG_LENGTHS = 0x4
+        const val FLAG_CHECKSUMS = 0x8
     }
 
 }

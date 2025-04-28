@@ -5,8 +5,8 @@ import com.displee.cache.index.Index.Companion.INDEX_SIZE
 import com.displee.cache.index.Index.Companion.WHIRLPOOL_SIZE
 import com.displee.cache.index.Index255
 import com.displee.cache.index.Index317
-import com.displee.cache.index.ReferenceTable.Companion.FLAG_4
-import com.displee.cache.index.ReferenceTable.Companion.FLAG_8
+import com.displee.cache.index.ReferenceTable.Companion.FLAG_LENGTHS
+import com.displee.cache.index.ReferenceTable.Companion.FLAG_CHECKSUMS
 import com.displee.cache.index.ReferenceTable.Companion.FLAG_NAME
 import com.displee.cache.index.ReferenceTable.Companion.FLAG_WHIRLPOOL
 import com.displee.cache.index.archive.Archive
@@ -132,8 +132,8 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     @JvmOverloads
     fun createIndex(compressionType: CompressionType = CompressionType.GZIP, version: Int = 6, revision: Int = 0,
-                    named: Boolean = false, whirlpool: Boolean = false, flag4: Boolean = false, flag8: Boolean = false,
-                    writeReferenceTable: Boolean = true, id: Int = indexCount + 1): Index {
+                    named: Boolean = false, whirlpool: Boolean = false, lengths: Boolean = false, checksums: Boolean = false,
+                    writeReferenceTable: Boolean = true, id: Int = if (indices.isEmpty()) 0 else indexCount + 1): Index {
         val raf = RandomAccessFile(File(path, "$CACHE_FILE_NAME.idx$id"), "rw")
         val index = (if (is317()) Index317(this, id, raf) else Index(this, id, raf)).also { indices[id] = it }
         if (!writeReferenceTable) {
@@ -149,13 +149,11 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         if (whirlpool) {
             index.flagMask(FLAG_WHIRLPOOL)
         }
-        if (isRS3()) {
-            if (flag4) {
-                index.flagMask(FLAG_4)
-            }
-            if (flag8) {
-                index.flagMask(FLAG_8)
-            }
+        if (lengths) {
+            index.flagMask(FLAG_LENGTHS)
+        }
+        if (checksums) {
+            index.flagMask(FLAG_CHECKSUMS)
         }
         index.flag()
         check(index.update())
@@ -164,7 +162,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     fun createIndex(index: Index, writeReferenceTable: Boolean = true): Index {
         return createIndex(index.compressionType, index.version, index.revision,
-                index.isNamed(), index.hasWhirlpool(), index.hasFlag4(), index.hasFlag8(), writeReferenceTable, index.id)
+                index.isNamed(), index.hasWhirlpool(), index.hasLengths(), index.hasChecksums(), writeReferenceTable, index.id)
     }
 
     fun exists(id: Int): Boolean {
