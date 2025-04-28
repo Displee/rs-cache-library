@@ -27,7 +27,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     lateinit var mainFile: RandomAccessFile
 
-    private val indices = ArrayList<Index?>(100)
+    private var indices: Array<Index?> = arrayOfNulls(0)
     val compressors = Compressors()
     val whirlpool = Whirlpool()
     var index255: Index255? = null
@@ -36,7 +36,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     var closed = false
 
     private val indexCount: Int
-        get() = indices.lastIndex
+        get() = indices.size
 
     init {
         init()
@@ -56,7 +56,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
      * Re-create indices and re-read reference tables.
      */
     fun reload() {
-        indices.clear()
+        indices = arrayOfNulls(0)
         init()
     }
 
@@ -78,20 +78,21 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         this.index255 = index255
         listener?.notify(0.0, "Reading indices...")
         val indicesLength = index255.raf.length().toInt() / INDEX_SIZE
+        indices = arrayOfNulls(indicesLength)
         rs3 = indicesLength > 39
         for (i in 0 until indicesLength) {
             val file = File(path, "$CACHE_FILE_NAME.idx$i")
             val progress = i / (indicesLength - 1.0)
             if (!file.exists()) {
-                indices.add(i, null)
+                setIndex(i, null)
                 listener?.notify(progress, "Could not load index $i, missing idx file.")
                 continue
             }
             try {
-                indices.add(i, Index(this, i, RandomAccessFile(file, "rw")))
+                setIndex(i, Index(this, i, RandomAccessFile(file, "rw")))
                 listener?.notify(progress, "Loaded index $i.")
             } catch (e: Exception) {
-                indices.add(i, null)
+                setIndex(i, null)
                 e.printStackTrace()
                 listener?.notify(progress, "Failed to load index $i.")
             }
@@ -116,18 +117,25 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
             val file = File(path, "$CACHE_FILE_NAME.idx$i")
             val progress = i / (indexFiles.size - 1.0)
             if (!file.exists()) {
-                indices.add(i, null)
+                setIndex(i, null)
                 continue
             }
             try {
-                indices.add(i, Index317(this, i, RandomAccessFile(file, "rw")))
+                setIndex(i, Index317(this, i, RandomAccessFile(file, "rw")))
                 listener?.notify(progress, "Loaded index $i .")
             } catch (e: Exception) {
-                indices.add(i, null)
+                setIndex(i, null)
                 e.printStackTrace()
                 listener?.notify(progress, "Failed to load index $i.")
             }
         }
+    }
+
+    private fun setIndex(index: Int, value: Index?) {
+        if (index >= indices.size) {
+            indices = indices.copyOf(index + 1)
+        }
+        indices[index] = value
     }
 
     @JvmOverloads
@@ -135,7 +143,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
                     named: Boolean = false, whirlpool: Boolean = false, lengths: Boolean = false, checksums: Boolean = false,
                     writeReferenceTable: Boolean = true, id: Int = if (indices.isEmpty()) 0 else indexCount + 1): Index {
         val raf = RandomAccessFile(File(path, "$CACHE_FILE_NAME.idx$id"), "rw")
-        val index = (if (is317()) Index317(this, id, raf) else Index(this, id, raf)).also { indices.add(id, it) }
+        val index = (if (is317()) Index317(this, id, raf) else Index(this, id, raf)).also { setIndex(id, it) }
         if (!writeReferenceTable) {
             return index
         }
@@ -282,7 +290,8 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
             throw RuntimeException("Failed to remove the random access file of the argued index[id=$id, file exists=${file.exists()}]")
         }
         index255?.raf?.setLength(id * INDEX_SIZE.toLong())
-        indices.removeAt(id)
+        indices[id] = null
+        indices = indices.copyOf(id)
     }
 
     @JvmOverloads
@@ -376,7 +385,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         if (indices.isEmpty()) {
             return null
         }
-        return indices.getOrNull(indices.lastIndex)
+        return indices.getOrNull(indices.size - 1)
     }
 
     fun is317(): Boolean {
