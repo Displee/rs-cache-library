@@ -35,8 +35,8 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     var closed = false
 
-    private val indexCount: Int
-        get() = indices.indexOf(null) - 1
+    val indexCount: Int
+        get() = indices.count { it != null }
 
     init {
         init()
@@ -133,7 +133,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     @JvmOverloads
     fun createIndex(compressionType: CompressionType = CompressionType.GZIP, version: Int = 6, revision: Int = 0,
                     named: Boolean = false, whirlpool: Boolean = false, lengths: Boolean = false, checksums: Boolean = false,
-                    writeReferenceTable: Boolean = true, id: Int = indexCount + 1): Index {
+                    writeReferenceTable: Boolean = true, id: Int = (last()?.id ?: -1) + 1): Index {
         val raf = RandomAccessFile(File(path, "$CACHE_FILE_NAME.idx$id"), "rw")
         val index = (if (is317()) Index317(this, id, raf) else Index(this, id, raf)).also { indices[id] = it }
         if (!writeReferenceTable) {
@@ -274,7 +274,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         if (is317()) {
             throw UnsupportedOperationException("317 not supported to remove indices yet.")
         }
-        val id = indexCount
+        val id = last()?.id ?: throw NoSuchElementException("There is no index to delete.")
         val index = indices.getOrNull(id) ?: return
         index.close()
         val file = File(path, "$CACHE_FILE_NAME.idx$id")
@@ -287,9 +287,10 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     @JvmOverloads
     fun generateUkeys(writeWhirlpool: Boolean = true, exponent: BigInteger? = null, modulus: BigInteger? = null): ByteArray {
-        val buffer = OutputBuffer(6 + indexCount * 72)
+        val lastIndexId = (last()?.id ?: -1) + 1
+        val buffer = OutputBuffer(6 + lastIndexId * 72)
         if (writeWhirlpool) {
-            buffer.writeByte(indexCount)
+            buffer.writeByte(lastIndexId)
         }
         val emptyWhirlpool = ByteArray(WHIRLPOOL_SIZE)
         for (index in indices()) {
@@ -366,14 +367,11 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
     }
 
     fun first(): Index? {
-        return indices[0]
+        return indices.first { it != null }
     }
 
     fun last(): Index? {
-        if (indices.isEmpty()) {
-            return null
-        }
-        return indices.getOrNull(indices.lastIndex)
+        return indices.last { it != null }
     }
 
     fun is317(): Boolean {
@@ -382,7 +380,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     fun isOSRS(): Boolean {
         val index = index(2)
-        return index.revision >= 300 && indexCount <= 23
+        return index.revision >= 300 && indices().size <= 24
     }
 
     fun isRS3(): Boolean {
