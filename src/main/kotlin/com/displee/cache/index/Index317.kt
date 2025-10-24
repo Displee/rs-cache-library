@@ -52,7 +52,6 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
     override fun update(listener: ProgressListener?): Boolean {
         check(!closed) { "Index is closed." }
         val flaggedArchives = flaggedArchives()
-        val archives = archives()
         var i = 0.0
         flaggedArchives.forEach {
             i++
@@ -76,8 +75,15 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
         }
         val versionAndCrcFileIndex = id - 1
         if (versionAndCrcFileIndex >= 0 && versionAndCrcFileIndex < VERSION_FILES.size && flagged()) {
-            writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::revision).toArray(), VERSION_FILES[versionAndCrcFileIndex], BufferType.SHORT)
-            writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::crc).toArray(), CRC_FILES[versionAndCrcFileIndex], BufferType.INT)
+            val length = (last()?.id ?: -1) + 1
+            val versions = IntArray(length) {
+                archives[it]?.revision ?: 0
+            }
+            writeArchiveProperties(versions, VERSION_FILES[versionAndCrcFileIndex], BufferType.SHORT)
+            val crcs = IntArray(length) {
+                archives[it]?.crc ?: 0
+            }
+            writeArchiveProperties(crcs, CRC_FILES[versionAndCrcFileIndex], BufferType.INT)
         }
         listener?.notify(1.0, "Successfully updated index $id.")
         return true
