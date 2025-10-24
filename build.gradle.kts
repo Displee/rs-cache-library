@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "com.displee"
-version = "7.3.1"
+version = "7.3.2"
 
 description = "A library written in Kotlin used to read and write to all cache formats of RuneScape."
 
@@ -24,6 +24,7 @@ dependencies {
     implementation("com.github.jponge:lzma-java:1.3")
     implementation("org.apache.ant:ant:1.10.14")
     implementation("com.displee:disio:2.3")
+    testImplementation(kotlin("test"))
 }
 
 java {

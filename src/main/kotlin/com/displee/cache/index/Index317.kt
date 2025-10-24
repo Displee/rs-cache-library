@@ -24,9 +24,10 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
         }
         var versions: IntArray? = null
         var crcs: IntArray? = null
-        if (id != CONFIG_INDEX && id < VERSION_FILES.size) {
-            versions = readArchiveProperties(VERSION_FILES[id - 1], BufferType.SHORT)
-            crcs = readArchiveProperties(CRC_FILES[id - 1], BufferType.INT)
+        val versionAndCrcFileIndex = id - 1
+        if (versionAndCrcFileIndex >= 0 && versionAndCrcFileIndex < VERSION_FILES.size) {
+            versions = readArchiveProperties(VERSION_FILES[versionAndCrcFileIndex], BufferType.SHORT)
+            crcs = readArchiveProperties(CRC_FILES[versionAndCrcFileIndex], BufferType.INT)
         }
         for (i in 0 until archiveLength) {
             readArchiveSector(i) ?: continue
@@ -73,9 +74,10 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
         if (flaggedArchives.isNotEmpty() && !flagged()) {
             flag()
         }
-        if (id != CONFIG_INDEX && flagged()) {
-            writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::revision).toArray(), VERSION_FILES[id - 1], BufferType.SHORT)
-            writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::crc).toArray(), CRC_FILES[id - 1], BufferType.INT)
+        val versionAndCrcFileIndex = id - 1
+        if (versionAndCrcFileIndex >= 0 && versionAndCrcFileIndex < VERSION_FILES.size && flagged()) {
+            writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::revision).toArray(), VERSION_FILES[versionAndCrcFileIndex], BufferType.SHORT)
+            writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::crc).toArray(), CRC_FILES[versionAndCrcFileIndex], BufferType.INT)
         }
         listener?.notify(1.0, "Successfully updated index $id.")
         return true
