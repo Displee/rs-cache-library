@@ -49,7 +49,7 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         if (cached) {
             return
         }
-        archives.values.forEach {
+        forEach {
             try {
                 archive(it.id, it.xtea, false)
             } catch (t: Throwable) {

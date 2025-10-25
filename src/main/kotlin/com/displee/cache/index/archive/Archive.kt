@@ -16,7 +16,7 @@ open class Archive(val id: Int, var hashName: Int = 0, xtea: IntArray? = null) :
 
     var revision = 0
     private var needUpdate = false
-    val files: SortedMap<Int, File> = TreeMap()
+    internal val files: SortedMap<Int, File> = TreeMap()
 
     var crc: Int = 0
     var whirlpool: ByteArray? = null
@@ -143,14 +143,14 @@ open class Archive(val id: Int, var hashName: Int = 0, xtea: IntArray? = null) :
     }
 
     fun add(data: ByteArray): File {
-        return add(nextId(), data)
+        return add(nextFileId(), data)
     }
 
     @JvmOverloads
     fun add(name: String, data: ByteArray, overwrite: Boolean = true): File {
         var id = fileId(name)
         if (id == -1) {
-            id = nextId()
+            id = nextFileId()
         }
         return add(id, data, toHash(name), overwrite)
     }
@@ -233,7 +233,9 @@ open class Archive(val id: Int, var hashName: Int = 0, xtea: IntArray? = null) :
         return -1
     }
 
-    fun nextId(): Int {
+    fun forEach(visitor: (File) -> Unit) = files.values.forEach(visitor)
+
+    fun nextFileId(): Int {
         val last = last()
         return if (last == null) 0 else last.id + 1
     }
@@ -241,9 +243,7 @@ open class Archive(val id: Int, var hashName: Int = 0, xtea: IntArray? = null) :
     fun copyFiles(): Array<File> {
         val files = files()
         val copy = ArrayList<File>(files.size)
-        for (i in files.indices) {
-            copy.add(i, File(files[i]))
-        }
+        forEach { copy.add(File(it)) }
         return copy.toTypedArray()
     }
 

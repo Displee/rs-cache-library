@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "com.displee"
-version = "8.0.0"
+version = "8.0.1"
 
 description = "A library written in Kotlin used to read and write to all cache formats of RuneScape."
 

@@ -21,7 +21,7 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
     var revision = 0
     private var mask = 0x0
     private var needUpdate = false
-    protected var archives: SortedMap<Int, Archive> = TreeMap()
+    internal var archives: SortedMap<Int, Archive> = TreeMap()
     private var archiveNames = mutableListOf<Int>()
 
     var version = 0
@@ -191,9 +191,9 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
 
     @JvmOverloads
     fun add(name: String? = null, xtea: IntArray? = null): Archive {
-        var id = if (name == null) nextId() else archiveId(name)
+        var id = if (name == null) nextArchiveId() else archiveId(name)
         if (id == -1) {
-            id = nextId()
+            id = nextArchiveId()
         }
         return add(id, toHash(name ?: ""), xtea)
     }
@@ -345,7 +345,9 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         return -1
     }
 
-    fun nextId(): Int {
+    fun forEach(visitor: (Archive) -> Unit) = archives.values.forEach(visitor)
+
+    fun nextArchiveId(): Int {
         val last = last()
         return if (last == null) 0 else last.id + 1
     }
@@ -353,9 +355,7 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
     fun copyArchives(): Array<Archive> {
         val archives = archives()
         val copy = ArrayList<Archive>(archives.size)
-        for (i in archives.indices) {
-            copy.add(i, Archive(archives[i]))
-        }
+        forEach { copy.add(Archive(it)) }
         return copy.toTypedArray()
     }
 

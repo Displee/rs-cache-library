@@ -162,6 +162,10 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
                 index.isNamed(), index.hasWhirlpool(), index.hasLengths(), index.hasChecksums(), writeReferenceTable, index.id)
     }
 
+    fun exists(id: Int): Boolean {
+        return index(id) != null
+    }
+
     fun index(id: Int): Index? {
         return indices.getOrNull(id)
     }
