@@ -49,9 +49,6 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         }
     }
 
-    /**
-     * Re-create indices and re-read reference tables.
-     */
     fun reload() {
         indices = arrayOfNulls(0)
         init()
