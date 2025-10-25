@@ -2,7 +2,6 @@ package com.displee.cache.index
 
 import com.displee.cache.CacheLibrary
 import com.displee.cache.ProgressListener
-import com.displee.cache.index.archive.Archive
 import com.displee.cache.index.archive.Archive317
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
@@ -11,7 +10,6 @@ import com.displee.util.generateWhirlpool
 import com.displee.util.hashCode317
 import java.io.IOException
 import java.io.RandomAccessFile
-import java.util.*
 
 class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(origin, id, raf) {
 
@@ -93,7 +91,7 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
         if (id == CONFIG_INDEX || id > VERSION_FILES.size) {
             return null
         }
-        val data = origin.index(CONFIG_INDEX).archive(VERSION_ARCHIVE)?.file(fileId)?.data ?: return null
+        val data = origin.index(CONFIG_INDEX)?.archive(VERSION_ARCHIVE)?.file(fileId)?.data ?: return null
         val buffer = InputBuffer(data)
         val properties = IntArray(data.size / (1 shl type.ordinal))
         val bufferFun: () -> Int = when (type) {
@@ -130,7 +128,7 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
             }
         }
         properties.forEach(bufferFun)
-        val index = origin.index(CONFIG_INDEX)
+        val index = origin.index(CONFIG_INDEX) ?: return false
         index.archive(VERSION_ARCHIVE)?.add(fileId, buffer.array())
         return index.update()
     }

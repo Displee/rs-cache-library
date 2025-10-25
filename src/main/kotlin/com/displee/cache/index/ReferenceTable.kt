@@ -265,38 +265,38 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         if (direct || archive.read || archive.new) {
             return archive
         }
-        val sector = origin.index(this.id).readArchiveSector(id)
+        val sector = origin.index(this.id)?.readArchiveSector(id)
         if (sector == null) {
             archive.read = true
             archive.new = true
             archive.clear()
+            return archive
+        }
+        val is317 = is317()
+        if (is317) {
+            archive.compressionType = if (this.id == 0) CompressionType.BZIP2 else CompressionType.GZIP
+            archive.compressor = origin.compressors.get(archive.compressionType)
+            archive.read(InputBuffer(sector.data))
         } else {
-            val is317 = is317()
-            if (is317) {
-                archive.compressionType = if (this.id == 0) CompressionType.BZIP2 else CompressionType.GZIP
-                archive.compressor = origin.compressors.get(archive.compressionType)
-                archive.read(InputBuffer(sector.data))
-            } else {
-                val decompressed = sector.decompress(origin.compressors, xtea)
-                archive.compressionType = sector.compressionType
-                archive.compressor = sector.compressor
-                if (decompressed.isNotEmpty()) {
-                    archive.read(InputBuffer(decompressed))
-                    archive.xtea = xtea
-                }
+            val decompressed = sector.decompress(origin.compressors, xtea)
+            archive.compressionType = sector.compressionType
+            archive.compressor = sector.compressor
+            if (decompressed.isNotEmpty()) {
+                archive.read(InputBuffer(decompressed))
+                archive.xtea = xtea
             }
-            val mapsIndex = if (is317) 4 else 5
-            if (this.id == mapsIndex && !archive.containsData()) {
-                archive.read = false
-            }
-            if (!is317) {
-                val sectorBuffer = InputBuffer(sector.data)
-                sectorBuffer.offset = 1
-                val remaining: Int = sector.data.size - (sectorBuffer.readInt() + sectorBuffer.offset)
-                if (remaining >= 2) {
-                    sectorBuffer.offset = sector.data.size - 2
-                    archive.revision = sectorBuffer.readUnsignedShort()
-                }
+        }
+        val mapsIndex = if (is317) 4 else 5
+        if (this.id == mapsIndex && !archive.containsData()) {
+            archive.read = false
+        }
+        if (!is317) {
+            val sectorBuffer = InputBuffer(sector.data)
+            sectorBuffer.offset = 1
+            val remaining: Int = sector.data.size - (sectorBuffer.readInt() + sectorBuffer.offset)
+            if (remaining >= 2) {
+                sectorBuffer.offset = sector.data.size - 2
+                archive.revision = sectorBuffer.readUnsignedShort()
             }
         }
         return archive
