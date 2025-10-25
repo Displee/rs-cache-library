@@ -387,7 +387,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     fun isOSRS(): Boolean {
         val index = index(2)
-        return index.revision >= 300 && indexCount <= 23
+        return index.revision >= 300 && indexCount <= 24
     }
 
     fun isRS3(): Boolean {
