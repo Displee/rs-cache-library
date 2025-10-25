@@ -7,6 +7,6 @@ enum class CompressionType {
     LZMA;
 
     companion object {
-        val compressionTypes = values()
+        val compressionTypes = entries.toTypedArray()
     }
 }

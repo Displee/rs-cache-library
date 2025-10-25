@@ -12,12 +12,16 @@ import com.displee.io.impl.OutputBuffer
 import java.util.*
 import kotlin.collections.ArrayList
 
+private const val PROTOCOL_DEFAULT = 5
+private const val PROTOCOL_VERSIONED = 6
+private const val PROTOCOL_SMART = 7
+
 open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Comparable<ReferenceTable> {
 
     var revision = 0
     private var mask = 0x0
     private var needUpdate = false
-    protected var archives: SortedMap<Int, Archive> = TreeMap()
+    internal var archives: SortedMap<Int, Archive> = TreeMap()
     private var archiveNames = mutableListOf<Int>()
 
     var version = 0
@@ -28,10 +32,10 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
 
     open fun read(buffer: InputBuffer) {
         version = buffer.readUnsignedByte()
-        if (version < 5 || version > 7) {
+        if (version < PROTOCOL_DEFAULT || version > PROTOCOL_SMART) {
             throw RuntimeException("Unknown version: $version")
         }
-        revision = if (version >= 6) buffer.readInt() else 0
+        revision = if (version >= PROTOCOL_VERSIONED) buffer.readInt() else 0
         mask = buffer.readByte().toInt()
         val named = mask and FLAG_NAME != 0
         val whirlpool = mask and FLAG_WHIRLPOOL != 0
@@ -39,13 +43,9 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         val checksums = mask and FLAG_CHECKSUMS != 0
 
         val readFun: () -> (Int) = if (version >= 7) {
-            {
-                buffer.readBigSmart()
-            }
+            buffer::readBigSmart
         } else {
-            {
-                buffer.readUnsignedShort()
-            }
+            buffer::readUnsignedShort
         }
 
         val archiveIds = IntArray(readFun())
@@ -113,19 +113,15 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
     open fun write(): ByteArray {
         val buffer = OutputBuffer(10_000_000) //10mb
         buffer.writeByte(version)
-        if (version >= 6) {
+        if (version >= PROTOCOL_VERSIONED) {
             buffer.writeInt(revision)
         }
         buffer.writeByte(mask)
 
-        val writeFun: (Int) -> Unit = if (version >= 7) {
-            {
-                buffer.writeBigSmart(it)
-            }
+        val writeFun: (Int) -> OutputBuffer = if (version >= PROTOCOL_SMART) {
+            buffer::writeBigSmart
         } else {
-            {
-                buffer.writeShort(it)
-            }
+            buffer::writeShort
         }
 
         writeFun(archives.size)
@@ -195,9 +191,9 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
 
     @JvmOverloads
     fun add(name: String? = null, xtea: IntArray? = null): Archive {
-        var id = if (name == null) nextId() else archiveId(name)
+        var id = if (name == null) nextArchiveId() else archiveId(name)
         if (id == -1) {
-            id = nextId()
+            id = nextArchiveId()
         }
         return add(id, toHash(name ?: ""), xtea)
     }
@@ -269,38 +265,38 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         if (direct || archive.read || archive.new) {
             return archive
         }
-        val sector = origin.index(this.id).readArchiveSector(id)
+        val sector = origin.index(this.id)?.readArchiveSector(id)
         if (sector == null) {
             archive.read = true
             archive.new = true
             archive.clear()
+            return archive
+        }
+        val is317 = is317()
+        if (is317) {
+            archive.compressionType = if (this.id == 0) CompressionType.BZIP2 else CompressionType.GZIP
+            archive.compressor = origin.compressors.get(archive.compressionType)
+            archive.read(InputBuffer(sector.data))
         } else {
-            val is317 = is317()
-            if (is317) {
-                archive.compressionType = if (this.id == 0) CompressionType.BZIP2 else CompressionType.GZIP
-                archive.compressor = origin.compressors.get(archive.compressionType)
-                archive.read(InputBuffer(sector.data))
-            } else {
-                val decompressed = sector.decompress(origin.compressors, xtea)
-                archive.compressionType = sector.compressionType
-                archive.compressor = sector.compressor
-                if (decompressed.isNotEmpty()) {
-                    archive.read(InputBuffer(decompressed))
-                    archive.xtea = xtea
-                }
+            val decompressed = sector.decompress(origin.compressors, xtea)
+            archive.compressionType = sector.compressionType
+            archive.compressor = sector.compressor
+            if (decompressed.isNotEmpty()) {
+                archive.read(InputBuffer(decompressed))
+                archive.xtea = xtea
             }
-            val mapsIndex = if (is317) 4 else 5
-            if (this.id == mapsIndex && !archive.containsData()) {
-                archive.read = false
-            }
-            if (!is317) {
-                val sectorBuffer = InputBuffer(sector.data)
-                sectorBuffer.offset = 1
-                val remaining: Int = sector.data.size - (sectorBuffer.readInt() + sectorBuffer.offset)
-                if (remaining >= 2) {
-                    sectorBuffer.offset = sector.data.size - 2
-                    archive.revision = sectorBuffer.readUnsignedShort()
-                }
+        }
+        val mapsIndex = if (is317) 4 else 5
+        if (this.id == mapsIndex && !archive.containsData()) {
+            archive.read = false
+        }
+        if (!is317) {
+            val sectorBuffer = InputBuffer(sector.data)
+            sectorBuffer.offset = 1
+            val remaining: Int = sector.data.size - (sectorBuffer.readInt() + sectorBuffer.offset)
+            if (remaining >= 2) {
+                sectorBuffer.offset = sector.data.size - 2
+                archive.revision = sectorBuffer.readUnsignedShort()
             }
         }
         return archive
@@ -349,7 +345,9 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         return -1
     }
 
-    fun nextId(): Int {
+    fun forEach(visitor: (Archive) -> Unit) = archives.values.forEach(visitor)
+
+    fun nextArchiveId(): Int {
         val last = last()
         return if (last == null) 0 else last.id + 1
     }
@@ -357,9 +355,7 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
     fun copyArchives(): Array<Archive> {
         val archives = archives()
         val copy = ArrayList<Archive>(archives.size)
-        for (i in archives.indices) {
-            copy.add(i, Archive(archives[i]))
-        }
+        forEach { copy.add(Archive(it)) }
         return copy.toTypedArray()
     }
 

@@ -2,7 +2,6 @@ package com.displee.cache.index
 
 import com.displee.cache.CacheLibrary
 import com.displee.cache.ProgressListener
-import com.displee.cache.index.archive.Archive
 import com.displee.cache.index.archive.Archive317
 import com.displee.io.impl.InputBuffer
 import com.displee.io.impl.OutputBuffer
@@ -11,7 +10,6 @@ import com.displee.util.generateWhirlpool
 import com.displee.util.hashCode317
 import java.io.IOException
 import java.io.RandomAccessFile
-import java.util.*
 
 class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(origin, id, raf) {
 
@@ -24,9 +22,10 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
         }
         var versions: IntArray? = null
         var crcs: IntArray? = null
-        if (id != CONFIG_INDEX && id < VERSION_FILES.size) {
-            versions = readArchiveProperties(VERSION_FILES[id - 1], BufferType.SHORT)
-            crcs = readArchiveProperties(CRC_FILES[id - 1], BufferType.INT)
+        val versionAndCrcFileIndex = id - 1
+        if (versionAndCrcFileIndex >= 0 && versionAndCrcFileIndex < VERSION_FILES.size) {
+            versions = readArchiveProperties(VERSION_FILES[versionAndCrcFileIndex], BufferType.SHORT)
+            crcs = readArchiveProperties(CRC_FILES[versionAndCrcFileIndex], BufferType.INT)
         }
         for (i in 0 until archiveLength) {
             readArchiveSector(i) ?: continue
@@ -51,7 +50,6 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
     override fun update(listener: ProgressListener?): Boolean {
         check(!closed) { "Index is closed." }
         val flaggedArchives = flaggedArchives()
-        val archives = archives()
         var i = 0.0
         flaggedArchives.forEach {
             i++
@@ -73,9 +71,17 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
         if (flaggedArchives.isNotEmpty() && !flagged()) {
             flag()
         }
-        if (id != CONFIG_INDEX && flagged()) {
-            writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::revision).toArray(), VERSION_FILES[id - 1], BufferType.SHORT)
-            writeArchiveProperties(Arrays.stream(archives).mapToInt(Archive::crc).toArray(), CRC_FILES[id - 1], BufferType.INT)
+        val versionAndCrcFileIndex = id - 1
+        if (versionAndCrcFileIndex >= 0 && versionAndCrcFileIndex < VERSION_FILES.size && flagged()) {
+            val length = (last()?.id ?: -1) + 1
+            val versions = IntArray(length) {
+                archives[it]?.revision ?: 0
+            }
+            writeArchiveProperties(versions, VERSION_FILES[versionAndCrcFileIndex], BufferType.SHORT)
+            val crcs = IntArray(length) {
+                archives[it]?.crc ?: 0
+            }
+            writeArchiveProperties(crcs, CRC_FILES[versionAndCrcFileIndex], BufferType.INT)
         }
         listener?.notify(1.0, "Successfully updated index $id.")
         return true
@@ -85,7 +91,7 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
         if (id == CONFIG_INDEX || id > VERSION_FILES.size) {
             return null
         }
-        val data = origin.index(CONFIG_INDEX).archive(VERSION_ARCHIVE)?.file(fileId)?.data ?: return null
+        val data = origin.index(CONFIG_INDEX)?.archive(VERSION_ARCHIVE)?.file(fileId)?.data ?: return null
         val buffer = InputBuffer(data)
         val properties = IntArray(data.size / (1 shl type.ordinal))
         val bufferFun: () -> Int = when (type) {
@@ -122,7 +128,7 @@ class Index317(origin: CacheLibrary, id: Int, raf: RandomAccessFile) : Index(ori
             }
         }
         properties.forEach(bufferFun)
-        val index = origin.index(CONFIG_INDEX)
+        val index = origin.index(CONFIG_INDEX) ?: return false
         index.archive(VERSION_ARCHIVE)?.add(fileId, buffer.array())
         return index.update()
     }
