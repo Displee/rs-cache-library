@@ -12,6 +12,10 @@ import com.displee.io.impl.OutputBuffer
 import java.util.*
 import kotlin.collections.ArrayList
 
+private const val PROTOCOL_DEFAULT = 5
+private const val PROTOCOL_VERSIONED = 6
+private const val PROTOCOL_SMART = 7
+
 open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Comparable<ReferenceTable> {
 
     var revision = 0
@@ -28,10 +32,10 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
 
     open fun read(buffer: InputBuffer) {
         version = buffer.readUnsignedByte()
-        if (version < 5 || version > 7) {
+        if (version < PROTOCOL_DEFAULT || version > PROTOCOL_SMART) {
             throw RuntimeException("Unknown version: $version")
         }
-        revision = if (version >= 6) buffer.readInt() else 0
+        revision = if (version >= PROTOCOL_VERSIONED) buffer.readInt() else 0
         mask = buffer.readByte().toInt()
         val named = mask and FLAG_NAME != 0
         val whirlpool = mask and FLAG_WHIRLPOOL != 0
@@ -39,13 +43,9 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         val checksums = mask and FLAG_CHECKSUMS != 0
 
         val readFun: () -> (Int) = if (version >= 7) {
-            {
-                buffer.readBigSmart()
-            }
+            buffer::readBigSmart
         } else {
-            {
-                buffer.readUnsignedShort()
-            }
+            buffer::readUnsignedShort
         }
 
         val archiveIds = IntArray(readFun())
@@ -113,19 +113,15 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
     open fun write(): ByteArray {
         val buffer = OutputBuffer(10_000_000) //10mb
         buffer.writeByte(version)
-        if (version >= 6) {
+        if (version >= PROTOCOL_VERSIONED) {
             buffer.writeInt(revision)
         }
         buffer.writeByte(mask)
 
-        val writeFun: (Int) -> Unit = if (version >= 7) {
-            {
-                buffer.writeBigSmart(it)
-            }
+        val writeFun: (Int) -> OutputBuffer = if (version >= PROTOCOL_SMART) {
+            buffer::writeBigSmart
         } else {
-            {
-                buffer.writeShort(it)
-            }
+            buffer::writeShort
         }
 
         writeFun(archives.size)
