@@ -35,9 +35,6 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     var closed = false
 
-    private val indexCount: Int
-        get() = indices.size
-
     init {
         init()
     }
@@ -288,15 +285,17 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         if ((exponent == null) != (modulus == null)) {
             throw IllegalArgumentException("Both exponent and modulus must be provided together")
         }
-        val buffer = OutputBuffer(6 + indexCount * 72)
+        val indicesSize = indices.size
+        val buffer = OutputBuffer(6 + indicesSize * 72)
         if (writeWhirlpool) {
-            buffer.writeByte(indexCount)
+            buffer.writeByte(indicesSize)
         }
         val emptyWhirlpool = ByteArray(WHIRLPOOL_SIZE)
-        for (index in validIndices()) {
-            buffer.writeInt(index.crc).writeInt(index.revision)
+        for (index in indices) {
+            buffer.writeInt(index?.crc ?: 0)
+                .writeInt(index?.revision ?: 0)
             if (writeWhirlpool) {
-                buffer.writeBytes(index.whirlpool ?: emptyWhirlpool)
+                buffer.writeBytes(index?.whirlpool ?: emptyWhirlpool)
             }
         }
         if (writeWhirlpool) {
@@ -377,7 +376,7 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
 
     fun isOSRS(): Boolean {
         val index = index(2) ?: return false
-        return index.revision >= 300 && indexCount <= 25
+        return index.revision >= 300 && indices.size <= 25
     }
 
     fun isRS3(): Boolean {
