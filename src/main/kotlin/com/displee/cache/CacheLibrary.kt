@@ -351,6 +351,15 @@ open class CacheLibrary(val path: String, val clearDataAfterUpdate: Boolean = fa
         }
     }
 
+    fun fixLengths(update: Boolean) {
+        for (index in validIndices()) {
+            if (index.archiveIds().isEmpty()) {
+                continue
+            }
+            index.fixLengths(update)
+        }
+    }
+
     override fun close() {
         if (closed) {
             return

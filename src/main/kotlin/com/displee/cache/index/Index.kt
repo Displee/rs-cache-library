@@ -78,9 +78,15 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
             }
             it.unFlag()
             listener?.notify((i / flaggedArchives.size) * 0.80, "Repacking archive ${it.id}...")
-            val compressed = it.write().compress(it.compressionType, it.compressor, it.xtea, it.revision)
-            it.crc = compressed.generateCrc(length = compressed.size - 2)
-            it.whirlpool = compressed.generateWhirlpool(origin.whirlpool, length = compressed.size - 2)
+            val revisionBytes = it.getRevisionBytes()
+            val decompressed = it.write()
+            val compressed = decompressed.compress(it.compressionType, it.compressor, it.xtea, it.revision)
+            it.crc = compressed.generateCrc(length = compressed.size - revisionBytes)
+            it.whirlpool = compressed.generateWhirlpool(origin.whirlpool, length = compressed.size - revisionBytes)
+            if (hasLengths()) {
+                it.compressedLength = compressed.size - revisionBytes
+                it.decompressedLength = decompressed.size
+            }
             val written = writeArchiveSector(it.id, compressed)
             check(written) { "Unable to write data to archive sector. Your cache may be corrupt." }
             if (origin.clearDataAfterUpdate) {
@@ -256,8 +262,9 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         var flag = false
         for (i in archiveIds) {
             val sector = readArchiveSector(i) ?: continue
-            val correctCRC = sector.data.generateCrc(length = sector.data.size - 2)
             val archive = archive(i) ?: continue
+            val revisionBytes = archive.getRevisionBytes()
+            val correctCRC = sector.data.generateCrc(length = sector.data.size - revisionBytes)
             val currentCRC = archive.crc
             if (currentCRC == correctCRC) {
                 continue
@@ -274,7 +281,42 @@ open class Index(origin: CacheLibrary, id: Int, val raf: RandomAccessFile) : Ref
         if (flag && update) {
             update()
         } else if (!flag) {
-            println("No invalid CRCs found.")
+            println("No invalid CRCs found in index $id")
+            return
+        }
+        unCache()
+    }
+
+    //TODO Support passing XTEAs for locs
+    fun fixLengths(update: Boolean) {
+        check(!closed) { "Index is closed." }
+        if (is317() || !hasLengths()/* || id == 5*/) {
+            return
+        }
+        val archiveIds = archiveIds()
+        var flag = false
+        for (i in archiveIds) {
+            val sector = readArchiveSector(i) ?: continue
+            val archive = archive(i) ?: continue
+            val decompressed = sector.decompress(origin.compressors)
+            val expectedDecompressedLength = decompressed.size
+            if (expectedDecompressedLength == 0) { // locs require XTEAs, ignore for now
+                continue
+            }
+            val currentDecompressedLength = archive.decompressedLength
+            val expectedCompressedLength = sector.size - 2
+            val currentLength = archive.compressedLength
+            if (expectedCompressedLength == currentLength && currentDecompressedLength == expectedDecompressedLength) {
+                continue
+            }
+            println("Incorrect lengths in index $id -> archive $i, current_length=$currentLength, expected_length=$expectedCompressedLength, current_decompressed_length=$currentDecompressedLength, expected_decompressed_length=$expectedDecompressedLength")
+            archive.flag()
+            flag = true
+        }
+        if (flag && update) {
+            update()
+        } else if (!flag) {
+            println("No invalid lengths found in index $id")
             return
         }
         unCache()

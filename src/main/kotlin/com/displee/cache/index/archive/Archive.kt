@@ -21,8 +21,8 @@ open class Archive(val id: Int, var hashName: Int = 0, xtea: IntArray? = null) :
     var crc: Int = 0
     var whirlpool: ByteArray? = null
     var checksum = 0
-    var length = 0
-    var uncompressedLength = 0
+    var compressedLength = 0
+    var decompressedLength = 0
 
     private var _xtea: IntArray? = xtea
     var xtea: IntArray?
@@ -283,6 +283,10 @@ open class Archive(val id: Int, var hashName: Int = 0, xtea: IntArray? = null) :
 
     fun files(): Array<File> {
         return files.values.toTypedArray()
+    }
+
+    fun getRevisionBytes(): Int {
+        return if (revision == -1) 0 else 2
     }
 
     @Deprecated("Use property syntax", ReplaceWith("xtea"))
