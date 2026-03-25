@@ -79,8 +79,8 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
         }
         if (lengths) {
             archives.forEach {
-                it.length = buffer.readInt()
-                it.uncompressedLength = buffer.readInt()
+                it.compressedLength = buffer.readInt()
+                it.decompressedLength = buffer.readInt()
             }
         }
         archives.forEach { it.revision = buffer.readInt() }
@@ -142,7 +142,7 @@ open class ReferenceTable(protected val origin: CacheLibrary, val id: Int) : Com
             archives.forEach { buffer.writeBytes(it.whirlpool ?: empty) }
         }
         if (hasLengths()) {
-            archives.forEach { buffer.writeInt(it.length).writeInt(it.uncompressedLength) }
+            archives.forEach { buffer.writeInt(it.compressedLength).writeInt(it.decompressedLength) }
         }
         archives.forEach { buffer.writeInt(it.revision) }
         archives.forEach { writeFun(it.files.size) }
